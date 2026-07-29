@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Сервис TaskPlan — документация</title>
+<style>
+body { font-family: Consolas, monospace; background: #000000; color: #e0e0e0; margin: 0; padding: 20px; }
+h1 { color: #569cd6; border-bottom: 2px solid #569cd6; padding-bottom: 10px; }
+h2 { color: #4ec9b0; margin-top: 30px; border-bottom: 1px solid #4ec9b0; }
+h3 { color: #ce9178; }
+pre { background: #0a0a0a; padding: 10px; border-radius: 4px; overflow-x: auto; border: 1px solid #1a1a1a; }
+code { color: #ce9178; }
+table { border-collapse: collapse; width: 100%; }
+td, th { border: 1px solid #1a1a1a; padding: 8px; text-align: left; }
+th { background: #0a0a0a; color: #569cd6; }
+.shell { background: #000000; color: #e0e0e0; }
+.param-name { color: #9cdcfe; }
+.note { background: #0a0a0a; border-left: 4px solid #ffcc00; padding: 10px; margin: 10px 0; border: 1px solid #1a1a1a; }
+.footer { margin-top: 40px; padding-top: 10px; border-top: 1px solid #1a1a1a; color: #e0e0e0; font-size: 0.9em; }
+.lead { font-size: 1.1em; color: #dcdcaa; }
+</style>
+</head>
+<body>
+
+<h1>Сервис управления планом объёмных задач</h1>
+<p class="lead">TaskPlan Service v1.0 | 19.07.2026 | <code>C:\AIS\AI\Prod\scripts\</code></p>
+
+<h2>1. Назначение</h2>
+<p>Сервис предназначен для решения объёмных задач с использованием недорогих LLM.</p>
+<p>Позволяет:</p>
+<ul>
+<li>Создать общий план задачи с этапами, статусами и ответственными</li>
+<li>Отслеживать прогресс выполнения</li>
+<li>Откладывать сложные подзадачи на дорогую LLM</li>
+<li>Формировать бриф для дорогой LLM с минимальным контекстом</li>
+<li>Визуализировать состояние через ДО-индикатор</li>
+</ul>
+
+<h2>2. Состав сервиса</h2>
+<table>
+<tr><th>Файл</th><th>Назначение</th><th>Размер</th></tr>
+<tr><td><code>TaskPlan-Tracker.ps1</code></td><td>Трекер общего плана</td><td>224 строк</td></tr>
+<tr><td><code>сTaskPlan-PrepareBrief.ps1</code></td><td>Бриф для дорогой LLM</td><td>115 строк</td></tr>
+<tr><td><code>Show-TaskPlan.ps1</code></td><td>ДО-индикатор</td><td>89 строк</td></tr>
+</table>
+
+<h2>3. Быстрый старт</h2>
+<pre class="shell"># 1. Создать план
+&gt; powershell -File TaskPlan-Tracker.ps1 -Action new -TaskName MYTASK -Goal "Цель" -Stages "Этап 1|llm-A","Этап 2|llm-B"
+
+# 2. Отметить этап
+&gt; powershell -File TaskPlan-Tracker.ps1 -Action set -TaskName MYTASK -StageNum 1 -Status done -DoneBy llm-A
+
+# 3. Бриф для дорогой LLM
+&gt; powershell -File TaskPlan-PrepareBrief.ps1 -TaskName MYTASK -StageNum 2 -Context "описание контекста"
+
+# 4. ДО-индикатор
+&gt; powershell -File Show-TaskPlan.ps1 -TaskName MYTASK -Once</pre>
+
+<h2>4. TaskPlan-Tracker.ps1</h2>
+
+<h3>4.1. Параметры</h3>
+<table>
+<tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr>
+<tr><td><code>-Action</code></td><td>[new|add|set|show|next|sync]</td><td>Действие</td></tr>
+<tr><td><code>-TaskName</code></td><td>string</td><td>Имя задачи (папка)</td></tr>
+<tr><td><code>-Stages</code></td><td>string[]</td><td>Массив этапов. Формат: "Текст" или "Текст|кем"</td></tr>
+<tr><td><code>-StageNum</code></td><td>int</td><td>Номер этапа (1-based)</td></tr>
+<tr><td><code>-Status</code></td><td>[todo|wip|done|defer]</td><td>Статус этапа</td></tr>
+<tr><td><code>-DoneBy</code></td><td>string</td><td>Кто/какая LLM выполнил</td></tr>
+<tr><td><code>-Goal</code></td><td>string</td><td>Цель задачи</td></tr>
+<tr><td><code>-ReleaseRoot</code></td><td>string</td><td>Корень задач (по умолч. C:\AIS\1 Release)</td></tr>
+<tr><td><code>-Force</code></td><td>switch</td><td>Перезаписать при new</td></tr>
+</table>
+
+<h3>4.2. Действия</h3>
+<table>
+<tr><th>Action</th><th>Описание</th></tr>
+<tr><td><code>new</code></td><td>Создать новый план. Требует <code>-Stages</code> и <code>-Goal</code>. С <code>-Force</code> перезаписывает.</td></tr>
+<tr><td><code>add</code></td><td>Добавить этапы к существующему плану.</td></tr>
+<tr><td><code>set</code></td><td>Изменить статус этапа. Требует <code>-StageNum</code> + <code>-Status</code>.</td></tr>
+<tr><td><code>show</code></td><td>Показать содержимое ПЛАН_РЕАЛИЗАЦИИ.txt.</td></tr>
+<tr><td><code>next</code></td><td>Показать следующий незавершённый этап.</td></tr>
+<tr><td><code>sync</code></td><td>Пересинхронизировать plan_state.json из txt.</td></tr>
+</table>
+
+<h3>4.3. Статусы этапов</h3>
+<table>
+<tr><th>Статус</th><th>Метка</th><th>Значение</th></tr>
+<tr><td><code>todo</code></td><td><code>[ ]</code></td><td>Не начат</td></tr>
+<tr><td><code>wip</code></td><td><code>[~]</code></td><td>В работе</td></tr>
+<tr><td><code>done</code></td><td><code>[x]</code></td><td>Готов</td></tr>
+<tr><td><code>defer</code></td><td><code>[!]</code></td><td>Отложен на дорогую LLM</td></tr>
+</table>
+
+<h3>4.4. Примеры</h3>
+<pre class="shell"># Создать план с 4 этапами
+&gt; powershell -File TaskPlan-Tracker.ps1 -Action new -TaskName SYBASE-12345 `
+    -Goal "Реализовать отчёт" -Stages "Анализ|haiku","Разраб|sonnet","Рефакторинг|opus","Тесты|haiku"
+
+# Отметить этап 3 как отложенный
+&gt; powershell -File TaskPlan-Tracker.ps1 -Action set -TaskName SYBASE-12345 `
+    -StageNum 3 -Status defer -DoneBy "глубокий рефакторинг"
+
+# Показать следующий этап
+&gt; powershell -File TaskPlan-Tracker.ps1 -Action next -TaskName SYBASE-12345</pre>
+
+<h2>5. TaskPlan-PrepareBrief.ps1</h2>
+
+<h3>5.1. Параметры</h3>
+<table>
+<tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr>
+<tr><td><code>-TaskName</code></td><td>string</td><td>Имя задачи (обязательный)</td></tr>
+<tr><td><code>-StageNum</code></td><td>int</td><td>Номер [!]-этапа (по умолч. первый defer)</td></tr>
+<tr><td><code>-SubName</code></td><td>string</td><td>Имя подзадачи</td></tr>
+<tr><td><code>-Context</code></td><td>string</td><td>Дополнительный контекст</td></tr>
+<tr><td><code>-Objects</code></td><td>string[]</td><td>Объекты PB/SQL</td></tr>
+<tr><td><code>-ReleaseRoot</code></td><td>string</td><td>Корень задач</td></tr>
+</table>
+
+<h3>5.2. Пример</h3>
+<pre class="shell"># Бриф с контекстом и объектами
+&gt; powershell -File TaskPlan-PrepareBrief.ps1 -TaskName SYBASE-12345 -StageNum 3 `
+    -Context "view v_rule_dim + rule_dim" -Objects "usp_report.sql","u_report.sru"</pre>
+
+<h2>6. Show-TaskPlan.ps1</h2>
+
+<h3>6.1. Параметры</h3>
+<table>
+<tr><th>Параметр</th><th>Тип</th><th>Описание</th></tr>
+<tr><td><code>-TaskName</code></td><td>string</td><td>Имя задачи (обязательный)</td></tr>
+<tr><td><code>-Once</code></td><td>switch</td><td>Один раз, без цикла</td></tr>
+<tr><td><code>-ReleaseRoot</code></td><td>string</td><td>Корень задач</td></tr>
+</table>
+
+<h3>6.2. Примеры</h3>
+<pre class="shell"># Показать один раз
+&gt; powershell -File Show-TaskPlan.ps1 -TaskName SYBASE-12345 -Once
+
+# Запустить мониторинг (автообновление каждые 800 мс)
+&gt; powershell -File Show-TaskPlan.ps1 -TaskName SYBASE-12345</pre>
+
+<h3>6.3. Цвета этапов</h3>
+<table>
+<tr><th>Цвет</th><th>Статус</th></tr>
+<tr><td style="color: green;">Зелёный</td><td>done [x]</td></tr>
+<tr><td style="color: yellow;">Жёлтый</td><td>wip [~]</td></tr>
+<tr><td style="color: red;">Красный</td><td>defer [!]</td></tr>
+<tr><td>Белый</td><td>todo [ ]</td></tr>
+</table>
+
+<h2>7. Структура файлов задачи</h2>
+<pre>&lt;ReleaseRoot&gt;/&lt;TaskName&gt;/
+├── Describe/
+│   ├── ПЛАН_РЕАЛИЗАЦИИ.txt        — общий план (txt с чек-боксами)
+│   ├── plan_state.json             — зеркало для ДО-индикатора
+│   ├── &lt;TaskName&gt;_SUB_&lt;n&gt;_бриф.txt — бриф для дорогой LLM
+│   ├── &lt;объект&gt;_анализ.txt         — анализ объекта
+│   └── &lt;объект&gt;_изменения.txt      — правки объекта
+├── Git_YYYY_MM_DD/                — оригиналы объектов
+├── Test_YYYY_MM_DD/               — изменённые объекты
+└── Ready_YYYY_MM_DD/              — готовые к выгрузке</pre>
+
+<h2>8. Полный цикл работы</h2>
+<ol>
+<li><code>TASK &lt;имя&gt;</code> — создать папку задачи (правило TASK)</li>
+<li><code>new + Stages + Goal</code> — создать общий план</li>
+<li><code>set + Status</code> — отмечать прогресс этапов</li>
+<li><code>PrepareBrief + StageNum</code> — подготовить бриф для дорогой LLM</li>
+<li>Запустить дорогую LLM для решения подзадачи</li>
+<li><code>set + Status done</code> — отметить этап выполненным</li>
+<li><code>next</code> — узнать следующий этап</li>
+<li><code>Show-TaskPlan -Once</code> — проверить состояние</li>
+<li>Повторять шаги 3-8 до завершения</li>
+</ol>
+<p>Все шаги 3-8 выполняются ДЕШЁВОЙ LLM. Дорогая LLM берёт ТОЛЬКО 
+отложенные [!] этапы (шаг 5).</p>
+
+<h2>9. Известные ограничения PS 5.1</h2>
+<div class="note">
+<strong>Bug-PS51-008:</strong> Where-Object при 1 результате возвращает объект, а не массив. 
+<code>.Count</code> даёт пустую строку. 
+<strong>Исправление:</strong> всегда оборачивать в <code>@(Where-Object {...}).Count</code>,
+а не <code>(Where-Object {...}).Count</code>.
+</div>
+
+<div class="note">
+<strong>Bug-PS51-009:</strong> Хэш-таблицы в Parse-Stage. Where-Object на хэш-таблицах 
+считает все строки как совпадение.
+<strong>Исправление:</strong> использовать <code>[PSCustomObject]</code> вместо <code>@{...}</code>.
+</div>
+
+<div class="note">
+<strong>Bug-PS51-010:</strong> ConvertFrom-Json в PS 5.1 не поддерживает <code>-Depth</code>.
+<strong>Исправление:</strong> <code>Add-Type -AssemblyName System.Web.Extensions</code>,
+<code>New-Object System.Web.Script.Serialization.JavaScriptSerializer</code>.
+Возвращает <code>Dictionary</code>, доступ через <code>$dict['key']</code>.
+</div>
+
+<div class="note">
+<strong>Bug-PS51-011:</strong> Join-Path принимает только 2 пути.
+<strong>Исправление:</strong> вложенный вызов: <code>Join-Path (Join-Path $a $b) $c</code>.
+</div>
+
+<h2>10. Связь со стратегией</h2>
+<p>Сервис реализует раздел <strong>«Стратегия решения объёмных задач 
+недорогими/бесплатными LLM»</strong> из <code>AGENTS.md</code>:</p>
+<ul>
+<li>П.2 (Общий план) → TaskPlan-Tracker.ps1 new/add/set</li>
+<li>П.3 (Поэтапное выполнение) → set/show/next</li>
+<li>П.4 (Переход на другую LLM) → plan_state.json</li>
+<li>П.5 (Откладывание на дорогую LLM) → defer статус</li>
+<li>П.6 (Подготовка перед дорогой LLM) → PrepareBrief.ps1</li>
+<li>П.7-8 (Роутинг и ДО) → Show-TaskPlan.ps1</li>
+</ul>
+
+<div class="footer">
+(C) 2026 AIS Project. Все скрипты в C:\AIS\AI\Prod\scripts\
+</div>
+</body>
+</html>

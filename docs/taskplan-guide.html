@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Документация</title>
+<style>
+body { font-family: 'Segoe UI', Arial, Calibri, sans-serif; background: #FFFFFF; color: #1A202C; margin: 40px; line-height: 1.6; }
+h1 { color: #1A3A60; font-size: 28px; border-bottom: 2px solid #2B6CB0; padding-bottom: 8px; margin-top: 32px; }
+h2 { color: #2D3748; font-size: 22px; margin-top: 28px; border-left: 4px solid #2B6CB0; padding-left: 10px; }
+h3 { color: #4A5568; font-size: 18px; margin-top: 22px; }
+p  { font-size: 14px; margin: 10px 0; }
+code { background: #F5F7FA; color: #1A3A60; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; }
+pre { background: #1E1E2E; color: #D4D4D4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: Consolas, monospace; font-size: 13px; }
+pre code { background: transparent; color: #D4D4D4; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+th { background: #1A3A60; color: #FFFFFF; font-weight: bold; padding: 10px; text-align: left; border: 1px solid #CBD5E0; }
+td { padding: 10px; border: 1px solid #CBD5E0; }
+tr:nth-child(even) { background: #F5F7FA; }
+tr:nth-child(odd)  { background: #FFFFFF; }
+ul, ol { margin: 10px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+a { color: #2B6CB0; text-decoration: none; }
+blockquote { border-left: 4px solid #CBD5E0; padding-left: 12px; color: #4A5568; font-style: italic; }
+hr { border: none; border-top: 1px solid #CBD5E0; margin: 24px 0; }
+</style>
+</head><body>
+<h1>Руководство по TaskPlan — управление объёмными задачами</h1>
+<h2>Назначение</h2>
+<p>TaskPlan — сервис для управления планами объёмных задач в проекте AIS.</p>
+<h2>Архитектура</h2>
+<pre><code>
+Show-TaskPlanGUI.ps1   → ДО (WPF, 3 вкладки)
+TaskPlan-Tracker.ps1   → ядро: ПЛАН_РЕАЛИЗАЦИИ.txt + plan_state.json
+TaskPlan-Manager.ps1   → диспетчер: task_index.json
+TaskPlan-Tests.ps1     → 15 автотестов
+</code></pre>
+<h2>Быстрый старт</h2>
+<h3>Запуск ДО</h3>
+<pre><code>
+TaskPl
+powershell -NoLogo -File scripts\Show-TaskPlanGUI.ps1 -TaskName SYBASE-12345
+</code></pre>
+<h3>Создание плана</h3>
+<ol>
+<li>Вкладка &#171;Управление&#187;</li>
+<li>Имя задачи — ввести или выбрать из истории</li>
+<li>Цель (Goal) — описание</li>
+<li>Этапы — по одному на строку: u{FFFD}Текст этапаu{FFFD} или u{FFFD}Текст|Исполнительu{FFFD}</li>
+<li>Кнопка &#171;Новый план&#187;</li>
+</ol>
+<h2>Трекер напрямую</h2>
+<pre><code>
+&amp; scripts\TaskPlan-Tracker.ps1 -Action new -TaskName TASK-1 `
+    -Goal &quot;Описание&quot; -Stages @(&quot;S1&quot;,&quot;S2|llama-3-70b&quot;,&quot;S3&quot;) -Force
+</code></pre>
+<h2>Диспетчер задач</h2>
+<pre><code>
+&amp; scripts\TaskPlan-Manager.ps1 -Action create -Name TASK-2 -Prompt &quot;Описание&quot;
+&amp; scripts\TaskPlan-Manager.ps1 -Action switch -Name TASK-2
+</code></pre>
+<h2>Поля ДО</h2>
+<table>
+<tr><th>Поле</th><th>Тип</th><th>Описание</th></tr>
+<tr><td>Имя задачи</td><td>ComboBox + ввод</td><td>История из task_index.json</td></tr>
+<tr><td>Корень задач</td><td>TextBox</td><td>C:\AIS\1 Release или C:\AIS\AI\Prod\tasks</td></tr>
+<tr><td>Цель (Goal)</td><td>TextBox</td><td>Описание задачи</td></tr>
+<tr><td>Этапы</td><td>Multi-line</td><td>По одному на строку</td></tr>
+<tr><td>LLM / исполнитель</td><td>ComboBox</td><td>Бесплатные первыми</td></tr>
+<tr><td>Статус этапа</td><td>ComboBox</td><td>не начато / в работе / готово / отложено</td></tr>
+<tr><td>Номер этапа</td><td>TextBox</td><td>1-based</td></tr>
+</table>
+<h2>Статусы этапов</h2>
+<table>
+<tr><th>Чек-бокс</th><th>Статус</th><th>Значение</th></tr>
+<tr><td>[ ]</td><td>todo</td><td>Не начато</td></tr>
+<tr><td>[~]</td><td>wip</td><td>В работе</td></tr>
+<tr><td>[x]</td><td>done</td><td>Готово</td></tr>
+<tr><td>[!]</td><td>defer</td><td>Отложено на дорогую LLM</td></tr>
+</table>
+<h2>Стратегия LLM</h2>
+<ul>
+<li>Основная обработка — дешёвые LLM (deepseek-v3, llama-3-70b, gpt-4o-mini)</li>
+<li>Дорогая LLM — только для [!]-этапов, только с готовым брифом</li>
+<li>Оценка применимости в DLLM — колонка PROD (0–100)</li>
+</ul>
+</body></html>

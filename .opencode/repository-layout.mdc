@@ -1,0 +1,47 @@
+---
+description: Repository layout — SQL (BD) and PowerBuilder (PB) object placement
+alwaysApply: true
+---
+
+# Repository object placement
+
+## SQL objects (`BD`)
+
+```
+BD\{server}\{database}\{type}\
+```
+
+- `{server}` — имя сервера (например `dev_golden`)
+- `{database}` — имя базы данных (например `golden`)
+- `{type}` — тип объектов SQL:
+  - `Procedure` — хранимые процедуры
+  - `Tables` — описание таблиц (один файл `all_tables.sql`)
+  - `Functions` — функции
+  - `Triggers` — триггеры
+  - `Indexes` — индексы (один файл `all_indexes.sql`)
+  - `FK` — внешние ключи (один файл `all_fk.sql`)
+  - `PK` — первичные ключи (один файл `all_pk.sql`)
+  - `LOGS` — служебные логи
+
+Пример: `BD\dev_golden\golden\Procedure\usp_add_sync_mess.sql`
+
+## PowerBuilder objects (`PB`)
+
+PowerBuilder 12.5.2 objects are exported to the `PB` folder. Each subfolder matches a PBL library name:
+
+```
+PB\{library}\
+```
+
+Примеры: `PB\golden_subject\`, `PB\golden_bill\`, `PB\golden_commission\`, `PB\dddws_common\`
+
+## Practical guidance
+
+- For SQL tasks: determine server, database, object type → navigate under `BD`.
+- For PowerBuilder tasks: library folder name under `PB` equals the PBL name.
+
+## PowerBuilder text length rule
+
+- In PB text length calculations, `~` in service escape sequences does not count as a separate character.
+- Example: `~n` is one logical character (newline), not two.
+- Example: `~t` is one logical character (tab), not two.

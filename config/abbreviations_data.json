@@ -1,0 +1,148 @@
+[
+  {
+    "Header": "Каталоги",
+    "Columns": ["Abbr","Value","Desc"],
+    "Headers": ["Сокращение","Полное имя / Путь","Назначение"],
+    "Data": [
+      {"Abbr":"Current","Value":"C:\\Work\\gold","Desc":"Рабочая (разрабатываемая) версия исходников PB"},
+      {"Abbr":"Main","Value":"C:\\SRC125\\gold","Desc":"Эталонная (промышленная) версия исходников PB"},
+      {"Abbr":"PB_Current","Value":"C:\\AIS\\AI\\Prod\\PB_Current","Desc":"Экспортированные PB-объекты из Current"},
+      {"Abbr":"PB_Main","Value":"C:\\AIS\\AI\\Prod\\PB_Main","Desc":"Экспортированные PB-объекты из Main"},
+      {"Abbr":"BD/dev_golden","Value":"C:\\AIS\\AI\\Prod\\BD\\dev_golden\\","Desc":"SQL-экспорт с сервера dev_golden (Current)"},
+      {"Abbr":"BD/galaxy","Value":"C:\\AIS\\AI\\Prod\\BD\\galaxy\\","Desc":"SQL-экспорт с сервера galaxy (Main)"},
+      {"Abbr":"Ready_*","Value":"C:\\AIS\\1 Release\\<Task>\\Ready_ГГГГ_ММ_ДД","Desc":"Папки с объектами к выпуску"},
+      {"Abbr":"ReadyMerged","Value":"C:\\Temp\\ReadyMerged\\<Task>","Desc":"Сводный набор из всех Ready_*"}
+    ]
+  },
+  {
+    "Header": "Серверы и БД",
+    "Columns": ["Name","Type","Desc"],
+    "Headers": ["Имя","Тип","Назначение"],
+    "Data": [
+      {"Name":"dev_golden","Type":"Сервер Sybase ASE","Desc":"Разрабатываемая БД (Current)"},
+      {"Name":"galaxy","Type":"Сервер Sybase ASE","Desc":"Промышленная БД (Main)"},
+      {"Name":"golden","Type":"База данных","Desc":"Имя БД на обоих серверах"},
+      {"Name":"vchaga","Type":"Пользователь Sybase","Desc":"Учётная запись для isql"}
+    ]
+  },
+  {
+    "Header": "Типы объектов",
+    "Columns": ["Type","Ext","Desc"],
+    "Headers": ["Тип","Расширение","Описание"],
+    "Data": [
+      {"Type":"PBL","Ext":".pbl","Desc":"PowerBuilder Library"},
+      {"Type":"PBT","Ext":".pbt","Desc":"PowerBuilder Target"},
+      {"Type":"SRU/SRW","Ext":".sr*","Desc":"Экспортированные PB-объекты"},
+      {"Type":"Procedure","Ext":".sql","Desc":"Хранимая процедура Sybase ASE"},
+      {"Type":"Functions","Ext":".sql","Desc":"Функция Sybase ASE"},
+      {"Type":"Triggers","Ext":".sql","Desc":"Триггер Sybase ASE"},
+      {"Type":"AIS","Ext":"-","Desc":"Наименование проекта PowerBuilder / Jira"}
+    ]
+  },
+  {
+    "Header": "Статусы",
+    "Columns": ["Status","Desc"],
+    "Headers": ["Статус","Значение"],
+    "Data": [
+      {"Status":"READY","Desc":"Объект готов к выводу в ПРОД"},
+      {"Status":"NOT_READY","Desc":"Объект НЕ готов"},
+      {"Status":"NOT_IN_CURRENT","Desc":"Отсутствует в Current"},
+      {"Status":"DIFF_CURRENT","Desc":"Отличается от Current"},
+      {"Status":"NEW_OBJECT","Desc":"Новый объект (отсутствует в Main)"},
+      {"Status":"SAME_AS_MAIN","Desc":"Совпадает с Main"},
+      {"Status":"DIFF","Desc":"Объекты различаются"},
+      {"Status":"NOT_IN_MAIN","Desc":"Есть в Current, отсутствует в Main"}
+    ]
+  },
+  {
+    "Header": "Утилиты",
+    "Columns": ["Tool","Desc"],
+    "Headers": ["Утилита","Назначение"],
+    "Data": [
+      {"Tool":"isql","Desc":"Командная утилита Sybase ASE"},
+      {"Tool":"pbldump","Desc":"Экспорт объектов из PBL в .sr*"},
+      {"Tool":"TortoiseMerge","Desc":"Визуальное сравнение файлов"},
+      {"Tool":"ss.exe","Desc":"Microsoft Visual SourceSafe (VSS) — система контроля версий"},
+      {"Tool":"VSS-Utils.ps1","Desc":"PowerShell модуль для работы с VSS"}
+    ]
+  },
+  {
+    "Header": "VSS команды",
+    "Columns": ["Cmd","Desc","Example","Params"],
+    "Headers": ["Команда","Назначение","Пример","Параметры"],
+    "Data": [
+      {"Cmd":"Get","Desc":"Получить последнюю версию из VSS","Example":"Get-VssLatest -Project \"$/Project\" -Recursive","Params":"-Project, -Recursive"},
+      {"Cmd":"Status","Desc":"Узнать состояние объектов (Checked In/Out)","Example":"Get-VssStatus -Project \"$/Project\" -Recursive","Params":"-Project, -Recursive"},
+      {"Cmd":"Properties","Desc":"Узнать кто использует объект","Example":"Get-VssWhoIsUsing -Project \"$/Project\"","Params":"-Project"},
+      {"Cmd":"Checkout","Desc":"Выполнить Check Out объекта","Example":"Set-VssCheckout -Project \"$/Project\" -Comment \"text\" -Recursive","Params":"-Project, -Comment, -Recursive"},
+      {"Cmd":"Checkin","Desc":"Выполнить Check In объекта","Example":"Set-VssCheckin -Project \"$/Project\" -Comment \"text\" -Recursive","Params":"-Project, -Comment, -Recursive"}
+    ]
+  },
+  {
+    "Header": "Файлы",
+    "Columns": ["File","Desc","Location"],
+    "Headers": ["Файл","Назначение","Расположение"],
+    "Data": [
+      {"File":"config.json","Desc":"Конфигурация путей, Jira","Location":"config/"},
+      {"File":"Prod-GUI.ps1","Desc":"GUI-приложение","Location":"bin/"},
+      {"File":"Compare-Export.ps1","Desc":"Сравнение и RFC","Location":"scripts/"},
+      {"File":"Add-ReleaseComment.ps1","Desc":"Комментарий в Jira с таблицей объектов","Location":"scripts/"},
+      {"File":"Create-RFC.ps1","Desc":"Создание RFC","Location":"scripts/"},
+      {"File":"Run-Tests.ps1","Desc":"Мастер-тест","Location":"scripts/"},
+      {"File":"VSS-Utils.ps1","Desc":"Утилиты VSS","Location":"scripts/"},
+      {"File":"Settings-Module.ps1","Desc":"Модуль настроек","Location":"scripts/"},
+      {"File":"Show-Report.ps1","Desc":"WPF-диалог отчёта","Location":"scripts/"},
+      {"File":"Show-Report-Launcher.ps1","Desc":"Запуск отчёта","Location":"scripts/"},
+      {"File":"abbreviations.md","Desc":"Свод сокращений","Location":"rules/"},
+      {"File":"jira-rules.md","Desc":"Правила Jira RFC","Location":"rules/"}
+    ]
+  },
+  {
+    "Header": "Команды",
+    "Columns": ["Abbr","Desc","Detail"],
+    "Headers": ["Сокращение","Значение","Подробнее"],
+    "Data": [
+      {"Abbr":"ЦИКЛ","Desc":"Цикл автоисправления для указанной ОП","Detail":"auto_fix_loop.ps1 -OpNumber N"},
+      {"Abbr":"OUT / ОБР","Desc":"Анализ ошибок из Output","Detail":"temp\\last_output.log"},
+      {"Abbr":"ОБРВСЕ","Desc":"ОБР + исправить + протестировать + представить","Detail":"Автоматический цикл fix/test по last_output.log"},
+      {"Abbr":"КРЗ","Desc":"Кракозябры — убрать","Detail":"Проанализируй причину и убери кракозябры, чтобы больше они не отображались в таких окнах"},
+      {"Abbr":"ПРОМПТ","Desc":"История пользовательских промптов","Detail":"temp\\user_prompts.log"},
+      {"Abbr":"СТАНДАРТ1","Desc":"Эталон APPL2-стиля","Detail":"Show-Appl2Standard.ps1"},
+      {"Abbr":"НОМ","Desc":"Номер операции в GUI (1-based)","Detail":"Массив $operations"},
+      {"Abbr":"СОКР","Desc":"Сокращения проекта (это окно)","Detail":"Show-Abbreviations.ps1"},
+      {"Abbr":"RR / РР","Desc":"Переключить модель на русский язык","Detail":"При нарушении языкового правила"},
+      {"Abbr":"ЗАПОМНИ","Desc":"Анализ ошибок и запоминание","Detail":"rules/remember-rule.md"},
+      {"Abbr":"СОХР","Desc":"Архив проекта на дату-время","Detail":"Save-Snapshot.ps1"},
+      {"Abbr":"OO / ОО","Desc":"Выполнить todo-лист / продолжить","Detail":"Завершить оставшиеся пункты"},
+      {"Abbr":"ОТЕСТ","Desc":"Тестовый диалог APPL2","Detail":"Show-TestMsg.ps1"},
+      {"Abbr":"ОТЧЁТ","Desc":"Открыть отчёт по задаче Jira","Detail":"Show-Report.ps1 -TaskName <имя>"},
+      {"Abbr":"TASK","Desc":"Начать работу над задачей","Detail":"TASK <имя_задачи> [<папка>]"},
+      {"Abbr":"ИЗМДИЗАЙН","Desc":"Синхронизировать дизайн окон","Detail":"Apply-DesignChanges.ps1"},
+      {"Abbr":"АВТОТЕСТ","Desc":"Автотестирование через Run-Tests.ps1","Detail":"-Test <скрипт> или all"},
+      {"Abbr":"РУДИМЕНТ","Desc":"Поиск рудиментов в скриптах объекта","Detail":"РУДИМЕНТ <объект> или ALL"},
+      {"Abbr":"DLLM","Desc":"Диалоговое окно LLM (список моделей)","Detail":"Show-LLMs.ps1"},
+      {"Abbr":"ALL_LLM","Desc":"DLLM + СПИСОК LLM (все представления моделей)","Detail":"DLLM и список LLM в главном GUI"}
+    ]
+  },
+  {
+    "Header": "Термины и названия",
+    "Columns": ["Term","Desc"],
+    "Headers": ["Термин","Описание"],
+    "Data": [
+      {"Term":"Current","Desc":"Рабочая версия исходников PB — C:\\Work\\gold"},
+      {"Term":"Main","Desc":"Эталонная версия исходников PB — C:\\SRC125\\gold"},
+      {"Term":"PB_Current","Desc":"Экспорт PB-объектов из Current"},
+      {"Term":"PB_Main","Desc":"Экспорт PB-объектов из Main"},
+      {"Term":"BD","Desc":"Папка SQL-экспортов"},
+      {"Term":"Ready_*","Desc":"Папки объектов к выпуску: Ready_ГГГГ_ММ_ДД"},
+      {"Term":"Describe","Desc":"Папка с описаниями изменений объектов задачи"},
+      {"Term":"Git_*","Desc":"Папка исходных объектов задачи"},
+      {"Term":"Test_*","Desc":"Папка изменённых объектов задачи"},
+      {"Term":"ОТЧЁТ","Desc":"WPF-диалог отчёта по задаче, 4 вкладки"},
+      {"Term":"VSS","Desc":"Microsoft Visual SourceSafe"},
+      {"Term":"RFC","Desc":"Request For Change — заявка в Jira"},
+      {"Term":"Jira","Desc":"Система управления задачами"},
+      {"Term":"PB","Desc":"PowerBuilder"}
+    ]
+  }
+]

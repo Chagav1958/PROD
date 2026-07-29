@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "sybase-docs": {
+      "type": "stdio",
+      "command": "C:\\AIS\\AI\\sybase-docs-mcp\\venv\\Scripts\\python.exe",
+      "args": ["-m", "sybase_mcp.server"],
+      "env": {
+        "DOCS_ROOT": "C:\\AIS\\AI\\sybase-docs-mcp",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    "atlassian": {
+      "type": "stdio",
+      "command": "C:\\Users\\vchaga\\AppData\\Roaming\\Python\\Python312\\Scripts\\uvx.exe",
+      "args": ["mcp-atlassian"],
+      "env": {
+        "JIRA_URL": "https://mytask.renins.com",
+        "CONFLUENCE_URL": "https://wiki.renins.com",
+        "READ_ONLY_MODE": "true",
+        "ENABLED_TOOLS": "confluence_search,confluence_get_page,jira_search,jira_get_issue"
+      }
+    }
+  }
+}

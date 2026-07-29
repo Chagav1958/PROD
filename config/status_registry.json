@@ -1,0 +1,268 @@
+﻿{
+    "objects":  {
+                    "OP1":  {
+                                "id":  "OP1",
+                                "type":  "ОП",
+                                "name":  "Настройки параметров",
+                                "status":  "EDIT"
+                            },
+                    "OP2":  {
+                                "id":  "OP2",
+                                "type":  "ОП",
+                                "name":  "Запуск тестов",
+                                "status":  "EDIT"
+                            },
+                    "OP3":  {
+                                "id":  "OP3",
+                                "type":  "ОП",
+                                "name":  "Export Service (выгрузка проекта)",
+                                "status":  "EDIT"
+                            },
+                    "OP4":  {
+                                "id":  "OP4",
+                                "type":  "ОП",
+                                "name":  "Собрать объекты для вывода в ПРОД",
+                                "status":  "EDIT"
+                            },
+                    "OP5":  {
+                                "id":  "OP5",
+                                "type":  "ОП",
+                                "name":  "Выгрузка PB: Current или Main",
+                                "status":  "FIXED"
+                            },
+                    "OP6":  {
+                                "id":  "OP6",
+                                "type":  "ОП",
+                                "name":  "Сравнение PB: Current и Main",
+                                "status":  "EDIT"
+                            },
+                    "OP7":  {
+                                "id":  "OP7",
+                                "type":  "ОП",
+                                "name":  "Выгрузка SQL",
+                                "status":  "FIXED"
+                            },
+                    "OP8":  {
+                                "id":  "OP8",
+                                "type":  "ОП",
+                                "name":  "Сравнение SQL: dev_golden и galaxy",
+                                "status":  "EDIT"
+                            },
+                    "OP9":  {
+                                "id":  "OP9",
+                                "type":  "ОП",
+                                "name":  "Сравнение и проверка (Compare \u0026 Verify)",
+                                "status":  "EDIT"
+                            },
+                    "OP10":  {
+                                 "id":  "OP10",
+                                 "type":  "ОП",
+                                 "name":  "Создание RFC в Jira",
+                                 "status":  "EDIT"
+                             },
+                    "OP11":  {
+                                 "id":  "OP11",
+                                 "type":  "ОП",
+                                 "name":  "Комментарий в Jira: таблица объектов PB и SQL",
+                                 "status":  "EDIT"
+                             },
+                    "OP12":  {
+                                 "id":  "OP12",
+                                 "type":  "ОП",
+                                 "name":  "VSS: Получить последнюю версию",
+                                 "status":  "EDIT"
+                             },
+                    "OP13":  {
+                                 "id":  "OP13",
+                                 "type":  "ОП",
+                                 "name":  "VSS: Проверить статус",
+                                 "status":  "EDIT"
+                             },
+                    "OP14":  {
+                                 "id":  "OP14",
+                                 "type":  "ОП",
+                                 "name":  "VSS: Кто использует",
+                                 "status":  "EDIT"
+                             },
+                    "OP15":  {
+                                 "id":  "OP15",
+                                 "type":  "ОП",
+                                 "name":  "VSS: Checkout",
+                                 "status":  "EDIT"
+                             },
+                    "OP16":  {
+                                 "id":  "OP16",
+                                 "type":  "ОП",
+                                 "name":  "VSS: Checkin",
+                                 "status":  "EDIT"
+                             },
+                    "OP17":  {
+                                 "id":  "OP17",
+                                 "type":  "ОП",
+                                 "name":  "VSS: Undo Check Out",
+                                 "status":  "EDIT"
+                             },
+                    "OP18":  {
+                                 "id":  "OP18",
+                                 "type":  "ОП",
+                                 "name":  "VSS: История объекта",
+                                 "status":  "FIXED"
+                             },
+                    "Show-LLMs.ps1":  {
+                                          "id":  "Show-LLMs.ps1",
+                                          "type":  "ДО",
+                                          "name":  "DLLM",
+                                          "status":  "EDIT"
+                                      },
+                    "Show-Rules.ps1":  {
+                                           "id":  "Show-Rules.ps1",
+                                           "type":  "ДО",
+                                           "name":  "Окно RULES",
+                                           "status":  "EDIT"
+                                       },
+                    "Show-Prompts.ps1":  {
+                                             "id":  "Show-Prompts.ps1",
+                                             "type":  "ДО",
+                                             "name":  "Окно PROMPTS",
+                                             "status":  "EDIT"
+                                         },
+                    "Show-OpStatus.ps1":  {
+                                              "id":  "Show-OpStatus.ps1",
+                                              "type":  "ДО",
+                                              "name":  "Окно FIXSHOW",
+                                              "status":  "EDIT"
+                                          },
+                    "VSS-History-Show.ps1":  {
+                                                 "id":  "VSS-History-Show.ps1",
+                                                 "type":  "ДО",
+                                                 "name":  "ДО VSS: История",
+                                                 "status":  "FIXED"
+                                             },
+                    "Show-TestMsg.ps1":  {
+                                             "id":  "Show-TestMsg.ps1",
+                                             "type":  "ДО",
+                                             "name":  "Окно ОТЕСТ",
+                                             "status":  "EDIT"
+                                         },
+                    "Show-Appl2Standard.ps1":  {
+                                                   "id":  "Show-Appl2Standard.ps1",
+                                                   "type":  "ДО",
+                                                   "name":  "Окно СТАНДАРТ1",
+                                                   "status":  "EDIT"
+                                               },
+                    "Show-Abbreviations.ps1":  {
+                                                   "id":  "Show-Abbreviations.ps1",
+                                                   "type":  "ДО",
+                                                   "name":  "Окно СОКР",
+                                                   "status":  "EDIT"
+                                               },
+                    "Show-Abbreviations":  {
+                                               "id":  "Show-Abbreviations",
+                                               "type":  "ДО",
+                                               "name":  "Abbreviations",
+                                               "status":  "EDIT"
+                                           },
+                    "VSS-History-Show":  {
+                                             "id":  "VSS-History-Show",
+                                             "type":  "ДО",
+                                             "name":  "ДО VSS: История",
+                                             "status":  "EDIT"
+                                         },
+                    "Show-OpStatus":  {
+                                          "id":  "Show-OpStatus",
+                                          "type":  "ДО",
+                                          "name":  "OpStatus",
+                                          "status":  "EDIT"
+                                      },
+                    "Show-LLMs":  {
+                                      "id":  "Show-LLMs",
+                                      "type":  "ДО",
+                                      "name":  "DLLM List",
+                                      "status":  "EDIT"
+                                  },
+                    "Show-ProgressState":  {
+                                               "id":  "Show-ProgressState",
+                                               "type":  "ДО",
+                                               "name":  "ProgressState",
+                                               "status":  "EDIT"
+                                           },
+                    "Show-Prompts":  {
+                                         "id":  "Show-Prompts",
+                                         "type":  "ДО",
+                                         "name":  "Prompts",
+                                         "status":  "EDIT"
+                                     },
+                    "Show-Appl2Standard":  {
+                                               "id":  "Show-Appl2Standard",
+                                               "type":  "ДО",
+                                               "name":  "Appl2Standard",
+                                               "status":  "EDIT"
+                                           },
+                    "Show-Rules":  {
+                                       "id":  "Show-Rules",
+                                       "type":  "ДО",
+                                       "name":  "Rules",
+                                       "status":  "EDIT"
+                                   },
+                    "Show-TestMsg":  {
+                                         "id":  "Show-TestMsg",
+                                         "type":  "ДО",
+                                         "name":  "TestMsg",
+                                         "status":  "EDIT"
+                                     },
+                    "Prod-GUI":  {
+                                     "id":  "Prod-GUI",
+                                     "type":  "ДО",
+                                     "name":  "МОРДА (главное окно)",
+                                     "status":  "EDIT"
+                                 },
+                    "Show-Report":  {
+                                        "id":  "Show-Report",
+                                        "type":  "ДО",
+                                        "name":  "Report",
+                                        "status":  "EDIT"
+                                    },
+                    "Show-Report-Launcher":  {
+                                                 "id":  "Show-Report-Launcher",
+                                                 "type":  "ДО",
+                                                 "name":  "Report-Launcher",
+                                                 "status":  "EDIT"
+                                             },
+                    "Show-RestoreDialog":  {
+                                               "id":  "Show-RestoreDialog",
+                                               "type":  "ДО",
+                                               "name":  "RestoreDialog",
+                                               "status":  "EDIT"
+                                           }
+                },
+    "history":  [
+                    {
+                        "timestamp":  "2026-07-06 16:57",
+                        "object":  "OP5",
+                        "oldStatus":  "EDIT",
+                        "newStatus":  "FIXED",
+                        "reason":  "Готово, изменения запрещены"
+                    },
+                    {
+                        "timestamp":  "2026-07-06 16:57",
+                        "object":  "OP18",
+                        "oldStatus":  "EDIT",
+                        "newStatus":  "FIXED",
+                        "reason":  "Готово, изменения запрещены"
+                    },
+                    {
+                        "timestamp":  "2026-07-06 16:57",
+                        "object":  "VSS-History-Show.ps1",
+                        "oldStatus":  "EDIT",
+                        "newStatus":  "FIXED",
+                        "reason":  "Готово, изменения запрещены"
+                    },
+                    {
+                        "timestamp":  "2026-07-06 18:04",
+                        "object":  "OP7",
+                        "oldStatus":  "EDIT",
+                        "newStatus":  "FIXED",
+                        "reason":  "Готово, изменения запрещены"
+                    }
+                ]
+}

@@ -1,0 +1,72 @@
+---
+description: Правила работы с Microsoft Visual SourceSafe (VSS) в проекте
+alwaysApply: true
+---
+
+# Правила работы с VSS
+
+## 1. Инструменты
+
+- `ss.exe` — командная утилита VSS (обычно `C:\Program Files (x86)\Microsoft Visual SourceSafe\ss.exe`)
+- БД VSS: `\\ren-msksf01\VSS2005\srcsafe.ini`
+- `$env:SSDIR` — указывает на папку с `srcsafe.ini`
+- Авторизация: `-I-Y -Y"user,pass"` (подавление интерактивных запросов + логин/пароль)
+
+## 2. Основные команды
+
+| Команда | Назначение | Пример |
+|---------|------------|--------|
+| Status | Проверить, кто извлёк объект | `ss.exe Status $/SRC125/gold/lib/obj.srw -I-Y -Y"user,pass"` |
+| History | Показать историю версий | `ss.exe History $/SRC125/gold/lib/obj.srw -I-Y -Y"user,pass"` |
+| Get | Получить версию из VSS | `ss.exe Get $/SRC125/gold/lib/obj.srw -V5 -I-Y -Y"user,pass" -G` |
+| Checkout | Извлечь объект | `ss.exe Checkout $/SRC125/gold/lib/obj.srw -I-Y -Y"user,pass"` |
+| Checkin | Зафиксировать изменения | `ss.exe Checkin $/SRC125/gold/lib/obj.srw -I-Y -Y"user,pass"` |
+| UndoCheckout | Отменить извлечение | `ss.exe UndoCheckout $/SRC125/gold/lib/obj.srw -I-Y -Y"user,pass"` |
+
+## 3. Получение истории
+
+Формат вывода `ss.exe History`:
+```
+*****************  Version N   *****************
+User: username      Date: DD.MM.YY   Time: HH:MM
+Checked in $/SRC125/gold/...
+```
+
+Парсинг: регулярное выражение `\*{3,}\s*Version\s+(\d+)\s*\*{3,}` для номера версии, `^User:\s*(\S+)` для автора.
+
+## 4. Получение OLDPB из VSS (для Add-ReleaseComment.ps1)
+
+Если объект занят мной (текущим разработчиком), **нельзя использовать Git_*** как OLDPB — туда могла быть скопирована изменённая версия.
+
+Правильный порядок:
+1. **Занят мной** → VSS History, последняя версия
+2. **Не занят мной** → Git_* (если есть) → PB_Main
+
+Это реализовано в `VSS-History.ps1` (функция `Find-VssOldPbPath`).
+
+## 5. Известные ошибки и их решения
+
+### Bug-VSS-001: `& $exe ... 2>&1` вызывает NativeCommandError
+- **Симптом:** `NativeCommandError` при вызове `ss.exe` через `&`. `$ErrorActionPreference = "Stop"` в вызывающем скрипте преобразует stderr в исключение.
+- **Причина:** `2>&1` направляет stderr в stdout, но PowerShell оборачивает stderr в `ErrorRecord`.
+- **Решение:** Использовать `System.Diagnostics.ProcessStartInfo` + `Process.Start()` вместо `&`.
+
+### Bug-VSS-002: `Sort-Object Version` на hashtable даёт неверный порядок
+- **Симптом:** Сортировка версий от 1 до N даёт случайный порядок.
+- **Причина:** `Sort-Object Version` для hashtable обращается к .NET-свойству, а не к ключу.
+- **Решение:** Использовать `Sort-Object { $_.Version } -Descending` (с блоком скрипта).
+
+### Bug-VSS-003: `[Path]::GetFileName` на VSS-пути с wildcard
+- **Симптом:** `GetFileName('$/path/obj.sr*')` возвращает `obj.sr*` с `*`.
+- **Причина:** VSS-пути используют `sr*` для обозначения любого PB-расширения (srw/srd/sru).
+- **Решение:** Удалять `\*$` из имени файла перед вызовом `GetFileNameWithoutExtension`.
+
+### Bug-VSS-004: ss.exe Get не работает через `&` в функции
+- **Симптом:** `& $exe Get $path ...` внутри функции PowerShell не создаёт файл, хотя вне функции работает.
+- **Причина:** Неизвестна (возможно, конфликт с областью видимости `$env:SSDIR`).
+- **Решение:** Всегда использовать `System.Diagnostics.Process` для вызова `ss.exe Get`.
+
+## 6. Скрипты
+
+- `scripts/VSS-History.ps1` — функции для работы с историей VSS
+- `scripts/VSS-Utils.ps1` — основные операции VSS (Checkout, Checkin, Status)

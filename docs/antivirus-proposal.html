@@ -1,0 +1,148 @@
+﻿<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Документация</title>
+<style>
+body { font-family: 'Segoe UI', Arial, Calibri, sans-serif; background: #FFFFFF; color: #1A202C; margin: 40px; line-height: 1.6; }
+h1 { color: #1A3A60; font-size: 28px; border-bottom: 2px solid #2B6CB0; padding-bottom: 8px; margin-top: 32px; }
+h2 { color: #2D3748; font-size: 22px; margin-top: 28px; border-left: 4px solid #2B6CB0; padding-left: 10px; }
+h3 { color: #4A5568; font-size: 18px; margin-top: 22px; }
+p  { font-size: 14px; margin: 10px 0; }
+code { background: #F5F7FA; color: #1A3A60; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; }
+pre { background: #1E1E2E; color: #D4D4D4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: Consolas, monospace; font-size: 13px; }
+pre code { background: transparent; color: #D4D4D4; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+th { background: #1A3A60; color: #FFFFFF; font-weight: bold; padding: 10px; text-align: left; border: 1px solid #CBD5E0; }
+td { padding: 10px; border: 1px solid #CBD5E0; }
+tr:nth-child(even) { background: #F5F7FA; }
+tr:nth-child(odd)  { background: #FFFFFF; }
+ul, ol { margin: 10px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+a { color: #2B6CB0; text-decoration: none; }
+blockquote { border-left: 4px solid #CBD5E0; padding-left: 12px; color: #4A5568; font-style: italic; }
+hr { border: none; border-top: 1px solid #CBD5E0; margin: 24px 0; }
+</style>
+</head><body>
+<h1>Предложение для отдела технической поддержки</h1>
+<h2>Исключения антивируса для проекта AIS Release Preparation</h2>
+<h3>Контекст</h3>
+<p>Проект u{FFFB}AIS Release Preparationu{FFFB} — внутренний инструмент для подготовки релизов страхового продукта &quot;Ренессанс&quot;. Инструмент автоматизирует сравнение SQL-объектов, выгрузку из PowerBuilder, работу с Jira/RFC и контроль версий (VSS). Проект написан на PowerShell 5.1, Python 3.12 и BAT-скриптах.</p>
+<p>u{FFFB}Антивирус на рабочей станции разработчика уже вызывал проблемыu{FFFB} — пришлось переписывать код, чтобы избежать ложных срабатываний.</p>
+<hr>
+<h3>Что уже было изменено из-за антивируса</h3>
+<table>
+<tr><th>Проблема</th><th>Что сделано</th></tr>
+<tr><td>`user32.dll` P/Invoke (ShowWindow) в скрытии консоли</td><td>Заменён на чистый .NET `Start-Process -WindowStyle Hidden`</td></tr>
+<tr><td>P/Invoke в всех Show-*.ps1 скриптах</td><td>Удалён `Invoke-HiddenDialog` из Show-OpStatus, Show-Prompts и др.</td></tr>
+<tr><td>WPF-код с `Add-Type -TypeDefinition` (Win32 API)</td><td>Заменён на управляемые .NET-аналоги</td></tr>
+</table>
+<p>u{FFFB}Файл:u{FFFB} u{FFFD}scripts\Hide-ConsoleWindow.ps1u{FFFD} (строка 3: u{FFFD}# НЕ использует P/Invoke — антивирус не детектитu{FFFD})</p>
+<hr>
+<h3>Рекомендуемые исключения для антивируса</h3>
+<h4>1. Директории (сканирование исключить)</h4>
+<table>
+<tr><th>Директория</th><th>Назначение</th></tr>
+<tr><td>`C:\AIS\AI\Prod\`</td><td>Корень проекта (PowerShell-скрипты, BAT-файлы, Python-сервер)</td></tr>
+<tr><td>`C:\AIS\1 Release\`</td><td>Релизы (SQL-файлы, .sr* файлы PowerBuilder)</td></tr>
+<tr><td>`C:\SRC125\gold`</td><td>Исходники PowerBuilder (PBL-библиотеки, только чтение)</td></tr>
+<tr><td>`C:\Work\gold`</td><td>Текущая рабочая копия PowerBuilder</td></tr>
+</table>
+<h4>2. Исполняемые файлы (не удалять/не блокировать)</h4>
+<table>
+<tr><th>Файл</th><th>Назначение</th><th>Почему может сработать</th></tr>
+<tr><td>`C:\AIS\AI\Prod\tools\pbldump-1.3.1stable\PblDump.exe`</td><td>Экспорт объектов PowerBuilder из PBL-библиотек</td><td>Неизвестная утилита, может детектиров как PUA</td></tr>
+<tr><td>`C:\Program Files (x86)\Microsoft Visual SourceSafe\ss.exe`</td><td>Microsoft Visual SourceSafe — контроль версий</td><td>Старое ПО (2005), может срабатывать эвристика</td></tr>
+<tr><td>`C:\Program Files\TortoiseSVN\bin\TortoiseMerge.exe`</td><td>Программа сравнения/слияния файлов</td><td>Вызывается скриптами для просмотра различий</td></tr>
+</table>
+<h4>3. Python-зависимости (MCP-серверы базы знаний)</h4>
+<table>
+<tr><th>Директория</th><th>Назначение</th></tr>
+<tr><td>`C:\AIS\AI\Prod\scripts\ais_catalog_mcp\`</td><td>MCP-сервер каталога проекта AIS (Python)</td></tr>
+<tr><td>`C:\AIS\AI\Prod\scripts\ais_catalog_mcp\lib\`</td><td>Python-пакеты: cryptography, pywin32, mcp, uvicorn и др.</td></tr>
+<tr><td>`C:\AIS\AI\Prod\scripts\opencode_mcp\`</td><td>MCP-сервер знаний об OpenCode (Python)</td></tr>
+<tr><td>`C:\AIS\AI\Prod\scripts\opencode_mcp\lib\`</td><td>Python-пакеты MCP-сервера</td></tr>
+</table>
+<p>Python-пакеты содержат u{FFFD}.exeu{FFFD}-файлы (uvicorn.exe, mcp.exe, pythonservice.exe), которые антивирус может ошибочно классифицировать как подозрительные.</p>
+<blockquote>ПРИМЕЧАНИЕ: сервер u{FFFD}knowledge_mcpu{FFFD} удалён (рудимент, БД пуста, 17.07.2026). Его исключать НЕ нужно.</blockquote>
+<h4>4. BAT-файлы (не блокировать запуск)</h4>
+<table>
+<tr><th>Файл</th><th>Назначение</th></tr>
+<tr><td>`bin\Prod-GUI.bat`</td><td>Лончер GUI-приложения</td></tr>
+<tr><td>`bin\SQL_exp_single.bat`</td><td>Экспорт одного SQL-объекта из БД</td></tr>
+<tr><td>`bin\SQL_exp_param.bat`</td><td>Полный SQL-экспорт</td></tr>
+<tr><td>`bin\SQL_exp_ready.bat`</td><td>SQL-экспорт из папки Ready</td></tr>
+<tr><td>`bin\prepare_release.bat`</td><td>Главный оркестратор подготовки релиза</td></tr>
+<tr><td>`bin\AIS_export.bat` / `bin\AIS_export_flexible.bat`</td><td>Выгрузка проекта</td></tr>
+<tr><td>`bin\Export-Service.bat` / `bin\Export.bat`</td><td>Сервис экспорта</td></tr>
+<tr><td>`bin\Claude-PB-SQL.bat`</td><td>Интеграция с Claude (AI-ассистент)</td></tr>
+</table>
+<h4>4.1. OpenCode (AI-ассистент) — КРИТИЧНО</h4>
+<table>
+<tr><th>Объект</th><th>Назначение</th><th>Почему срабатывает</th></tr>
+<tr><td>`C:\Users\vchaga\AppData\Local\Programs\@opencode-aidesktop\OpenCode.exe`</td><td>Главный исполняемый файл OpenCode (Electron/Node)</td><td>Поведенческий анализ `PDM:Trojan.Win32.Generic` — легитимно запускает powershell, пишет файлы, ходит в сеть к LLM API</td></tr>
+<tr><td>`C:\Users\vchaga\AppData\Roaming\ai.opencode.desktop\`</td><td>Кэш и настройки OpenCode (в т.ч. `Cache\Cache_Data\`)</td><td>Эвристика `HEUR:Trojan.PowerShell.Obfus.b` на бинарный кэш (содержит фрагменты веб-контента/кода, которые рендерит приложение)</td></tr>
+<tr><td>`C:\Users\vchaga\AppData\Local\Programs\@opencode-aidesktop\`</td><td>Папка установки OpenCode</td><td>Исключить из сканирования целиком</td></tr>
+</table>
+<p>u{FFFB}Факт проверки (17.07.2026):u{FFFB} SHA256 u{FFFD}OpenCode.exeu{FFFD} = u{FFFD}673025C27F2FDDD129D22DFAC9F5755BA3455C7F2C3830D12F11F91BD49E3BCAu{FFFD} — совпадает с хэшем из отчёта антивируса. Файл легитимный, не изменён. Оба срабатывания — FALSE POSITIVE.</p>
+<p>u{FFFB}Исключить из сканирования:u{FFFB}</p>
+<ul>
+<li>Директорию u{FFFD}C:\Users\vchaga\AppData\Local\Programs\@opencode-aidesktop\u{FFFD} (целиком)</li>
+<li>Директорию u{FFFD}C:\Users\vchaga\AppData\Roaming\ai.opencode.desktop\u{FFFD} (целиком)</li>
+<li>Процесс u{FFFD}OpenCode.exeu{FFFD} из поведенческого (HIPS/PDM) мониторинга</li>
+</ul>
+<p>u{FFFB}Важно:u{FFFB} файлы кэша (u{FFFD}Cache_Data\f_xxxxxxu{FFFD}) удалять/восстанавливать вручную НЕ нужно — OpenCode пересоздаёт кэш автоматически при запуске.</p>
+<h4>5. PowerShell-скрипты (не блокировать выполнение)</h4>
+<table>
+<tr><th>Файл/Директория</th><th>Назначение</th></tr>
+<tr><td>`bin\Prod-GUI.ps1`</td><td>Основной GUI (4600+ строк, WPF)</td></tr>
+<tr><td>`scripts\*.ps1`</td><td>Все рабочие скрипты (выгрузка, сравнение, экспорт)</td></tr>
+<tr><td>`scripts\ais_catalog_mcp\server.py`</td><td>Python MCP-сервер каталога (запускается из OpenCode)</td></tr>
+<tr><td>`scripts\opencode_mcp\server.py`</td><td>Python MCP-сервер знаний об OpenCode</td></tr>
+</table>
+<h4>6. Сетевые ресурсы (не блокировать доступ)</h4>
+<table>
+<tr><th>Ресурс</th><th>Назначение</th></tr>
+<tr><td>`\\ren-msksf01\VSS2005\`</td><td>База VSS (совместный доступ к файлам версий)</td></tr>
+<tr><td>`localhost:4096`</td><td>Локальный HTTP-сервер OpenCode API</td></tr>
+<tr><td>`https://mytask.renins.com`</td><td>Jira Cloud (создание RFC и комментариев)</td></tr>
+</table>
+<hr>
+<h3>Дополнительные рекомендации</h3>
+<ol>
+<li>u{FFFB}Не включать &quot;облачное сканирование&quot;u{FFFB} для u{FFFD}.ps1u{FFFD}-файлов — PowerShell-скрипты с шифрованием паролей (AES) могут детектироваться как &quot;-script obfuscation&quot;</li>
+</ol>
+<ol>
+<li>u{FFFB}Не сканировать u{FFFD}.sqlu{FFFD}-файлыu{FFFB} в u{FFFD}C:\AIS\AI\Prod\BD\u{FFFD} — это экспорты из Sybase ASE, содержат SQL-команды (CREATE PROCEDURE, GRANT и т.д.)</li>
+</ol>
+<ol>
+<li>u{FFFB}Не блокировать u{FFFD}Start-Process -WindowStyle Hiddenu{FFFD}u{FFFB} — используется для скрытия вспомогательных консолей (legitimate use)</li>
+</ol>
+<ol>
+<li>u{FFFB}Не блокировать network-запросыu{FFFB} на u{FFFD}localhost:4096u{FFFD} (OpenCode API) и u{FFFD}\\ren-msksf01\VSS2005\u{FFFD} (VSS-база)</li>
+</ol>
+<hr>
+<h3>Последствия блокировки</h3>
+<table>
+<tr><th>Если заблокировано</th><th>Чему мешает</th></tr>
+<tr><td>`PblDump.exe`</td><td>Невозможность выгрузки объектов PowerBuilder из PBL</td></tr>
+<tr><td>`ss.exe`</td><td>Невозможность работы с контролем версий (checkout/checkin/status)</td></tr>
+<tr><td>`TortoiseMerge.exe`</td><td>Невозможность визуального сравнения файлов</td></tr>
+<tr><td>BAT-файлы</td><td>Полная неработоспособность инструмента</td></tr>
+<tr><td>PowerShell-скрипты</td><td>Полная неработоспособность инструмента</td></tr>
+<tr><td>Python-пакеты</td><td>Неработоспособность MCP-сервера базы знаний</td></tr>
+<tr><td>Сеть `\\ren-msksf01`</td><td>Невозможность доступа к VSS</td></tr>
+<tr><td>Сеть `localhost:4096`</td><td>Невозможность AI-ассистента (OpenCode)</td></tr>
+</table>
+<hr>
+<h3>Итого</h3>
+<table>
+<tr><th>Тип исключения</th><th>Кол-во</th></tr>
+<tr><td>Директории</td><td>4 (+2 OpenCode)</td></tr>
+<tr><td>Исполняемые файлы</td><td>3 (+1 OpenCode.exe)</td></tr>
+<tr><td>BAT-файлы</td><td>10</td></tr>
+<tr><td>Python-директория</td><td>2 (ais_catalog_mcp, opencode_mcp)</td></tr>
+<tr><td>Сетевые ресурсы</td><td>3</td></tr>
+<tr><td>**Всего**</td><td>**~22 исключения**</td></tr>
+</table>
+<hr>
+<p>u{FFFC}Подготовлено: AIS Release Preparationu{FFFC}</p>
+<p>u{FFFC}Дата: 17.07.2026 (обновлено: добавлены исключения OpenCode, удалён knowledge_mcp)u{FFFC}</p>
+<p>u{FFFC}Контакт: vchagau{FFFC}</p>
+</body></html>

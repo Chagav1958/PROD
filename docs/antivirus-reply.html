@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Документация</title>
+<style>
+body { font-family: 'Segoe UI', Arial, Calibri, sans-serif; background: #FFFFFF; color: #1A202C; margin: 40px; line-height: 1.6; }
+h1 { color: #1A3A60; font-size: 28px; border-bottom: 2px solid #2B6CB0; padding-bottom: 8px; margin-top: 32px; }
+h2 { color: #2D3748; font-size: 22px; margin-top: 28px; border-left: 4px solid #2B6CB0; padding-left: 10px; }
+h3 { color: #4A5568; font-size: 18px; margin-top: 22px; }
+p  { font-size: 14px; margin: 10px 0; }
+code { background: #F5F7FA; color: #1A3A60; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; }
+pre { background: #1E1E2E; color: #D4D4D4; padding: 14px; border-radius: 8px; overflow-x: auto; font-family: Consolas, monospace; font-size: 13px; }
+pre code { background: transparent; color: #D4D4D4; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+th { background: #1A3A60; color: #FFFFFF; font-weight: bold; padding: 10px; text-align: left; border: 1px solid #CBD5E0; }
+td { padding: 10px; border: 1px solid #CBD5E0; }
+tr:nth-child(even) { background: #F5F7FA; }
+tr:nth-child(odd)  { background: #FFFFFF; }
+ul, ol { margin: 10px 0; padding-left: 24px; }
+li { margin: 4px 0; }
+a { color: #2B6CB0; text-decoration: none; }
+blockquote { border-left: 4px solid #CBD5E0; padding-left: 12px; color: #4A5568; font-style: italic; }
+hr { border: none; border-top: 1px solid #CBD5E0; margin: 24px 0; }
+</style>
+</head><body>
+<h1>Ответ на письмо Фунтиковой П.</h1>
+<hr>
+<p>u{FFFB}От:u{FFFB} Чага Валерий</p>
+<p>u{FFFB}Кому:u{FFFB} Фунтикова Полина</p>
+<p>u{FFFB}Тема:u{FFFB} Re: Исключения антивируса — AIS Release Preparation</p>
+<hr>
+<p>Добрый день, Полина!</p>
+<p>Благодарю за разъяснение. Полностью согласен, что исключение целого каталога — избыточное решение. Предлагаю более точечный подход.</p>
+<h3>Конкретный файл для анализа</h3>
+<p>Основной файл, вызывающий срабатывание — u{FFFB}u{FFFD}Hide-ConsoleWindow.ps1u{FFFD}u{FFFB}:</p>
+<pre><code>
+# Скрипт скрытия вспомогательной консоли (19 строк)
+$psi = New-Object Diagnostics.ProcessStartInfo
+$psi.FileName = &quot;powershell.exe&quot;
+$psi.Arguments = &quot;-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -STA -File ...&quot;
+$psi.UseShellExecute = $false
+$psi.CreateNoWindow = $true
+[Diagnostics.Process]::Start($psi) | Out-Null
+</code></pre>
+<p>u{FFFB}Почему срабатывает:u{FFFB} u{FFFD}Start-Process -WindowStyle Hiddenu{FFFD} + u{FFFD}CreateNoWindow = trueu{FFFD} — эвристика классифицирует как &quot;скрытый запуск процесса&quot;.</p>
+<p>u{FFFB}Что делает скрипт:u{FFFB} скрывает вспомогательную консоль при запуске GUI-приложения. Пользователь видит только графическое окно, консоль работает в фоне.</p>
+<p>u{FFFB}Файл для передачи в Kaspersky:u{FFFB} u{FFFD}C:\AIS\AI\Prod\scripts\Hide-ConsoleWindow.ps1u{FFFD}</p>
+<h3>Что я уже сделал для снижения рисков</h3>
+<p>Ранее в проекте использовался u{FFFD}user32.dllu{FFFD} P/Invoke (u{FFFD}ShowWindowu{FFFD}) — он вызывал срабатывания. Я u{FFFB}уже заменилu{FFFB} его на управляемый .NET-аналог. Текущая реализация максимально безопасна, но эвристика всё равно реагирует на скрытый запуск.</p>
+<h3>Конкретная просьба об исключениях</h3>
+<p>Прошу рассмотреть u{FFFB}targeted-исключенияu{FFFB} для следующих файлов:</p>
+<table>
+<tr><th>Файл</th><th>Тип</th><th>Назначение</th></tr>
+<tr><td>`C:\AIS\AI\Prod\scripts\Hide-ConsoleWindow.ps1`</td><td>.ps1</td><td>Скрытие консоли</td></tr>
+<tr><td>`C:\AIS\AI\Prod\bin\Prod-GUI.ps1`</td><td>.ps1</td><td>GUI-приложение (4600+ строк)</td></tr>
+<tr><td>`C:\AIS\AI\Prod\tools\pbldump-1.3.1stable\PblDump.exe`</td><td>.exe</td><td>Экспорт объектов PowerBuilder</td></tr>
+<tr><td>`C:\Program Files (x86)\Microsoft Visual SourceSafe\ss.exe`</td><td>.exe</td><td>Контроль версий VSS</td></tr>
+</table>
+<p>u{FFFB}Не прошуu{FFFB} исключения дляBAT-файлов и всего каталога u{FFFD}scripts/u{FFFD}.</p>
+<h3>Контекст проекта</h3>
+<p>Проект AIS Release Preparation — внутренний инструмент для подготовки релизов. Используется для:</p>
+<ul>
+<li>Сравнения SQL-объектов между тестовой и боевой БД</li>
+<li>Выгрузки объектов PowerBuilder</li>
+<li>Интеграции с Jira/RFC</li>
+<li>Контроля версий (VSS)</li>
+</ul>
+<p>Проект работает только на рабочей станции разработчика, не распространяется.</p>
+<hr>
+<p>Буду благодарен за возможность передать u{FFFD}Hide-ConsoleWindow.ps1u{FFFD} на анализ в Kaspersky. Готов предоставить любую дополнительную информацию.</p>
+<p>С уважением,</p>
+<p>Чага Валерий</p>
+</body></html>

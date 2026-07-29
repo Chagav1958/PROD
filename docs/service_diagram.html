@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Диаграмма работы сервиса AIS Release Preparation</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #F5F7FA;
+            color: #4A5568;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #3182CE;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .section h2 {
+            color: #3182CE;
+            font-size: 18px;
+            margin-top: 0;
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 8px;
+        }
+        .section h3 {
+            color: #4A5568;
+            font-size: 15px;
+            margin-top: 20px;
+        }
+        .mermaid {
+            text-align: center;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .legend {
+            background: #EDF2F7;
+            border-radius: 6px;
+            padding: 12px 18px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        .legend ul { margin: 5px 0; padding-left: 20px; }
+        .legend li { margin: 3px 0; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 2px;
+        }
+        .badge-pb  { background: #EBF8FF; color: #2B6CB0; }
+        .badge-sql { background: #FFF5F5; color: #C53030; }
+        .badge-vss { background: #F0FFF4; color: #276749; }
+        .badge-jira{ background: #FFFAF0; color: #C05621; }
+        .badge-type{ background: #FAF5FF; color: #6B2D8B; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+        table th, table td {
+            border: 1px solid #E2E8F0;
+            padding: 6px 10px;
+            text-align: left;
+        }
+        table th { background: #3182CE; color: white; }
+        table tr:nth-child(even) { background: #F7FAFC; }
+        .toc {
+            background: #EBF8FF;
+            border-radius: 6px;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+        }
+        .toc a { color: #3182CE; text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+        .dtype {
+            font-size: 11px;
+            color: #6B2D8B;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .footer {
+            text-align: center;
+            color: #A0AEC0;
+            font-size: 12px;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #E2E8F0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Диаграмма работы сервиса AIS Release Preparation</h1>
+<p class="subtitle">Версия 6.0 &mdash; 06.07.2026</p>
+
+<div class="toc">
+    <strong>Связанные документы:</strong>
+    <ul>
+        <li><a href="sql_export_instructions.html">Полная документация сервиса (HTML)</a> &mdash; подробное описание всех скриптов, параметров, конфигурации и типичных проблем. Содержит 12 разделов: назначение, быстрый старт, состав сервиса, использование скриптов, конфигурация, логика RFC, кодировка, примеры, справочник сокращений, развёртывание.</li>
+        <li><a href="sql_export_instructions.pdf">Полная документация сервиса (PDF)</a> &mdash; PDF-версия для печати и офлайн-чтения.</li>
+    </ul>
+    <strong>Содержание диаграмм:</strong>
+    <ul>
+        <li><a href="#arch">1. Архитектура сервиса</a> &mdash; <span class="dtype">C4 Container</span></li>
+        <li><a href="#dataflow">2. Потоки данных между каталогами</a> &mdash; <span class="dtype">ER-диаграмма</span></li>
+        <li><a href="#workflow">3. Типовой маршрут подготовки релиза</a> &mdash; <span class="dtype">Gantt</span></li>
+        <li><a href="#operations">4. Распределение операций по категориям</a> &mdash; <span class="dtype">Pie chart</span></li>
+        <li><a href="#dependencies">5. Зависимости между операциями</a> &mdash; <span class="dtype">Class diagram</span></li>
+        <li><a href="#vss">6. VSS-операции</a> &mdash; <span class="dtype">Sequence diagram</span></li>
+        <li><a href="#jira">7. Интеграция с Jira</a> &mdash; <span class="dtype">Sequence diagram</span></li>
+        <li><a href="#compare">8. Compare &amp; Verify: состояния объектов</a> &mdash; <span class="dtype">State diagram</span></li>
+        <li><a href="#oplist">9. Полный список операций GUI</a> &mdash; <span class="dtype">Таблица</span></li>
+        <li><a href="#dialogs">10. Дополнительные диалоговые окна</a> &mdash; <span class="dtype">Таблица</span></li>
+    </ul>
+</div>
+
+<!-- ===================== 1. Архитектура (C4 Container) ===================== -->
+<div class="section" id="arch">
+    <h2>1. Архитектура сервиса</h2>
+    <p class="dtype">Тип диаграммы: C4 Container</p>
+    <p>Сервис состоит из GUI-приложения (стиль APPL2: прозрачное окно, кастомный title bar, скруглённые углы), PowerShell-скриптов, BAT-оркестраторов и конфигурации. Все пути и настройки &mdash; в <code>config/config.json</code>.</p>
+
+    <div class="mermaid">
+    flowchart TB
+        subgraph GUI["GUI (Prod-GUI.ps1)"]
+            OPSEL["Выбор операции<br/>18 операций"]
+            PARAMS["Панель параметров"]
+            SETTINGS["Панель настроек<br/>(Settings-Module.ps1)"]
+            OUTPUT["Область вывода"]
+            POPUP["Popup-окно результата"]
+        end
+
+        subgraph Scripts["PowerShell скрипты (scripts/)"]
+            CMP["Compare-Export.ps1<br/>Compare-PB.ps1<br/>Compare-SQL.ps1"]
+            EXP["Export-PB.ps1<br/>AIS_export.ps1"]
+            JIRA["Create-RFC.ps1<br/>Add-ReleaseComment.ps1"]
+            VSS["VSS-Utils.ps1"]
+            TEST["Run-Tests.ps1"]
+            EXPSRV["Export-Service.ps1"]
+        end
+
+        subgraph Bat["BAT-оркестраторы (bin/)"]
+            SQLEXP["SQL_exp_param.bat<br/>SQL_exp_ready.bat<br/>SQL_exp_single.bat"]
+        end
+
+        subgraph Config["Конфигурация (config/)"]
+            CFG["config.json<br/>settings_history.json<br/>vss_object_history.json"]
+        end
+
+        subgraph Tools["Внешние утилиты"]
+            ISQL["isql (Sybase ASE)"]
+            PBLDUMP["PblDump.exe"]
+            TMERGE["TortoiseMerge.exe"]
+            SSEXE["ss.exe (VSS)"]
+        end
+
+        GUI --> Scripts
+        GUI --> Bat
+        GUI --> Config
+        Scripts --> Config
+        Bat --> Config
+        Scripts --> Tools
+        Bat --> Tools
+    </div>
+</div>
+
+<!-- ===================== 2. Потоки данных (ER) ===================== -->
+<div class="section" id="dataflow">
+    <h2>2. Потоки данных между каталогами</h2>
+    <p class="dtype">Тип диаграммы: ER-диаграмма (Entity-Relationship)</p>
+    <p>Три типа источников: рабочие копии PB (Current/Main), БД Sybase (dev_golden/galaxy), VSS. Результаты экспорта сравниваются с объектами из папок Ready.</p>
+
+    <div class="mermaid">
+    erDiagram
+        WORK_GOLD ||--o{ PB_CURRENT : "PblDump экспорт"
+        SRC125    ||--o{ PB_MAIN   : "PblDump экспорт"
+        DEV_GOLDEN||--o{ BD_CURRENT: "isql экспорт"
+        GALAXY    ||--o{ BD_MAIN   : "isql экспорт"
+        VSS       ||--o| WORK_GOLD : "Get Latest"
+        VSS       ||--o| SRC125    : "Get Latest"
+
+        READY_FOLDER ||--o{ READY_MERGED : "merge по дате"
+        RELEASE_ROOT ||--o{ READY_FOLDER  : "содержит"
+
+        PB_CURRENT  ||--o{ READY_MERGED : "MD5 сравнение"
+        PB_MAIN     ||--o{ READY_MERGED : "MD5 сравнение"
+        BD_CURRENT  ||--o{ READY_MERGED : "MD5 сравнение"
+        BD_MAIN     ||--o{ READY_MERGED : "MD5 сравнение"
+
+        READY_MERGED ||--|| RELEASE_REPORT : "генерация"
+        PB_CURRENT   ||--o{ COMPARE_PB_REPORT : "Compare-PB"
+        PB_MAIN      ||--o{ COMPARE_PB_REPORT : "Compare-PB"
+        BD_CURRENT   ||--o{ COMPARE_SQL_REPORT: "Compare-SQL"
+        BD_MAIN      ||--o{ COMPARE_SQL_REPORT: "Compare-SQL"
+
+        READY_MERGED ||--o{ TORTOISE_MERGE : "визуальное сравнение"
+
+        WORK_GOLD {
+            string path "C:\Work\gold"
+            string type "PB Current source"
+        }
+        SRC125 {
+            string path "C:\SRC125\gold"
+            string type "PB Main source"
+        }
+        DEV_GOLDEN {
+            string server "dev_golden"
+            string db "golden"
+        }
+        GALAXY {
+            string server "galaxy"
+            string db "golden"
+        }
+        PB_CURRENT {
+            string path "PB_Current/"
+            string ext ".sr*"
+        }
+        PB_MAIN {
+            string path "PB_Main/"
+            string ext ".sr*"
+        }
+        BD_CURRENT {
+            string path "BD/dev_golden/golden/"
+            string ext ".sql"
+        }
+        BD_MAIN {
+            string path "BD/galaxy/golden/"
+            string ext ".sql"
+        }
+        READY_FOLDER {
+            string pattern "Ready_YYYY_MM_DD"
+            string contents ".sr* + .sql"
+        }
+        READY_MERGED {
+            string path "C:\Temp\ReadyMerged"
+            string rule "newest wins"
+        }
+        RELEASE_REPORT {
+            string file "release_report.txt"
+            string enc "Windows-1251"
+        }
+    </div>
+
+    <div class="legend">
+        <strong>Алгоритм merge Ready:</strong> папки <code>Ready_YYYY_MM_DD</code> сортируются по убыванию даты. Для каждого объекта (по имени без расширения) берётся первое вхождение &mdash; самая свежая версия. Результат копируется в <code>ReadyMerged/&lt;Task&gt;</code>.
+    </div>
+</div>
+
+<!-- ===================== 3. Типовой маршрут (Gantt) ===================== -->
+<div class="section" id="workflow">
+    <h2>3. Типовой маршрут подготовки релиза</h2>
+    <p class="dtype">Тип диаграммы: Диаграмма Ганта</p>
+    <p>Последовательность этапов от настройки до публикации комментария в Jira. Шаги 2&ndash;6 (экспорт) выполняются после обновления из VSS.</p>
+
+    <div class="mermaid">
+    gantt
+        title Типовой маршрут подготовки релиза
+        dateFormat X
+        axisFormat %s
+
+        section Подготовка
+        Настройки параметров           :a1, 0, 1
+        VSS Get Latest (по .pbt)       :a2, after a1, 1
+
+        section Экспорт
+        Export PB: Current             :b1, after a2, 1
+        Export PB: Main                :b2, after a2, 1
+        SQL Export: Current            :b3, after a2, 1
+        SQL Export: Main               :b4, after a2, 1
+
+        section Подготовка объектов
+        Размещение в Ready_YYYY_MM_DD  :c1, after b1, 1
+
+        section Проверка
+        Compare and Verify (merge)     :d1, after c1, 1
+        MD5: Ready vs Current/Main     :d2, after d1, 1
+        Автообновление NOT_IN_CURRENT  :d3, after d2, 1
+        TortoiseMerge (при различиях)  :d4, after d3, 1
+
+        section Jira
+        Создание RFC                   :e1, after d4, 1
+        Комментарий (таблица объектов) :e2, after e1, 1
+
+        section Финал
+        SQL Export from Ready          :f1, after e2, 1
+        Релиз готов                    :milestone, f2, after f1, 0
+    </div>
+</div>
+
+<!-- ===================== 4. Распределение операций (Pie) ===================== -->
+<div class="section" id="operations">
+    <h2>4. Распределение операций по категориям</h2>
+    <p class="dtype">Тип диаграммы: Круговая диаграмма (Pie chart)</p>
+    <p>18 операций GUI распределены по 6 категориям: экспорт, сравнение, Jira, VSS, утилиты, настройки.</p>
+
+    <div class="mermaid">
+    pie title Операции GUI по категориям (18 всего)
+        "Экспорт (PB + SQL)" : 4
+        "Сравнение" : 3
+        "VSS" : 6
+        "Jira" : 2
+        "Утилиты (Тесты, Export Service)" : 2
+        "Настройки" : 1
+    </div>
+
+    <h3>Детализация по категориям</h3>
+    <table>
+        <tr>
+            <th>Категория</th><th>Кол-во</th><th>Операции</th>
+        </tr>
+        <tr>
+            <td><span class="badge badge-pb">Экспорт</span></td>
+            <td>4</td>
+            <td>Export PB Current, Export PB Main, SQL Export Current, SQL Export Main, SQL Export from Ready</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-sql">Сравнение</span></td>
+            <td>3</td>
+            <td>Compare PB, Compare SQL, Compare &amp; Verify</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-vss">VSS</span></td>
+            <td>6</td>
+            <td>Get Latest, Check Status, Who Is Using, Checkout, Checkin, Undo Check Out</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-jira">Jira</span></td>
+            <td>2</td>
+            <td>Create RFC, Release Comment (таблица объектов)</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-type">Утилиты</span></td>
+            <td>2</td>
+            <td>Run Tests, Export Service</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-type">Настройки</span></td>
+            <td>1</td>
+            <td>Settings (кастомная WPF-панель)</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ===================== 5. Зависимости (Class diagram) ===================== -->
+<div class="section" id="dependencies">
+    <h2>5. Зависимости между операциями</h2>
+    <p class="dtype">Тип диаграммы: Диаграмма классов</p>
+    <p>Стрелки показывают, какие операции должны быть выполнены до запуска последующих. Settings &mdash; обязательный первый шаг.</p>
+
+    <div class="mermaid">
+    classDiagram
+        class Settings {
+            +paths: pb_current, pb_main, bd_current, bd_main
+            +vss: user, password_encrypted, db_path
+            +jira: email, token_encrypted
+            +gui: timeout, compare_all_max
+            +MasterKey: AES-256 + DPAPI
+        }
+
+        class VssGetLatest {
+            +PbtFile: gold.pbt
+            +Recursive: bool
+            --> обновляет Work/gold и SRC125/gold
+        }
+
+        class ExportPbCurrent {
+            +Source: Current
+            +TaskName: optional
+            --> PblDump в PB_Current/
+        }
+
+        class ExportPbMain {
+            +Source: Main
+            --> PblDump в PB_Main/
+        }
+
+        class SqlExportCurrent {
+            +Server: dev_golden
+            +Database: golden
+            --> isql в BD/dev_golden/golden/
+        }
+
+        class SqlExportMain {
+            +Server: galaxy
+            +Database: golden
+            --> isql в BD/galaxy/golden/
+        }
+
+        class ComparePb {
+            +TaskName: optional
+            --> PB_Current vs PB_Main (MD5)
+        }
+
+        class CompareSql {
+            +TaskName: optional
+            --> BD/dev_golden vs BD/galaxy (MD5)
+        }
+
+        class CompareVerify {
+            +TaskName: required
+            +ShowDiff: bool
+            +CreateRFC: bool
+            --> merge Ready в ReadyMerged
+            --> MD5: Ready vs Current vs Main
+            --> release_report.txt
+        }
+
+        class CreateRfc {
+            +TaskName: required
+            --> Jira REST: POST /issue
+            --> Jira REST: POST /issueLink
+        }
+
+        class ReleaseComment {
+            +TaskName: required
+            +ProjectName: AIS
+            --> Jira REST: POST /issue/comment
+        }
+
+        class SqlExportReady {
+            +ReadyFolder: ReadyMerged path
+            --> re-export из live БД
+        }
+
+        class RunTests {
+            +QuickMode: bool
+            --> парсер + кодировка + операции
+        }
+
+        class ExportService {
+            --> копирование в Z:\AI\Prod
+            --> санитизация паролей
+        }
+
+        Settings --> VssGetLatest : обязательно
+        Settings --> ExportPbCurrent : обязательно
+        Settings --> ExportPbMain : обязательно
+        Settings --> SqlExportCurrent : обязательно
+        Settings --> SqlExportMain : обязательно
+        VssGetLatest --> ExportPbCurrent : обновление исходников
+        VssGetLatest --> ExportPbMain : обновление исходников
+
+        ExportPbCurrent --> ComparePb
+        ExportPbMain --> ComparePb
+        SqlExportCurrent --> CompareSql
+        SqlExportMain --> CompareSql
+
+        ExportPbCurrent --> CompareVerify
+        ExportPbMain --> CompareVerify
+        SqlExportCurrent --> CompareVerify
+        SqlExportMain --> CompareVerify
+
+        CompareVerify --> CreateRfc : все READY или CreateRFC
+        CreateRfc --> ReleaseComment
+        CompareVerify --> SqlExportReady : ReadyMerged
+
+        Settings --> RunTests : независимо
+        Settings --> ExportService : независимо
+    </div>
+</div>
+
+<!-- ===================== 6. VSS-операции (Sequence) ===================== -->
+<div class="section" id="vss">
+    <h2>6. VSS-операции</h2>
+    <p class="dtype">Тип диаграммы: Диаграмма последовательности (Sequence)</p>
+    <p>Взаимодействие GUI &rarr; VSS-Utils.ps1 &rarr; ss.exe &rarr; VSS Database. Пароль VSS расшифровывается из config.json перед вызовом.</p>
+
+    <div class="mermaid">
+    sequenceDiagram
+        actor U as Пользователь
+        participant GUI as GUI (Prod-GUI)
+        participant VU as VSS-Utils.ps1
+        participant SS as ss.exe
+        participant VSS as VSS Database
+        participant CFG as config.json
+
+        U->>GUI: Выбрать VSS-операцию<br/>(Get/Status/Checkout/...)
+        GUI->>CFG: Чтение vss.password_encrypted
+        GUI->>CFG: Чтение master_key_encrypted
+        GUI->>GUI: Decrypt-Password (AES-256)
+        GUI->>VU: Invoke-VssCommand<br/>(Project, User, Password, Command)
+
+        alt Get Latest
+            VU->>SS: ss.exe Get $/SRC125/... -I-Y -Yuser,pass [-R]
+            SS->>VSS: Запрос последней версии
+            VSS-->>SS: Файлы
+            SS-->>VU: "Getting..." / "You now have..."
+            VU-->>GUI: Streaming вывод (русский)
+        else Check Status
+            VU->>SS: ss.exe Status $/SRC125/... -I-Y -Yuser,pass [-R]
+            SS->>VSS: Запрос статуса
+            VSS-->>SS: Checked Out / Checked In
+            SS-->>VU: Список файлов + статус
+            VU-->>GUI: "найдено N извлечённых файлов"
+        else Checkout
+            VU->>SS: ss.exe Checkout $/... -C"comment" -I-Y -Yuser,pass
+            SS->>VSS: Отметить как извлечённый
+            VSS-->>SS: OK
+            SS-->>VU: "Checked out to vchaga"
+            VU-->>GUI: Результат
+        else Checkin
+            VU->>SS: ss.exe Checkin $/... -C"comment" -I-Y -Yuser,pass
+            SS->>VSS: Зафиксировать изменения
+            VSS-->>SS: OK
+            SS-->>VU: "Checked in"
+            VU-->>GUI: Результат
+        else Undo Checkout
+            VU->>SS: ss.exe UndoCheckout $/... -I-Y -Yuser,pass
+            SS->>VSS: Снять резервирование
+            VSS-->>SS: OK
+            SS-->>VU: "Undone"
+            VU-->>GUI: Результат
+        end
+
+        GUI->>CFG: Сохранение в vss_object_history.json
+        GUI-->>U: Popup-окно с результатом
+    </div>
+
+    <h3>Разрешение коротких имён объектов (Resolve-VssObjectPath)</h3>
+    <div class="mermaid">
+    flowchart TD
+        INPUT["Ввод: w_ais_request_select"]
+        SEARCH["Поиск .sr* в PB_Main/ и PB_Current/"]
+        FOUND{"Найден?"}
+        OK["PBL = имя папки<br/>Ext = .srw"]
+        PATH["VSS-путь:<br/>$/SRC125/gold/pbl_name/w_ais_request_select.srw"]
+        ERR["Ошибка: объект не найден"]
+        INPUT --> SEARCH --> FOUND
+        FOUND -->|Да| OK --> PATH
+        FOUND -->|Нет| ERR
+    </div>
+</div>
+
+<!-- ===================== 7. Jira (Sequence) ===================== -->
+<div class="section" id="jira">
+    <h2>7. Интеграция с Jira</h2>
+    <p class="dtype">Тип диаграммы: Диаграмма последовательности (Sequence)</p>
+    <p>Две операции: создание RFC-задачи и добавление комментария с таблицей объектов. Обе используют Jira REST API v2.</p>
+
+    <div class="mermaid">
+    sequenceDiagram
+        actor U as Пользователь
+        participant GUI as GUI
+        participant RFC as Create-RFC.ps1
+        participant COMMENT as Add-ReleaseComment.ps1
+        participant JIRA as Jira REST API
+        participant CFG as config.json
+        participant PBC as PB_Current / PB_Main
+
+        rect rgb(255, 250, 240)
+            Note over U,CFG: Создание RFC
+            U->>GUI: "Создание RFC в Jira" + TaskName
+            GUI->>CFG: jira.email + token_encrypted
+            GUI->>GUI: Decrypt token
+            GUI->>RFC: -TaskName SYBASE-XXXXX
+            RFC->>JIRA: GET /rest/api/2/search<br/>(JQL: project=RFC AND summary~TaskName)
+            JIRA-->>RFC: Существующие RFC (или пусто)
+
+            alt RFC не существует
+                RFC->>RFC: Вычисление окна:<br/>start = now+1h, end = start+24h
+                RFC->>RFC: Заполнение полей:<br/>summary, description, assignee<br/>customfield_25953..26053
+                RFC->>JIRA: POST /rest/api/2/issue<br/>(project=RFC, summary="Разработка - ...",<br/>description="RFC сформирована автоматически...",<br/>assignee, customfields)
+                JIRA-->>RFC: 201 Created (RFC-XXXXX)
+                RFC->>JIRA: POST /rest/api/2/issueLink<br/>(Mention: RFC → Task)
+                JIRA-->>RFC: 201 Created
+                RFC-->>GUI: RFC создан
+            else RFC уже существует
+                RFC-->>GUI: Пропуск (уже создан)
+            end
+        end
+
+        rect rgb(235, 248, 255)
+            Note over U,PBC: Комментарий с таблицей объектов
+            U->>GUI: "Комментарий в Jira" + TaskName + ProjectName
+            GUI->>CFG: jira.email + token_encrypted
+            GUI->>GUI: Decrypt token
+            GUI->>COMMENT: -TaskName -ProjectName AIS -JiraPassword token
+
+            COMMENT->>COMMENT: Сканирование Ready_*<br/>(сбор .sr* и .sql)
+
+            loop Для каждого PB-объекта
+                COMMENT->>PBC: Поиск .sr* по имени
+                PBC-->>COMMENT: Имя папки = PBL-библиотека
+            end
+
+            COMMENT->>CFG: bd_current_export → сервер + БД
+            COMMENT->>COMMENT: Формирование Jira wiki-таблицы:<br/>||Проект/Сервер||Библиотека/БД||Объект||Информация||
+            COMMENT->>JIRA: POST /rest/api/2/issue/SYBASE-XXXXX/comment
+            JIRA-->>COMMENT: 201 Created
+            COMMENT-->>GUI: Комментарий добавлен
+        end
+
+        GUI-->>U: Popup-окно с результатом
+    </div>
+
+    <h3>Структура таблицы в комментарии Jira</h3>
+    <table>
+        <tr>
+            <th>Колонка</th>
+            <th>PB-объекты</th>
+            <th>SQL-объекты</th>
+        </tr>
+        <tr>
+            <td><strong>Проект/Сервер</strong></td>
+            <td>Имя проекта PB (по умолч. "AIS", параметр ProjectName)</td>
+            <td>Имя сервера (dev_golden &mdash; предпоследний элемент bd_current_export)</td>
+        </tr>
+        <tr>
+            <td><strong>Библиотека/БД</strong></td>
+            <td>Имя PBL (родительская папка .sr* в PB_Current/PB_Main)</td>
+            <td>Имя БД (golden &mdash; последний элемент bd_current_export)</td>
+        </tr>
+        <tr>
+            <td><strong>Наименование объекта</strong></td>
+            <td>Имя объекта без расширения</td>
+            <td>Имя объекта без расширения</td>
+        </tr>
+        <tr>
+            <td><strong>Информация</strong></td>
+            <td>Краткое описание изменений (зарезервировано)</td>
+            <td>Краткое описание изменений (зарезервировано)</td>
+        </tr>
+    </table>
+    <p><small>Формат: <code>||Проект/Сервер||Библиотека/БД||Наименование объекта||Информация||</code> (заголовок)<br/>
+    <code>|AIS|golden_subject|u_entity_document| |</code> (данные &mdash; пробел в пустой колонке)</small></p>
+</div>
+
+<!-- ===================== 8. Compare & Verify (State) ===================== -->
+<div class="section" id="compare">
+    <h2>8. Compare &amp; Verify: состояния объектов</h2>
+    <p class="dtype">Тип диаграммы: Диаграмма состояний (State diagram)</p>
+    <p>Compare-Export.ps1 проверяет каждый объект из Ready по MD5. Возможные переходы между статусами:</p>
+
+    <div class="mermaid">
+    stateDiagram-v2
+        [*] --> Scanning : "Запуск Compare-Export"
+
+        Scanning : Сканирование Ready_* папок
+        Scanning --> Merging : "Сбор всех файлов"
+
+        Merging : Merge в ReadyMerged
+        Merging --> Checking : "newest версия каждого объекта"
+
+        Checking : MD5 проверка
+        Checking --> READY : "Ready==Current AND Ready!=Main"
+        Checking --> NOT_READY : "Ready!=Current"
+        Checking --> SAME_AS_MAIN : "Ready==Main"
+        Checking --> NOT_IN_CURRENT : "нет в Current"
+        Checking --> NEW_OBJECT : "нет в Main"
+
+        READY : READY (ГОТОВО)
+        NOT_READY : NOT_READY (НЕ ГОТОВО)
+        SAME_AS_MAIN : SAME_AS_MAIN
+        NOT_IN_CURRENT : NOT_IN_CURRENT
+        NEW_OBJECT : NEW_OBJECT (НОВЫЙ)
+
+        NOT_READY --> Diff : "ShowDiff=true"
+        SAME_AS_MAIN --> Diff : "ShowDiff=true"
+        Diff : TortoiseMerge
+        Diff --> Checking : "повторная проверка"
+
+        NOT_IN_CURRENT --> AutoUpdate : "автообновление"
+        AutoUpdate : PblDump из PBL
+        AutoUpdate --> Checking : "re-compare"
+
+        READY --> CreateRfc : "все READY"
+        NEW_OBJECT --> CreateRfc : "все READY"
+        NOT_READY --> [*] : "требует исправления"
+        SAME_AS_MAIN --> [*] : "не нужен в релизе"
+
+        CreateRfc : Create-RFC.ps1
+        CreateRfc --> Report : "RFC создан"
+        CreateRfc --> Report : "RFC пропущен"
+
+        Report : release_report.txt
+        Report --> [*] : "завершено"
+    </div>
+
+    <div class="legend">
+        <strong>Статусы проверки:</strong>
+        <ul>
+            <li><strong>READY (ГОТОВО)</strong> &mdash; совпадает с Current, отличается от Main &mdash; готов к выводу</li>
+            <li><strong>NOT_READY (НЕ ГОТОВО)</strong> &mdash; отличается от Current &mdash; требуется обновление</li>
+            <li><strong>NEW_OBJECT (НОВЫЙ)</strong> &mdash; есть в Current, отсутствует в Main &mdash; новый объект</li>
+            <li><strong>SAME_AS_MAIN</strong> &mdash; совпадает с Main &mdash; изменений нет</li>
+            <li><strong>NOT_IN_CURRENT</strong> &mdash; отсутствует в Current &mdash; автообновление через PblDump</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ===================== 9. Полный список (таблица) ===================== -->
+<div class="section" id="oplist">
+    <h2>9. Полный список операций GUI</h2>
+    <p class="dtype">Тип: Таблица</p>
+    <p>18 операций в выпадающем списке GUI (группировка по категориям).</p>
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Операция (RU)</th>
+            <th>Категория</th>
+            <th>Пароль</th>
+            <th>Параметры</th>
+            <th>Скрипт</th>
+        </tr>
+        <tr><td>1</td><td>Настройки параметров</td><td>Сервисные</td><td>&mdash;</td><td>(кастомная панель)</td><td>Settings-Module.ps1</td></tr>
+        <tr><td>2</td><td>Запуск тестов</td><td>Сервисные</td><td>&mdash;</td><td>QuickMode</td><td>Run-Tests.ps1</td></tr>
+        <tr><td>3</td><td>Export Service (выгрузка проекта)</td><td>Сервисные</td><td>&mdash;</td><td>&mdash;</td><td>Export-Service.ps1</td></tr>
+        <tr><td>4</td><td>Собрать объекты для вывода в ПРОД</td><td>Сервисные</td><td>&mdash;</td><td>TaskName</td><td>AIS_export.ps1</td></tr>
+        <tr><td>5</td><td>Выгрузка PB: Current или Main</td><td>PowerBuilder</td><td>&mdash;</td><td>Source, TaskName</td><td>Export-PB.ps1</td></tr>
+        <tr><td>6</td><td>Сравнение PB: Current и Main</td><td>PowerBuilder</td><td>&mdash;</td><td>TaskName, OutputFile</td><td>Compare-PB.ps1</td></tr>
+        <tr><td>7</td><td>Выгрузка SQL</td><td>SQL</td><td>Sybase</td><td>Source, Server, Db, BdExportPath</td><td>SQL_exp_param.bat</td></tr>
+        <tr><td>8</td><td>Сравнение SQL: dev_golden и galaxy</td><td>SQL</td><td>&mdash;</td><td>TaskName, OutputFile</td><td>Compare-SQL.ps1</td></tr>
+        <tr><td>9</td><td>Сравнение и проверка (Compare &amp; Verify)</td><td>SQL</td><td>Sybase</td><td>TaskName, ShowDiff, CreateRFC</td><td>Compare-Export.ps1</td></tr>
+        <tr><td>10</td><td>Создание RFC в Jira</td><td>Jira/RFC</td><td>&mdash;</td><td>TaskName</td><td>Create-RFC.ps1</td></tr>
+        <tr><td>11</td><td>Комментарий в Jira: таблица объектов</td><td>Jira/RFC</td><td>Токен Jira</td><td>TaskName, ProjectName</td><td>Add-ReleaseComment.ps1</td></tr>
+        <tr><td>12</td><td>VSS: Получить последнюю версию</td><td>VSS</td><td>из Settings</td><td>VssPath, VssUser, Project, PbtFile, Recursive</td><td>VSS-Utils.ps1</td></tr>
+        <tr><td>13</td><td>VSS: Проверить статус</td><td>VSS</td><td>из Settings</td><td>VssPath, VssUser, Project, TaskName, Recursive</td><td>VSS-Utils.ps1</td></tr>
+        <tr><td>14</td><td>VSS: Кто использует</td><td>VSS</td><td>из Settings</td><td>VssPath, VssUser, Project, Recursive</td><td>VSS-Utils.ps1</td></tr>
+        <tr><td>15</td><td>VSS: Checkout (Извлечь / Зарезервировать)</td><td>VSS</td><td>из Settings</td><td>VssPath, VssUser, Project, Comment, Recursive</td><td>VSS-Utils.ps1</td></tr>
+        <tr><td>16</td><td>VSS: Checkin (Сохранить / Зафиксировать)</td><td>VSS</td><td>из Settings</td><td>VssPath, VssUser, Project, Comment, Recursive</td><td>VSS-Utils.ps1</td></tr>
+        <tr><td>17</td><td>VSS: Undo Check Out (Снять резервирование)</td><td>VSS</td><td>из Settings</td><td>VssPath, VssUser, Project, Recursive</td><td>VSS-Utils.ps1</td></tr>
+        <tr><td>18</td><td>VSS: История объекта</td><td>VSS</td><td>из Settings</td><td>VssPath, VssUser, Project, TaskName, SearchText, ShowHistory</td><td>VSS-History-Show.ps1</td></tr>
+    </table>
+
+    <h3 id="dialogs">10. Дополнительные диалоговые окна (независимые ДО)</h3>
+    <table>
+        <tr>
+            <th>Окно</th>
+            <th>Команда</th>
+            <th>Описание</th>
+            <th>Скриншот</th>
+        </tr>
+        <tr><td>LLM</td><td>Show-LLMs.ps1</td><td>Просмотр и переключение моделей ИИ (две вкладки: Доступные / Все)</td><td><a href="screenshots/llm_dialog.png">llm_dialog.png</a></td></tr>
+        <tr><td>FIXSHOW</td><td>Show-OpStatus.ps1</td><td>Управление статусами EDIT/FIXED для всех объектов + история изменений</td><td><a href="screenshots/fixshow_dialog.png">fixshow_dialog.png</a></td></tr>
+        <tr><td>ПРОМПТ</td><td>Show-Prompts.ps1</td><td>История пользовательских промптов с поиском и подсветкой</td><td><a href="screenshots/prompts_dialog.png">prompts_dialog.png</a></td></tr>
+        <tr><td>СОКР</td><td>Show-Abbreviations.ps1</td><td>Свод всех сокращений проекта (8 вкладок)</td><td><a href="screenshots/abbr_dialog.png">abbr_dialog.png</a></td></tr>
+        <tr><td>RULES</td><td>Show-Rules.ps1</td><td>Просмотр и редактирование файлов-правил с поиском</td><td><a href="screenshots/rules_dialog.png">rules_dialog.png</a></td></tr>
+        <tr><td>VSS История</td><td>VSS-History-Show.ps1</td><td>История версий VSS, сравнение через TortoiseMerge, поиск по содержимому</td><td><a href="screenshots/gui_vss_main.png">gui_vss_main.png</a></td></tr>
+    </table>
+</div>
+
+<div class="footer">
+    AIS Release Preparation Service &mdash; Диаграмма работы<br/>
+    Сгенерировано: 06.07.2026<br/>
+    Типы диаграмм: C4 Container, ER, Gantt, Pie, Class, Sequence, State<br/>
+    18 операций GUI + 6 дополнительных диалоговых окон (LLM, FIXSHOW, ПРОМПТ, СОКР, RULES, VSS История)<br/><br/>
+    <a href="sql_export_instructions.html" style="color: #3182CE;">Полная документация сервиса (HTML)</a>
+    &nbsp;|&nbsp;
+    <a href="sql_export_instructions.pdf" style="color: #3182CE;">Полная документация сервиса (PDF)</a>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'linear' },
+        sequence: { useMaxWidth: true, actorMargin: 50, boxMargin: 10 },
+        securityLevel: 'loose',
+        themeVariables: {
+            primaryColor: '#3182CE',
+            primaryTextColor: '#4A5568',
+            primaryBorderColor: '#3182CE',
+            lineColor: '#A0AEC0',
+            secondaryColor: '#EBF8FF',
+            tertiaryColor: '#F5F7FA'
+        }
+    });
+
+    (async function() {
+        try {
+            await mermaid.run({ querySelector: '.mermaid' });
+            document.body.setAttribute('data-mermaid-ready', 'true');
+        } catch(e) {
+            console.error('Mermaid render error:', e);
+            document.body.setAttribute('data-mermaid-ready', 'error');
+        }
+    })();
+</script>
+
+</body>
+</html>

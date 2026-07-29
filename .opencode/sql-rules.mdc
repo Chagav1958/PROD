@@ -1,0 +1,405 @@
+---
+description: Sybase ASE 15.5 SQL — синтаксис, функции, особенности сервера
+globs: **/*.sql
+alwaysApply: false
+---
+
+# SQL правила для Sybase ASE 15.5
+
+Сервер базы данных: **Sybase Adaptive Server Enterprise (ASE) 15.5** (СУБД проекта AIS). Язык SQL этого сервера имеет ряд отличий от других СУБД (MS SQL, PostgreSQL, Oracle). Ниже приведены ключевые особенности, актуальные для данного репозитория.
+
+## Строковые функции
+
+### STR_REPLACE — вместо REPLACE
+
+Для замены подстроки используется `STR_REPLACE()`, а не стандартный `REPLACE()`:
+
+```sql
+-- ПРАВИЛЬНО
+SET @tmp_sql = STR_REPLACE(@tmp_sql, 'and p.state <>', 'and p.state =')
+
+-- НЕПРАВИЛЬНО
+SET @tmp_sql = REPLACE(@tmp_sql, 'and p.state <>', 'and p.state =')
+```
+
+### CHARINDEX — поиск подстроки
+
+Поддерживается только 2-аргументная форма (без начальной позиции):
+
+```sql
+SELECT @pos = CHARINDEX(',', @insure_kind)
+IF @pos > 0
+    SELECT @item = SUBSTRING(@insure_kind, 1, @pos - 1)
+```
+
+> В отличие от MS SQL Server, `CHARINDEX` в ASE 15.5 **не поддерживает** третий аргумент (start_location). Для поиска с позиции нужно использовать `SUBSTRING` + `CHARINDEX`.
+
+### CHAR_LENGTH — длина строки
+
+Используется `CHAR_LENGTH()`, не `LEN()` и не `LENGTH()`:
+
+```sql
+IF CHAR_LENGTH(@insure_kind) > 0
+```
+
+### SUBSTRING — 1-based индексация
+
+```sql
+SUBSTRING(p.date_sale, 9, 2)  -- символы с 9-й позиции, 2 символа
+```
+
+### STUFF — удаление/замена по позиции
+
+```sql
+SELECT @insurant = STUFF(@insurant, CHARINDEX(CHAR(13), @insurant), 1, NULL)
+```
+
+### LTRIM / RTRIM — обрезка пробелов
+
+```sql
+SELECT @val = LTRIM(RTRIM(@val))
+```
+
+### CHAR() — специальные символы
+
+```sql
+CHAR(13)   -- возврат каретки (CR)
+CHAR(10)   -- перевод строки (LF)
+CHAR(9)    -- табуляция (TAB)
+```
+
+## Функции даты и времени
+
+### Текущая дата/время
+
+```sql
+SET @date_now      = current_date()   -- только дата (time part 00:00:00)
+SET @date_time_now = GetDate()        -- дата + время
+```
+
+### DATEADD — добавление интервала
+
+```sql
+SET @new_date = DATEADD(dd, @days, @date)       -- дни
+SET @new_date = DATEADD(yy, -3, @date)          -- года (отрицательный сдвиг)
+SET @new_date = DATEADD(dy, 1, @date)           -- день года (синоним dd)
+SET @new_date = DATEADD(ms, 500, @datetime)     -- миллисекунды
+```
+
+### DATEDIFF — разница между датами
+
+```sql
+SELECT @diff_ms = DATEDIFF(ms, @start_dt, @finish_dt)
+```
+
+### DATEPART — извлечение части даты
+
+```sql
+SET @day_number = DATEPART(dw, @today)     -- день недели
+SELECT @year    = DATEPART(yy, a.date_out) -- год
+```
+
+### CONVERT — форматирование даты
+
+Стили форматирования (третий аргумент):
+
+| Стиль | Формат | Пример |
+|---|---|---|
+| `23` | `yyyy-mm-dd` | `2024-01-15` |
+| `102` | `yyyy.mm.dd` | `2024.01.15` |
+| `105` | `dd-mm-yyyy` | `15-01-2024` |
+| `111` | `yyyy/mm/dd` | `2024/01/15` |
+
+```sql
+CONVERT(VARCHAR(10), @date, 111)   -- '2024/01/15'
+CONVERT(VARCHAR(10), @date, 105)   -- '15-01-2024'
+CONVERT(DATE, @date_string)        -- приведение строки к DATE
+```
+
+## CASE — условное выражение
+
+Поддерживается в двух формах:
+
+```sql
+-- Простая форма: CASE поле WHEN значение THEN результат
+SELECT CASE a.state
+    WHEN 0 THEN 'Новый'
+    WHEN 1 THEN 'Активен'
+    WHEN 2 THEN 'Закрыт'
+    ELSE 'Неизвестно'
+END
+
+-- Расширенная форма: CASE WHEN условие THEN результат
+SELECT CASE
+    WHEN CHARINDEX('-', a.num_dover) = 0 THEN CHAR_LENGTH(a.num_dover) - 2
+    ELSE CHARINDEX('-', a.num_dover) - 1
+END
+```
+
+## Ограничение количества строк
+
+### SELECT TOP N
+
+```sql
+SELECT TOP 1 policy_id, num_agreement FROM oss_agreement
+```
+
+### SET ROWCOUNT N
+
+```sql
+SET ROWCOUNT @rows     -- ограничить количество строк
+SELECT ... FROM ...
+SET ROWCOUNT 0         -- сбросить (обязательно!)
+```
+
+> `LIMIT` и `OFFSET` не поддерживаются.
+
+## Обработка NULL
+
+### ISNULL — замена NULL на значение (основной способ)
+
+```sql
+SELECT ISNULL(@param, 'default')
+SELECT ISNULL(date_cancel, date_to)
+```
+
+### COALESCE — первый не-NULL из списка (используется реже)
+
+```sql
+SELECT COALESCE(date_cancel, date_to, '2099-01-01')
+```
+
+> `NULLIF` в проекте не используется.
+
+## Временные таблицы
+
+- Создаются через `SELECT ... INTO #temp` или `CREATE TABLE #temp (...)`
+- Префикс `#` обязателен:
+
+```sql
+CREATE TABLE #tmp_pol (
+    os_policy_id NUMERIC(10,0),
+    system       VARCHAR(10) NULL,
+    ais_policy_id NUMERIC(10,0) NULL
+)
+
+SELECT ... INTO #tmp_paym FROM paym_golden
+
+DROP TABLE #tmp_pol
+```
+
+## Идентификаторы (IDENTITY / @@IDENTITY)
+
+- Автоинкрементные колонки: `IDENTITY` (не `AUTO_INCREMENT`)
+- Получение последнего ID: `@@IDENTITY` (не `LAST_INSERT_ID()`)
+
+```sql
+INSERT INTO fin_trans (...) VALUES (...)
+SELECT @err = @@ERROR, @fin_trans_id = @@IDENTITY
+
+-- Создание таблицы с identity-колонкой
+CREATE TABLE #result (
+    row_number NUMERIC(10,0) IDENTITY,
+    field_name VARCHAR(255) NULL
+)
+```
+
+### SET IDENTITY_INSERT — явная вставка в identity-колонку
+
+```sql
+SET IDENTITY_INSERT table_name ON
+INSERT INTO table_name (identity_col, ...) VALUES (значение, ...)
+SET IDENTITY_INSERT table_name OFF
+```
+
+## Конкатенация строк
+
+```sql
+SET @err_text = 'Ошибка при обработке ID = ' + CONVERT(VARCHAR(10), @ag_id)
+```
+
+## Транзакции
+
+```sql
+BEGIN TRAN
+    INSERT INTO period_journal (...) VALUES (...)
+    IF @@ERROR <> 0 BEGIN
+        ROLLBACK TRAN
+        RETURN -1
+    END
+COMMIT TRAN
+
+-- Гарантированный откат при ошибке
+IF @@ERROR <> 0 BEGIN
+    WHILE (@@TRANCOUNT > 0) BEGIN
+        ROLLBACK TRAN
+    END
+END
+```
+
+> `SAVE TRAN` (сохранённые точки) в проекте не используются.
+
+## Обработка ошибок
+
+### @@ERROR и @@ROWCOUNT — всегда парой
+
+```sql
+SELECT @RC = @@ERROR, @row_count = @@ROWCOUNT
+IF @RC <> 0 BEGIN
+    GOTO EXIT_PROC
+END
+```
+
+### RAISERROR
+
+Два варианта синтаксиса (оба используются в проекте):
+
+```sql
+-- Вариант 1: пробел между номером и сообщением
+RAISERROR 99999 'Описание ошибки'
+
+-- Вариант 2: запятая между номером и сообщением
+RAISERROR 99999, 'Описание ошибки'
+
+-- Сообщение с подстановкой переменной
+RAISERROR 99999 'Ошибка обновления записи %1!', @entity_id
+RETURN -100
+```
+
+### GOTO — переход на метку
+
+```sql
+EXIT_PROC:
+    PRINT 'Завершение.'
+    RETURN @RC
+```
+
+### PRINT — вывод отладочных сообщений
+
+`PRINT` поддерживает форматирование с плейсхолдерами `%N!`:
+
+```sql
+PRINT '@RC = %1!, @err_text = %2!', @RC, @err_text
+PRINT 'Count = %1!', @Count_com
+```
+
+## Динамический SQL
+
+```sql
+SELECT @tmp_sql = 'SELECT ... WHERE id = ' + CONVERT(VARCHAR(15), @id)
+EXECUTE (@tmp_sql)
+```
+
+## Системные переменные
+
+| Переменная | Назначение |
+|---|---|
+| `@@IDENTITY` | Последний вставленный identity |
+| `@@ERROR` | Код последней ошибки |
+| `@@ROWCOUNT` | Количество строк, затронутых последней операцией |
+| `@@TRANCOUNT` | Глубина вложенности транзакций |
+| `@@SPID` | ID текущего процесса (spid) |
+| `@@PROCID` | ID текущей процедуры |
+| `@@SQLSTATUS` | Статус последней операции FETCH (0 = успешно) |
+
+## Хранимые процедуры
+
+```sql
+CREATE PROCEDURE dbo.usp_name;1
+    @param1 NUMERIC(10,0),
+    @param2 INT = 0,           -- параметр по умолчанию
+    @param3 VARCHAR(255) OUTPUT -- выходной параметр
+AS
+BEGIN
+    ...
+    RETURN @RC
+END
+
+-- WITH RECOMPILE
+CREATE PROCEDURE dbo.usp_name WITH RECOMPILE
+AS
+BEGIN
+    ...
+END
+```
+
+> Суффикс `;1` после имени процедуры — стандартное соглашение Sybase ASE (номер версии).
+
+## Межбазовые запросы
+
+```sql
+SELECT ... FROM golden.dbo.paym_golden
+SELECT ... FROM master..sysprocesses
+```
+
+## Курсоры
+
+```sql
+DECLARE cur_name CURSOR FOR SELECT ... FROM ...
+OPEN cur_name
+FETCH cur_name INTO @var1, @var2
+WHILE (@@SQLSTATUS = 0) BEGIN
+    ...
+    FETCH cur_name INTO @var1, @var2
+END
+CLOSE cur_name
+DEALLOCATE CURSOR cur_name
+```
+
+## Подсказки (Hints)
+
+### Индексные хинты
+
+Указываются в скобках после имени таблицы:
+
+```sql
+SELECT ... FROM ais_policy p (INDEX os_policy_id)
+SELECT ... FROM oss_agreement (INDEX ix_agreement_date)
+```
+
+### Блокировки
+
+```sql
+LOCK TABLE table_name IN EXCLUSIVE MODE
+LOCK TABLE table_name IN SHARED MODE
+-- WAIT — таймаут ожидания блокировки (секунды):
+LOCK TABLE ais_job_status IN EXCLUSIVE MODE WAIT 1
+```
+
+## Системные функции
+
+| Функция | Назначение |
+|---|---|
+| `SUSER_NAME()` | Имя текущего пользователя сервера |
+| `HOST_NAME()` | Имя хоста текущего подключения |
+| `PROGRAM_NAME()` | Имя клиентской программы (из `master..sysprocesses.program_name`) |
+| `OBJECT_NAME(@@PROCID)` | Имя текущей хранимой процедуры |
+
+## Чего НЕТ в Sybase ASE 15.5 (важно для мигрантов с MS SQL)
+
+| Конструкция | Чем заменять |
+|---|---|
+| `DECLARE @table TABLE (...)` | Временная таблица `#table` через `CREATE TABLE #table` |
+| `OUTPUT` (INSERT/UPDATE/DELETE) | После операции — `SELECT @@IDENTITY`, `@@ROWCOUNT` |
+| `MERGE` | Отдельные `INSERT`/`UPDATE`/`DELETE` с проверкой `IF EXISTS` |
+| `TRY...CATCH` | `@@ERROR` + `GOTO` + метка (см. раздел «Обработка ошибок») |
+| `LIMIT` / `OFFSET` | `SELECT TOP N` или `SET ROWCOUNT N` |
+| `AUTO_INCREMENT` | `IDENTITY` (см. выше) |
+| `LAST_INSERT_ID()` | `@@IDENTITY` |
+| `ROW_NUMBER() OVER (...)` | **Поддерживается**, но в проекте не используется |
+| CTE (`WITH ... AS`) | **Поддерживается**, но в проекте не используется |
+| `TRUNCATE TABLE` | **Поддерживается** (но без логирования только при определённых настройках БД) |
+| `EXCEPT` / `INTERSECT` | Не поддерживаются. Заменять через `NOT EXISTS` / `INNER JOIN` |
+
+## Особенности кодировки
+
+- Датампы SQL-объектов в папке `BD` сохранены в кодировке **Windows-1251** (cp1251). При просмотре или редактировании этих файлов убедитесь, что редактор использует правильную кодировку.
+- Кодировка строковых данных на сервере может отличаться от кодировки файлов экспорта. При сравнении кириллических строк через `COLLATE` используйте collation, соответствующее базе данных.
+
+## Правила оформления SQL-кода
+
+- Имена таблиц: `dbo.имя_таблицы` (префикс схемы).
+- Названия таблиц и полей — в `snake_case`.
+- Псевдонимы таблиц — короткие (1–3 буквы): `p` для policy, `a` для agreement, `e` для entity.
+- `SELECT` — ключевые слова заглавными.
+- Каждый `SELECT` на новой строке, поля с отступом.

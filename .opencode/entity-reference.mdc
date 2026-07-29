@@ -1,0 +1,162 @@
+---
+description: Справочник сущностей golden_subject.pbl — entity_type_id, legal_code, doctype_id, архитектура окон
+alwaysApply: true
+---
+
+# Справочник сущностей для golden_subject.pbl
+
+## Аббревиатуры и их расшифровка
+
+### Типы посредников (entity_type_id)
+
+| entity_type_id | Название | Сокращение |
+|---|---|---|
+| 1 | Агент | Агент |
+| 2 | Брокер | Брокер |
+| 3 | Продавец | Продавец |
+| 4 | Сотрудник | Сотрудник |
+| 5 | Консультант | Консультант |
+
+### Тип лица (legal_code)
+
+| legal_code | Расшифровка | Полное имя |
+|---|---|---|
+| `'C'` | ЮЛ | Юридическое лицо |
+| `'P'` | ИП | Индивидуальный предприниматель |
+
+### Типы документов (doctype_id) для d_per_other_document_list
+
+| doctype_id | Описание |
+|---|---|
+| `'I'` | Свидетельство о регистрации ИП |
+| `'D'` | Доверенность (предположительно) |
+| `'Q'`, `'K'` | Другие типы (уточнять в DDDW `dddw_subj_doctype_cert`) |
+| `'S'` | Справка/свидетельство (связано с individual_keeper) |
+| `'U'` | Связано с УСН (единый налог) |
+| `''` | Пустое значение |
+
+---
+
+## Где искать значения параметров
+
+### entity_type_id
+
+**Таблица:** `ais_entity`
+**Поле:** `entity_type_id`
+
+Способы получения:
+1. Из `w_entity_card.dw_info.object.entity_type_id[1]` — после retrieve в `dw_info`
+2. SQL-запрос:
+   ```sql
+   SELECT entity_type_id FROM ais_entity WHERE entity_id = :entity_id
+   ```
+3. Через JOIN с `ais_entity_data`:
+   ```sql
+   SELECT e.entity_type_id
+   FROM ais_entity e
+   JOIN ais_entity_data ed ON ed.entity_id = e.entity_id
+   WHERE ed.subj_id = :subj_id AND ed.date_to IS NULL
+   ```
+
+### legal_code
+
+**Таблица:** `ais_entity`
+**Поле:** `legal_code`
+
+Способы получения:
+1. Публичная функция `w_entity_card.get_legal_code()`:
+   ```powerbuilder
+   string ls_legal
+   ls_legal = nvl(dw_info.object.legal_code[1],'')
+   return ls_legal
+   ```
+2. SQL-запрос (аналогично entity_type_id)
+3. Через parameter linkage `dw_info` в `w_entity_card`:
+   ```powerbuilder
+   this.inv_parmlinkage.of_setparm("legal_code", "%","set")
+   ```
+
+### subj_id
+
+**Таблица:** `ais_entity_data`
+**Поле:** `subj_id`
+
+Способы получения:
+1. Через parameter linkage `dw_table1`:
+   ```powerbuilder
+   any la_parm
+   dw_table1.inv_parmlinkage.of_getparmvalue('subj_id', la_parm)
+   ldec_subj_id = dec(nvl(la_parm,0))
+   ```
+2. Из `w_entity_card.dw_info.object.subj_id[1]`
+
+### entity_id
+
+**Таблица:** `ais_entity`
+**Поле:** `entity_id`
+
+Способы получения:
+1. Из `w_entity_card.dw_info.object.entity_id[1]`
+2. Из `ais_entity_data` по `subj_id`:
+   ```sql
+   SELECT top 1 entity_id
+   FROM ais_entity_data
+   WHERE date_to IS NULL AND subj_id = :subj_id
+   ```
+
+---
+
+## Архитектурные особенности
+
+### Иерархия окон для карточки посредника
+
+```
+w_entity_card (extends w_sheet)
+ ├── dw_info (dataobject = d_entity_card) — содержит entity_type_id, legal_code, subj_id, entity_id
+ └── tab_entity (type = u_entity_tab)
+      └── tabpage_7 (type = u_entity_document) — вкладка "Документы"
+           ├── dw_table (dataobject = d_per_document_list) — основные документы
+           ├── dw_table1 (dataobject = d_per_other_document_list) — прочие документы
+           │    ├── cb_add_table1 (type = u_cb_add) — кнопка "Добавить"
+           │    ├── cb_save_table1 (type = u_cb_save) — кнопка "Сохранить"
+           │    └── cb_del_table1 (type = u_cb_delete) — кнопка "Удалить"
+           └── dw_usn (dataobject = d_nds_rate_usn_list) — ставки/УСН
+```
+
+Также используется в `w_entity_card_response` (аналогичная структура).
+
+### Доступ к родительскому окну из tabpage
+
+Из пользовательского объекта-вкладки (`u_tabpg`):
+```powerbuilder
+window lw
+this.of_getparentwindow(ref lw)
+// lw теперь ссылается на родительское окно
+```
+
+### Получение entity_type_id/legal_code из дочерней вкладки
+
+Рекомендуемый способ — прямой SQL-запрос (не зависит от типа окна):
+```powerbuilder
+SELECT e.entity_type_id, e.legal_code
+INTO :ll_entity_type_id, :ls_legal_code
+FROM ais_entity e
+JOIN ais_entity_data ed ON ed.entity_id = e.entity_id
+WHERE ed.subj_id = :subj_id AND ed.date_to IS NULL
+USING SQLCA;
+```
+
+---
+
+## События и их назначение в u_entity_document
+
+| Событие | Описание |
+|---|---|
+| `ue_apply_restrictions` | Применяет ограничения на основе `entity_type_id` и `legal_code` |
+| `itemchanged (dw_table1)` | Валидация при изменении `doctype_id` (блокировка 'I' для ЮЛ) |
+
+## Дополнительные замечания
+
+- При отключении кнопок `cb_add_table1`, `cb_save_table1`, `cb_del_table1` учитывать также флаг `gnv_app.ib_cb_audit` (режим аудита — все кнопки отключаются).
+- Поле `doctype_id` в `dw_table1` использует DDDW `dddw_subj_doctype_cert` для выбора типа документа.
+- Для проверки существующего договора используется `uf_check_agreement()` (проверка наличия действующего агентского договора в `d_agent_agreement_now_by_subj`).

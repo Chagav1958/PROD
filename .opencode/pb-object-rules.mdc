@@ -1,0 +1,150 @@
+﻿---
+description: Правила работы с объектами PowerBuilder — event-ы, функции, call super::, именование
+alwaysApply: true
+---
+
+# Правила работы с объектами PowerBuilder
+
+## 1. Оформление event-ов.
+
+Каждый создаваемый event обязан заканчиваться строкой `end event`.
+
+**Неправильно:**
+```powerbuilder
+event clicked;call super::clicked;
+// какой-то код
+```
+
+**Правильно:**
+```powerbuilder
+event clicked;call super::clicked;
+// какой-то код
+end event
+```
+
+Даже если event пустой, `end event` обязателен:
+```powerbuilder
+event ue_display;call super::ue_display;
+return success
+end event
+```
+
+---
+
+## 2. Разделение списков функций и event-ов
+
+Event-ы и функции должны быть строго разнесены по соответствующим спискам.
+
+- Создаваемые **event-ы** — вносятся только в список событий (forward prototypes с пометкой `event`)
+- Создаваемые **функции** — вносятся только в список функций (forward prototypes с пометкой `function`)
+
+**Неправильно (event в списке функций):**
+```powerbuilder
+forward prototypes
+public function integer uf_set_protect (boolean ab_enabled)
+event ue_apply_restrictions ( )
+end prototypes
+```
+
+Здесь `ue_apply_restrictions` должен быть в списке event-ов, не в списке функций.
+
+**Правильно:**
+```powerbuilder
+forward prototypes
+public function integer uf_set_protect (boolean ab_enabled)
+end prototypes
+
+forward events
+ue_apply_restrictions ( )
+end events
+```
+
+> **Примечание:** В текущем коде проекта, в силу особенностей PB Export формата, event-ы могут объявляться в общем forward prototypes. В таких случаях допустимо размещение event-ов в конце списка prototypes, отделённых от функций, но все они должны быть в блоке `forward prototypes`. Главное — не путать event с function при объявлении.
+
+---
+
+## 3. Вызов `call super::` и флаг "Extend Ancestor Script"
+
+Если в IDE (PowerBuilder Painter) для event-а **включён** флаг "Extend Ancestor Script", то НЕ нужно вставлять `call super::` первой строкой в коде event-а.
+
+- "Extend Ancestor Script" означает, что PB **автоматически** выполнит скрипт родительского объекта перед вашим кодом.
+- Добавление `call super::` вручную при включённом флаге приведёт к **двойному** выполнению родительского кода.
+
+**Когда писать `call super::` (флаг выключен):**
+```powerbuilder
+event itemchanged;call super::itemchanged;string ls_val
+// дополнительный код
+end event
+```
+
+**Когда НЕ писать `call super::` (флаг включён):**
+```powerbuilder
+event itemchanged;string ls_val
+// дополнительный код
+// super:: выполнится автоматически
+end event
+```
+
+### Как определить состояние флага в PB Export файле
+
+В формате экспорта PB (`*.srw`, `*.sru`) для каждого event-а может быть указан флаг:
+- `event itemchanged;call super::itemchanged;...` — `call super::` явно указан, флаг выключен
+- Отсутствие `call super::` в событии, где есть наследник — флаг включён
+
+При редактировании через инструменты (не через IDE) нужно явно указывать `call super::`, т.к. флаг "Extend Ancestor Script" не может быть установлен через текстовый экспорт.
+
+---
+
+## 4. Общие рекомендации
+
+### Именование
+- **Функции:** префикс `uf_` (user function), например `uf_set_protect`, `uf_check_agreement`
+- **События:** префикс `ue_` (user event), например `ue_apply_restrictions`, `ue_display`
+- **Переменные:** префиксы `i_` (instance), `li_` (local integer), `ls_` (local string), `ld_` (local decimal) и т.д.
+
+### Доступ к дочернему DataWindow (DDDW) через GetChild
+
+Для получения доступа к выпадающему списку DDDW используется функция `GetChild()`. Тип переменной — **`DataWindowChild`** (не `DataStoreChild` — этот тип не существует в PowerBuilder):
+
+```powerbuilder
+DataWindowChild ldsc_child
+IF dw_table1.GetChild('column_name', ldsc_child) = 1 THEN
+    ldsc_child.SetFilter("filter_condition")
+    ldsc_child.Filter()
+END IF
+```
+
+Пример — фильтрация списка типов документов для ЮЛ:
+```powerbuilder
+DataWindowChild ldsc_doctype
+IF dw_table1.GetChild('doctype_id', ldsc_doctype) = 1 THEN
+    ldsc_doctype.SetFilter("document_name <> 'Св-во о рег. физ.лица в кач. ИП'")
+    ldsc_doctype.Filter()
+END IF
+```
+
+### Проверка валидности объекта
+Перед обращением к динамически полученному окну/объекту всегда проверять через `IsValid()`:
+```powerbuilder
+w_entity_card lw_parent
+this.of_getparentwindow(ref lw_parent)
+IF IsValid(lw_parent) THEN
+    // безопасное обращение
+END IF
+```
+
+### Русскоязычные строки
+В PB Export файлах все русскоязычные строки необходимо кодировать в формате:
+```
+$$HEX<длина_в_байтах>$$<UTF-16LE hex>$$ENDHEX$$
+```
+Для кодирования используйте утилиту `ConvertTo-PBHex` (PowerShell):
+```powershell
+function ConvertTo-PBHex {
+    param([string]$text)
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($text)
+    $hex = -join ($bytes | ForEach-Object { "{0:x2}" -f $_ })
+    $len = $bytes.Length
+    "`$`$HEX$len`$`$$hex`$`$ENDHEX`$`$"
+}
+```

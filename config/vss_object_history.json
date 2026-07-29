@@ -1,0 +1,25 @@
+﻿{
+    "VSS: Who Is Using":  [
+                              "$/SRC125/gold/golden_sprw/d_ais_cat_product.srd",
+                              "$/SRC125"
+                          ],
+    "VSS: Check Status":  [
+                              "$/SRC125/gold/golden_sprw/d_ais_cat_product.srd",
+                              "$/SRC125/gold/golden_commission/w_ais_request_select.srw",
+                              "$/SRC125"
+                          ],
+    "VSS_Project_Shared":  [
+                               "$/SRC125/gold/golden_rule/dddw_dimension_dictionary.srd",
+                               "$/SRC125/gold/golden_sprw/w_sprw_all.srw",
+                               "$/SRC125/gold/golden_commission/w_ais_link_intermediary.srw",
+                               "$/SRC125/gold/golden_sprw/d_ais_cat_product.srd",
+                               "$/SRC125/gold/gold_common/d_entity_tariff_filter.srd",
+                               "$/SRC125"
+                           ],
+    "VssUser_Shared":  [
+                           "vchaga"
+                       ],
+    "PbtFile_Shared":  [
+                           "C:\\SRC125\\gold\\gold.pbt"
+                       ]
+}

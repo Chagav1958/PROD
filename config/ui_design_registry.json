@@ -1,0 +1,209 @@
+{
+    "_meta": {
+        "description": "Реестр дизайна UI-элементов проекта AIS Release Preparation",
+        "version": "1.0",
+        "updated": "2026-06-28",
+        "tiers": {
+            "APPL2": "Овальное окно (CornerRadius=60), AllowsTransparency, WindowStyle=None, двухслойный 3D-текст (#1A3A60 + белый смещённый слой), outerBorder (#33FFFFFF, CornerRadius=60, DropShadowEffect), titleBorder (#05FFFFFF, CornerRadius=10, Margin=(25,1,25,0), Padding=(20,2,20,0)), contentWrapper (#1A3A60, CornerRadius=46, Margin=(4,0,4,4)), mainBorder (белый, CornerRadius=42, Margin=4), кастомный title bar с кнопками ━ ▣ ✕ (двухслойный 3D-символ, градиент alpha 13, CornerRadius=6, Border #1A3A60 thickness=3)",
+            "APPL3": "APPL2 + resize (невидимая область в углу, 30×30), динамическая разметка (Grid * / Auto), сохранение/восстановление размера и позиции окна (fixshow_layout.json)",
+            "APPL": "MetroWindow + Apply-GrayWindowStyle (серый градиент + тень), Border CornerRadius=12, msgBorder CornerRadius=12, Apply-GlossyButtonStyle",
+            "Standard": "MetroWindow + Border CornerRadius=12, без Apply-GrayWindowStyle"
+        },
+        "design_params": {
+            "APPL2_CornerRadius": 60,
+            "APPL2_Color": "#1A3A60",
+            "APPL2_ButtonAlpha": 95,
+            "APPL2_TitleBarHeight": 40,
+            "APPL2_ProgressTop": "#1A3A60",
+            "APPL2_ProgressBottom": "#2B6CB0",
+            "APPL2_ProgressStepTop": "#0F2440",
+            "APPL2_ProgressStepBottom": "#1A5276",
+            "APPL2_ProgressCornerRadius": 5,
+            "APPL2_TitleButtonSymbols": "━ ▣ ✕",
+            "APPL2_TitleButtonAlpha": 13,
+            "APPL2_TitleButtonCornerRadius": 6,
+            "APPL2_TitleButtonBorderColor": "#1A3A60",
+            "APPL2_TitleButtonBorderThickness": 3,
+            "APPL2_TitleButtonMargin": "2,0",
+            "APPL2_TitleButtonSize": "28x28",
+            "APPL2_OuterBorderColor": "#33FFFFFF",
+            "APPL3_ResizeAreaSize": 30,
+            "APPL3_ResizeAreaColor": "#05FFFFFF",
+            "APPL3_LayoutMinWidth": 400,
+            "APPL3_LayoutMinHeight": 300,
+            "APPL3_LayoutFile": "config/fixshow_layout.json",
+            "APPL_CornerRadius": 12,
+            "APPL_GlossyTop": "#2A5080",
+            "APPL_GlossyBottom": "#87CEEB",
+            "APPL_GrayTop": "#808080",
+            "APPL_GrayCenter": "#D0D0D0",
+            "Standard_CornerRadius": 12
+        }
+    },
+    "APPL2": [
+        {
+            "name": "Главное окно (МОРДА)",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 1341,
+            "type": "XAML <Window>",
+            "function": null,
+            "features": ["AllowsTransparency=True", "WindowStyle=None", "CornerRadius=60", "APPL2 title bar", "APPL2 buttons", "APPL2 progress bars (Apply-GlossyProgressStyle)"],
+            "scrollbars": ["DataGrid in Settings", "TxtLog ScrollViewer"]
+        },
+        {
+            "name": "ОТЕСТ (тестовый диалог)",
+            "file": "scripts\\Show-TestMsg.ps1",
+            "line_start": 18,
+            "type": "New-Object Windows.Window",
+            "function": null,
+            "features": ["AllowsTransparency=$true", "WindowStyle=None", "CornerRadius=60", "APPL2 title bar", "APPL2 buttons", "APPL2 progress bars (Apply-GlossyProgressStyle)"]
+        },
+        {
+            "name": "СОКР (сокращения)",
+            "file": "scripts\\Show-Abbreviations.ps1",
+            "line_start": 164,
+            "type": "New-Object Windows.Window",
+            "function": null,
+            "features": ["AllowsTransparency=$true", "WindowStyle=None", "CornerRadius=60", "APPL2 title bar", "APPL2 buttons"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Settings History (журнал настроек)",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 3616,
+            "type": "New-Object Windows.Window (inline)",
+            "function": "BtnSettingsHistory.Add_Click",
+            "features": ["AllowsTransparency=$true", "WindowStyle=None", "CornerRadius=60", "APPL2 title bar", "APPL2 buttons"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto HorizontalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Show-OpStatus (статусы операций)",
+            "file": "scripts\\Show-OpStatus.ps1",
+            "line_start": 60,
+            "type": "New-Object Windows.Window",
+            "function": null,
+            "features": ["AllowsTransparency=$true", "WindowStyle=None", "CornerRadius=60", "APPL2 title bar", "APPL2 buttons", "Apply-GlossyButtonStyle for FIX/EDIT/Save/Restore"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Show-Prompts (архив промптов)",
+            "file": "scripts\\Show-Prompts.ps1",
+            "line_start": 73,
+            "function": null,
+            "features": ["AllowsTransparency=$true", "WindowStyle=None", "CornerRadius=60", "APPL2 title bar", "APPL2 buttons"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto HorizontalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "ОКНО_СТАНДАРТ_1 (эталон APPL2)",
+            "file": "scripts\\Show-Appl2Standard.ps1",
+            "line_start": 43,
+            "type": "New-Object Windows.Window",
+            "function": null,
+            "features": ["AllowsTransparency=$true", "WindowStyle=None", "CornerRadius=60", "outerBorder #33FFFFFF", "BorderBrush #1A3A60", "DropShadowEffect", "titleBorder #05FFFFFF CornerRadius=10", "двухслойный 3D-текст", "Add-TitleButton ━ ▣ ✕", "ControlTemplate CornerRadius=6 alpha=13", "contentWrapper #1A3A60 CornerRadius=46", "mainBorder белый CornerRadius=42"],
+            "notes": "Шаблон для создания новых APPL2-окон. Официальный эталон APPL2-дизайна. Команда: СТАНДАРТ1"
+        }
+    ],
+    "APPL3": [
+        {
+            "name": "Show-OpStatus (статусы операций)",
+            "file": "scripts\\Show-OpStatus.ps1",
+            "line_start": 60,
+            "type": "New-Object Windows.Window",
+            "function": null,
+            "features": ["APPL2 base (AllowsTransparency, WindowStyle=None, CornerRadius=60, APPL2 title bar/buttons, Apply-GlossyButtonStyle)", "resize via invisible 30x30 bottom-right area (Border MouseDown/Move/Up)", "dynamic Grid layout (Row * / Auto) — DataGrid заполняет, кнопки внизу", "save/restore window size+position in config/fixshow_layout.json"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto"]
+        }
+    ],
+    "APPL": [
+        {
+            "name": "Show-ResultPopup",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 405,
+            "function": "Show-ResultPopup",
+            "features": ["Apply-GrayWindowStyle", "Border CornerRadius=12", "msgBorder CornerRadius=12", "Apply-GlossyButtonStyle"],
+            "scrollbars": ["ScrollViewer for result text (MaxHeight=300)", "ScrollViewer for table (MaxHeight=400)"]
+        },
+        {
+            "name": "Show-ValidationErrorWindow",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 524,
+            "function": "Show-ValidationErrorWindow",
+            "features": ["Apply-GrayWindowStyle", "Border CornerRadius=12", "msgBorder CornerRadius=12", "Apply-GlossyButtonStyle"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Show-VssStatusTableWindow",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 621,
+            "function": "Show-VssStatusTableWindow",
+            "features": ["Apply-GrayWindowStyle", "Border CornerRadius=12", "msgBorder CornerRadius=12", "Apply-GlossyButtonStyle"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto HorizontalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Show-PbObjectTableWindow",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 729,
+            "function": "Show-PbObjectTableWindow",
+            "features": ["Apply-GrayWindowStyle", "Border CornerRadius=12", "msgBorder CornerRadius=12", "Apply-GlossyButtonStyle"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto HorizontalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Show-ProdCompareResult",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 808,
+            "function": "Show-ProdCompareResult",
+            "features": ["Apply-GrayWindowStyle", "Border CornerRadius=12", "msgBorder CornerRadius=12", "Apply-GlossyButtonStyle"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto HorizontalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Show-DiffSelectWindow",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 912,
+            "function": "Show-DiffSelectWindow",
+            "features": ["Apply-GrayWindowStyle", "Border CornerRadius=12", "msgBorder CornerRadius=12", "Apply-GlossyButtonStyle"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto HorizontalScrollBarVisibility=Auto"]
+        },
+        {
+            "name": "Show-PbCompareTableWindow",
+            "file": "bin\\Prod-GUI.ps1",
+            "line_start": 1117,
+            "function": "Show-PbCompareTableWindow",
+            "features": ["Apply-GrayWindowStyle", "Border CornerRadius=12", "msgBorder CornerRadius=12", "Apply-GlossyButtonStyle"],
+            "scrollbars": ["DataGrid VerticalScrollBarVisibility=Auto HorizontalScrollBarVisibility=Auto"]
+        }
+    ],
+    "Standard": [
+        {
+            "name": "Save-Snapshot (подтверждение)",
+            "file": "scripts\\Save-Snapshot.ps1",
+            "line_start": 24,
+            "function": null,
+            "features": ["MetroWindow", "Apply-GrayWindowStyle", "Border CornerRadius=12"],
+            "notes": "Гибрид Standard + APPL (есть GrayWindowStyle)"
+        },
+        {
+            "name": "Save-Snapshot (загрузка)",
+            "file": "scripts\\Save-Snapshot.ps1",
+            "line_start": 87,
+            "function": null,
+            "features": ["MetroWindow", "Apply-GrayWindowStyle", "Border CornerRadius=12"],
+            "notes": "Гибрид Standard + APPL (есть GrayWindowStyle)"
+        },
+        {
+            "name": "VSS: выбор объекта",
+            "file": "scripts\\VSS-History-Show.ps1",
+            "line_start": 113,
+            "function": null,
+            "features": ["MetroWindow", "Border CornerRadius=12"],
+            "notes": "Без GrayWindowStyle"
+        },
+        {
+            "name": "VSS: история",
+            "file": "scripts\\VSS-History-Show.ps1",
+            "line_start": 194,
+            "function": null,
+            "features": ["MetroWindow", "Border CornerRadius=12"],
+            "notes": "Без GrayWindowStyle"
+        }
+    ]
+}

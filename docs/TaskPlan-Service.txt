@@ -1,0 +1,192 @@
+======================================================================
+  СЕРВИС УПРАВЛЕНИЯ ПЛАНОМ ОБЪЁМНЫХ ЗАДАЧ (TASKPLAN SERVICE)
+======================================================================
+  Версия: 1.0
+  Дата: 19.07.2026
+  Расположение: C:\AIS\AI\Prod\scripts\
+======================================================================
+
+СОДЕРЖАНИЕ
+  1. Назначение
+  2. Состав сервиса
+  3. Быстрый старт
+  4. TaskPlan-Tracker.ps1 — трекер общего плана
+     4.1. Параметры
+     4.2. Действия (Action)
+     4.3. Примеры
+  5. TaskPlan-PrepareBrief.ps1 — бриф для дорогой LLM
+     5.1. Параметры
+     5.2. Примеры
+  6. Show-TaskPlan.ps1 — ДО-индикатор
+     6.1. Параметры
+     6.2. Примеры
+  7. Структура файлов задачи
+  8. Схема работы (полный цикл)
+  9. Известные ограничения PS 5.1
+
+
+1. НАЗНАЧЕНИЕ
+======================================================================
+Сервис предназначен для решения объёмных задач с использованием
+недорогих LLM. Позволяет:
+  - Создать общий план задачи с этапами
+  - Отслеживать прогресс выполнения
+  - Откладывать сложные подзадачи на дорогую LLM
+  - Формировать бриф для дорогой LLM с минимальным контекстом
+  - Визуализировать состояние через ДО-индикатор
+
+Поддерживает стратегию "дешёвая LLM делает что может, дорогая —
+только то, что не под силу дешёвой".
+
+
+2. СОСТАВ СЕРВИСА
+======================================================================
+  TaskPlan-Tracker.ps1       — Трекер общего плана (создание/обновление)
+  TaskPlan-PrepareBrief.ps1  — Формирование брифа для дорогой LLM
+  Show-TaskPlan.ps1          — ДО-индикатор (мониторинг прогресса)
+
+Все скрипты находятся в C:\AIS\AI\Prod\scripts\
+
+
+3. БЫСТРЫЙ СТАРТ
+======================================================================
+  # 1. Создать план задачи
+  & .\scripts\TaskPlan-Tracker.ps1 -Action new -TaskName "MYTASK" `
+      -Goal "Описание цели" -Stages "Этап 1|llm-A","Этап 2|llm-B"
+
+  # 2. Отметить этап выполненным
+  & .\scripts\TaskPlan-Tracker.ps1 -Action set -TaskName "MYTASK" `
+      -StageNum 1 -Status done -DoneBy "llm-A"
+
+  # 3. Отложить этап на дорогую LLM
+  & .\scripts\TaskPlan-Tracker.ps1 -Action set -TaskName "MYTASK" `
+      -StageNum 2 -Status defer -DoneBy "нужна мощная LLM: причина"
+
+  # 4. Сформировать бриф для дорогой LLM
+  & .\scripts\TaskPlan-PrepareBrief.ps1 -TaskName "MYTASK" -StageNum 2 `
+      -Context "дополнительный контекст" -Objects "obj1.sql","obj2.sru"
+
+  # 5. Показать ДО-индикатор (один раз)
+  & .\scripts\Show-TaskPlan.ps1 -TaskName "MYTASK" -Once
+
+
+4. TaskPlan-Tracker.ps1 — ТРЕКЕР ОБЩЕГО ПЛАНА
+======================================================================
+4.1. Параметры:
+  -Action     [new|add|set|show|next|sync]  Действие (обязательный)
+  -TaskName   string                         Имя задачи (папка)
+  -Stages     string[]                       Массив этапов
+  -StageNum   int                            Номер этапа (1-based)
+  -Status     [todo|wip|done|defer]          Статус этапа
+  -DoneBy     string                         Кто/какая LLM выполнил
+  -Goal       string                         Цель задачи
+  -ReleaseRoot string                        Корень задач (по умолч.
+                                             C:\AIS\1 Release)
+  -Force      switch                         Перезаписать при new
+
+4.2. Действия (Action):
+  new   — создать новый план (требует -Stages, -Goal; -Force если есть)
+  add   — добавить этапы к существующему плану
+  set   — изменить статус этапа (требует -StageNum, -Status)
+  show  — показать содержимое ПЛАН_РЕАЛИЗАЦИИ.txt
+  next  — показать следующий незавершённый этап
+  sync  — пересинхронизировать plan_state.json из txt
+
+4.3. Примеры:
+  # Создать план
+  & .\scripts\TaskPlan-Tracker.ps1 -Action new -TaskName "SYBASE-12345" `
+      -Goal "Реализовать отчёт по продажам" `
+      -Stages "Анализ требований|haiku","Разработка|sonnet",`
+              "Рефакторинг ядра|opus","Тестирование|haiku"
+
+  # Отметить этап 1 как выполненный
+  & .\scripts\TaskPlan-Tracker.ps1 -Action set -TaskName "SYBASE-12345" `
+      -StageNum 1 -Status done -DoneBy "haiku"
+
+  # Отложить этап 3 на дорогую LLM
+  & .\scripts\TaskPlan-Tracker.ps1 -Action set -TaskName "SYBASE-12345" `
+      -StageNum 3 -Status defer -DoneBy "глубокий рефакторинг"
+
+  # Показать следующий этап
+  & .\scripts\TaskPlan-Tracker.ps1 -Action next -TaskName "SYBASE-12345"
+
+
+5. TaskPlan-PrepareBrief.ps1 — БРИФ ДЛЯ ДОРОГОЙ LLM
+======================================================================
+5.1. Параметры:
+  -TaskName     string   Имя задачи (обязательный)
+  -StageNum     int      Номер [!]-этапа (по умолч. первый defer)
+  -SubName      string   Имя подзадачи (по умолч. <TaskName>_SUB_<n>)
+  -Context      string   Дополнительный контекст для дорогой LLM
+  -Objects      string[] Объекты PB/SQL для выгрузки фрагментов
+  -ReleaseRoot  string   Корень задач
+
+5.2. Примеры:
+  # Бриф с контекстом
+  & .\scripts\TaskPlan-PrepareBrief.ps1 -TaskName "SYBASE-12345" `
+      -StageNum 3 -Context "view v_rule_dim_dictionary + rule_dimension"
+
+  # Бриф с объектами
+  & .\scripts\TaskPlan-PrepareBrief.ps1 -TaskName "SYBASE-12345" `
+      -StageNum 3 -Objects "usp_report.sql","u_report.sru"
+
+
+6. Show-TaskPlan.ps1 — ДО-ИНДИКАТОР
+======================================================================
+6.1. Параметры:
+  -TaskName     string   Имя задачи (обязательный)
+  -Once         switch   Показать один раз (без цикла мониторинга)
+  -ReleaseRoot  string   Корень задач
+
+6.2. Примеры:
+  # Показать один раз
+  & .\scripts\Show-TaskPlan.ps1 -TaskName "SYBASE-12345" -Once
+
+  # Запустить мониторинг (автообновление каждые 800 мс)
+  & .\scripts\Show-TaskPlan.ps1 -TaskName "SYBASE-12345"
+
+
+7. СТРУКТУРА ФАЙЛОВ ЗАДАЧИ
+======================================================================
+  <ReleaseRoot>\<TaskName>\                   — папка задачи
+  <ReleaseRoot>\<TaskName>\Describe\           — служебные файлы
+  <ReleaseRoot>\<TaskName>\Describe\
+    ПЛАН_РЕАЛИЗАЦИИ.txt                        — общий план
+    plan_state.json                            — зеркало для ДО
+    <TaskName>_SUB_<n>_бриф.txt                — бриф для дорогой LLM
+    <объект>_анализ.txt                        — анализ объекта
+    <объект>_изменения.txt                     — описание изменений
+
+  Git_YYYY_MM_DD\                              — оригиналы (SQL/PB)
+  Test_YYYY_MM_DD\                             — изменённые объекты
+  Ready_YYYY_MM_DD\                            — готовые к выгрузке
+
+
+8. СХЕМА РАБОТЫ (ПОЛНЫЙ ЦИКЛ)
+======================================================================
+  1. TASK <имя>                  — создать папку задачи
+  2. new + Stages + Goal         — создать общий план
+  3. set + done / wip / defer    — отмечать прогресс
+  4. PrepareBrief + StageNum     — подготовить бриф для дорогой LLM
+  5. (запустить дорогую LLM)     — решить подзадачу
+  6. set + done                  — отметить этап выполненным
+  7. next                        — узнать следующий этап
+  8. Show-TaskPlan -Once         — проверить состояние
+  9. Повторять шаги 3-8          — до завершения всех этапов
+
+
+9. ИЗВЕСТНЫЕ ОГРАНИЧЕНИЯ PS 5.1
+======================================================================
+  - Where-Object при 1 результате возвращает объект, а не массив.
+    Всегда используйте @(Where-Object {...}).Count
+  - ConvertFrom-Json не поддерживает -Depth (только PS 6+).
+    Используется JavaScriptSerializer из System.Web.Extensions.
+  - Join-Path принимает только 2 пути.
+    Используйте Join-Path (Join-Path $a $b) $c.
+  - Для чтения plan_state.json используется JavaScriptSerializer,
+    возвращающий Dictionary (не PSCustomObject).
+    Доступ к полям: $dict['key'], а не $obj.key.
+
+======================================================================
+  (C) 2026 AIS Project
+======================================================================

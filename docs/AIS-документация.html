@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>AIS — документация проекта</title>
+<style>
+body { font-family: Segoe UI, Arial, sans-serif; max-width: 960px; margin: 0 auto; padding: 20px; background: #f5f7fa; color: #333; }
+h1 { color: #6B2D8B; border-bottom: 3px solid #3182CE; padding-bottom: 10px; }
+h2 { color: #3182CE; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 30px; }
+h3 { color: #4A5568; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; font-size: 14px; }
+th { background: #3182CE; color: white; }
+tr:nth-child(even) { background: #f9f9f9; }
+.toc { background: white; border: 1px solid #ddd; padding: 15px 25px; border-radius: 6px; margin: 20px 0; }
+.toc a { text-decoration: none; color: #3182CE; }
+.toc a:hover { text-decoration: underline; }
+.toc ul { padding-left: 20px; }
+.abbr-table td:first-child { font-weight: bold; white-space: nowrap; }
+.note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px 15px; margin: 10px 0; }
+.bug { background: #f8d7da; border-left: 4px solid #dc3545; padding: 10px 15px; margin: 10px 0; }
+code { background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+@media print { body { font-size: 12px; } h1 { font-size: 20px; } h2 { font-size: 16px; } }
+</style>
+</head>
+<body>
+
+<h1>АИС &laquo;Золото&raquo; — документация проекта</h1>
+<p>Версия от 16 июля 2026 г. Автоматически сгенерировано из каталога <code>ais-catalog</code>.</p>
+
+<!-- ==================== ОГЛАВЛЕНИЕ ==================== -->
+<div class="toc">
+<h2>Оглавление</h2>
+<ol>
+  <li><a href="#s1">Общие сведения о проекте</a></li>
+  <li><a href="#s2">Архитектура</a></li>
+  <li><a href="#s3">SQL-объекты</a></li>
+  <li><a href="#s4">PowerBuilder-объекты</a></li>
+  <li><a href="#s5">Бизнес-процессы</a></li>
+  <li><a href="#s6">MCP-серверы</a></li>
+  <li><a href="#s7">Команды OpenCode</a></li>
+  <li><a href="#s8">Кодировка файлов</a></li>
+  <li><a href="#s9">Preflight (проверки перед действием)</a></li>
+  <li><a href="#s10">Ограничения PS 5.1</a></li>
+  <li><a href="#s11">Ключевые баги</a></li>
+  <li><a href="#abbr">Сокращения</a></li>
+</ol>
+</div>
+
+<!-- ==================== 1. ОБЩИЕ СВЕДЕНИЯ ==================== -->
+<h2 id="s1">1. Общие сведения о проекте</h2>
+<table>
+  <tr><th>Характеристика</th><th>Значение</th></tr>
+  <tr><td>Название</td><td>АИС (Автоматизированная Информационная Система)</td></tr>
+  <tr><td>База данных</td><td><code>golden</code> (основная), <code>mis</code> (вспомогательная)</td></tr>
+  <tr><td>СУБД</td><td>Sybase Adaptive Server Enterprise (ASE) 15.5</td></tr>
+  <tr><td>Среда разработки</td><td>PowerBuilder 12.5.2</td></tr>
+  <tr><td>Сервер разработки (Current)</td><td><code>dev_golden</code></td></tr>
+  <tr><td>Сервер продуктивный (Main)</td><td><code>galaxy</code></td></tr>
+  <tr><td>Контроль версий</td><td>Visual SourceSafe (VSS) на <code>ren-msksf01</code>, проект <code>$/SRC125</code></td></tr>
+  <tr><td>Рабочая папка</td><td><code>C:\AIS\AI\Prod\</code></td></tr>
+  <tr><td>Эталонный код (только чтение)</td><td><code>C:\SRC125\gold</code> (PB_Main)</td></tr>
+</table>
+
+<!-- ==================== 2. АРХИТЕКТУРА ==================== -->
+<h2 id="s2">2. Архитектура</h2>
+
+<h3>2.1. Серверы и развёртывание</h3>
+<table>
+  <tr><th>Сервер</th><th>Назначение</th><th>БД</th></tr>
+  <tr><td><code>dev_golden</code></td><td>Разработка (Current)</td><td>golden</td></tr>
+  <tr><td><code>galaxy</code></td><td>Продуктив / пред-релиз (Main)</td><td>golden</td></tr>
+</table>
+
+<h3>2.2. Структура папок</h3>
+<table>
+  <tr><th>Папка</th><th>Назначение</th></tr>
+  <tr><td><code>BD\dev_golden\golden\</code></td><td>SQL-дампы Current (Procedure, Functions, Triggers, Tables, Views, Indexes, PK, FK, Grants)</td></tr>
+  <tr><td><code>BD\galaxy\golden\</code></td><td>SQL-дампы Main</td></tr>
+  <tr><td><code>PB_Current\</code></td><td>Экспорт PB-объектов из Current (32 библиотеки)</td></tr>
+  <tr><td><code>PB_Main\</code></td><td>PB_Main (<code>C:\SRC125\gold</code>)</td></tr>
+  <tr><td><code>bin\</code></td><td>Исполняемые файлы (SQL_exp_param.bat, SQL_exp_single.bat, Prod-GUI.ps1)</td></tr>
+  <tr><td><code>scripts\</code></td><td>Скрипты PS (экстракторы, сравнение, GUI)</td></tr>
+  <tr><td><code>config\</code></td><td>Конфигурация (<code>config.json</code>)</td></tr>
+  <tr><td><code>docs\</code></td><td>Документация</td></tr>
+  <tr><td><code>.opencode\</code></td><td>Правила для AI-модели (.mdc, preflight.mdc)</td></tr>
+  <tr><td><code>rules\</code></td><td>Правила проекта (changelog.md, abbreviations.md)</td></tr>
+</table>
+
+<h3>2.3. Поток задач (TASK)</h3>
+<ol>
+  <li><strong>Git_YYYY_MM_DD</strong> — оригиналы из PB_Main и BD/dev_golden (до изменений)</li>
+  <li><strong>Test_YYYY_MM_DD</strong> — изменённые объекты (сразу после разработки передаются тестировщикам)</li>
+  <li><strong>Ready_YYYY_MM_DD</strong> — готовые объекты (<strong>только по команде</strong> после тестирования)</li>
+  <li><strong>Describe\&lt;объект&gt;.txt</strong> — описание изменений</li>
+</ol>
+
+<!-- ==================== 3. SQL-ОБЪЕКТЫ ==================== -->
+<h2 id="s3">3. SQL-объекты</h2>
+<p>Всего: <strong>2229</strong> объектов в БД <code>golden</code> на сервере <code>dev_golden</code>.</p>
+
+<table>
+  <tr><th>Тип</th><th>Количество</th><th>Основные префиксы</th></tr>
+  <tr><td>Процедуры</td><td>1039</td><td><code>usp_</code> (868), <code>web_</code> (77), <code>tmp_</code> (22)</td></tr>
+  <tr><td>Функции</td><td>157</td><td><code>fn_</code>, <code>all_</code>, <code>Check</code></td></tr>
+  <tr><td>Триггеры</td><td>118</td><td><code>td_</code>, <code>tdiu_</code></td></tr>
+  <tr><td>Таблицы</td><td>820</td><td><code>ais_</code>, <code>oss_</code>, <code>ag_</code>, <code>bill_</code>, <code>cb_</code>, <code>chain_</code></td></tr>
+  <tr><td>Представления</td><td>96</td><td><code>v_</code></td></tr>
+</table>
+
+<h3>3.1. Ключевые процедуры по группам</h3>
+<table>
+  <tr><th>Группа</th><th>Кол-во</th><th>Назначение</th><th>Ключевые объекты</th></tr>
+  <tr><td><code>usp_get</code></td><td>65</td><td>Получение данных</td><td>usp_get_limits, usp_get_agreement_ins, usp_get_all_rules</td></tr>
+  <tr><td><code>usp_create</code></td><td>56</td><td>Создание объектов</td><td>usp_create_commission, usp_create_bill, usp_create_policy_com</td></tr>
+  <tr><td><code>usp_entity</code></td><td>43</td><td>Работа с юрлицами</td><td>usp_entity_list_ex, usp_entity_update, usp_entity_basis_report</td></tr>
+  <tr><td><code>usp_load</code></td><td>57</td><td>Загрузка данных</td><td>usp_load_oss_xml, usp_load_ais_basis</td></tr>
+  <tr><td><code>usp_add</code></td><td>50</td><td>Добавление</td><td>usp_add_sync_message, usp_add_transaction, usp_add_report_to_reestr</td></tr>
+  <tr><td><code>usp_ins</code></td><td>40</td><td>Вставка</td><td>usp_ins_ais_boss_payments</td></tr>
+  <tr><td><code>usp_report</code></td><td>25</td><td>Отчёты</td><td>usp_report_list_multi_m</td></tr>
+  <tr><td><code>usp_bill</code></td><td>27</td><td>Счета/биллинг</td><td>usp_bill_policy_select, usp_bill_policy_info</td></tr>
+  <tr><td><code>usp_agent</code></td><td>25</td><td>Агенты</td><td>usp_agent_policy_list, usp_agent_commission_ex</td></tr>
+  <tr><td><code>usp_generate</code></td><td>28</td><td>Генерация</td><td>usp_generate_report_2020, usp_generate_entity_basis</td></tr>
+</table>
+
+<h3>3.2. Топ таблиц по использованию</h3>
+<table>
+  <tr><th>Таблица</th><th>Ссылок из процедур</th></tr>
+  <tr><td><code>ais_entity_data</code></td><td>144</td></tr>
+  <tr><td><code>ais_entity_basis</code></td><td>106</td></tr>
+  <tr><td><code>ais_entity</code></td><td>67</td></tr>
+  <tr><td><code>ais_commission</code></td><td>63</td></tr>
+  <tr><td><code>oss_agreement</code></td><td>54</td></tr>
+  <tr><td><code>ais_report</code></td><td>53</td></tr>
+</table>
+
+<h3>3.3. Инструменты экспорта SQL</h3>
+<table>
+  <tr><th>Файл</th><th>Назначение</th></tr>
+  <tr><td><code>bin\SQL_exp_param.bat</code></td><td>Полный экспорт (все типы или один тип)</td></tr>
+  <tr><td><code>bin\SQL_exp_single.bat</code></td><td>Экспорт одного объекта по типу и имени</td></tr>
+</table>
+
+<!-- ==================== 4. PB-ОБЪЕКТЫ ==================== -->
+<h2 id="s4">4. PowerBuilder-объекты</h2>
+<p>Всего: <strong>2606</strong> объектов в 32 библиотеках.</p>
+
+<table>
+  <tr><th>Тип</th><th>Расширение</th><th>Количество</th></tr>
+  <tr><td>DataWindow</td><td><code>.srd</code></td><td>1361</td></tr>
+  <tr><td>User Object</td><td><code>.sru</code></td><td>695</td></tr>
+  <tr><td>Window</td><td><code>.srw</code></td><td>394</td></tr>
+  <tr><td>Function</td><td><code>.srf</code></td><td>90</td></tr>
+  <tr><td>Proxy</td><td><code>.srp</code></td><td>21</td></tr>
+  <tr><td>Structure</td><td><code>.srs</code></td><td>20</td></tr>
+  <tr><td>Menu</td><td><code>.srm</code></td><td>19</td></tr>
+  <tr><td>Application</td><td><code>.srj</code></td><td>5</td></tr>
+  <tr><td>Ancestor</td><td><code>.sra</code></td><td>1</td></tr>
+</table>
+
+<h3>4.1. Ключевые библиотеки</h3>
+<table>
+  <tr><th>Библиотека</th><th>Файлов</th><th>Назначение</th></tr>
+  <tr><td><code>golden_sprw</code></td><td>404</td><td>Окна</td></tr>
+  <tr><td><code>golden_subject</code></td><td>324</td><td>Субъекты (юрлица, посредники)</td></tr>
+  <tr><td><code>golden_commission</code></td><td>304</td><td>Комиссия</td></tr>
+  <tr><td><code>gold_common</code></td><td>274</td><td>Общие компоненты</td></tr>
+  <tr><td><code>golden_rule</code></td><td>151</td><td>Правила и тарифы</td></tr>
+  <tr><td><code>golden_report</code></td><td>90</td><td>Отчёты</td></tr>
+  <tr><td><code>pfe5003</code></td><td>113</td><td>PFC-расширение 5003</td></tr>
+  <tr><td><code>golden_bill</code></td><td>57</td><td>Счета</td></tr>
+  <tr><td><code>golden_motivation</code></td><td>52</td><td>Мотивационные акты</td></tr>
+</table>
+
+<h3>4.2. Ключевые окна (User Objects / Windows)</h3>
+<table>
+  <tr><th>Объект</th><th>Тип</th><th>Библиотека</th><th>Назначение</th></tr>
+  <tr><td><code>u_report_list</code></td><td>.sru</td><td>golden_commission</td><td>Список отчётов</td></tr>
+  <tr><td><code>w_report_list</code></td><td>.srw</td><td>golden_sprw</td><td>Окно списка отчётов</td></tr>
+  <tr><td><code>w_entity_card</code></td><td>.srw</td><td>golden_subject</td><td>Карточка юрлица</td></tr>
+  <tr><td><code>w_generate_report</code></td><td>.srw</td><td>golden_commission</td><td>Генерация отчёта</td></tr>
+  <tr><td><code>nvo_commission</code></td><td>.sru</td><td>golden_commission</td><td>Non-visual object комиссии</td></tr>
+  <tr><td><code>nvo_report</code></td><td>.sru</td><td>golden_commission</td><td>Non-visual object отчёта</td></tr>
+</table>
+
+<!-- ==================== 5. БИЗНЕС-ПРОЦЕССЫ ==================== -->
+<h2 id="s5">5. Бизнес-процессы</h2>
+
+<table>
+  <tr><th>#</th><th>Процесс</th><th>Процедуры</th><th>Таблицы</th></tr>
+  <tr><td>1</td><td><strong>Комиссия</strong></td><td><code>usp_commission_select</code>, <code>usp_create_commission</code>, <code>usp_agent_commission</code></td><td>ais_commission, ais_entity_basis, ais_policy</td></tr>
+  <tr><td>2</td><td><strong>Агентский отчёт</strong></td><td><code>usp_agent_ball_report</code>, <code>usp_agent_policy_list</code></td><td>ag_contract, ag_contract_policy</td></tr>
+  <tr><td>3</td><td><strong>Счёт / оплата</strong></td><td><code>usp_bill_policy_select</code>, <code>usp_boss_ag_integration</code>, <code>usp_create_bill</code></td><td>bill, bill_detail, oss_agreement</td></tr>
+  <tr><td>4</td><td><strong>Создание проводок</strong></td><td><code>usp_create_transaction</code>, <code>usp_create_policy_com</code></td><td>ais_transaction, ais_policy</td></tr>
+  <tr><td>5</td><td><strong>Загрузка данных</strong></td><td><code>usp_load_oss_xml</code>, <code>usp_load_ais_basis</code></td><td>oss_gb_message, ais_entity_basis</td></tr>
+  <tr><td>6</td><td><strong>Генерация отчётов</strong></td><td><code>usp_generate_report_2020</code>, <code>usp_generate_entity_basis</code></td><td>ais_report, ais_entity</td></tr>
+  <tr><td>7</td><td><strong>Проверки / валидация</strong></td><td><code>usp_check_role</code>, <code>usp_check_chain_tariff</code></td><td>ais_entity, chain</td></tr>
+  <tr><td>8</td><td><strong>Синхронизация</strong></td><td><code>aissync_commit_change</code>, <code>usp_add_sync_message_kv</code></td><td>ais_vs_businessrules, sync_message</td></tr>
+</table>
+
+<!-- ==================== 6. MCP-СЕРВЕРЫ ==================== -->
+<h2 id="s6">6. MCP-серверы</h2>
+<table>
+  <tr><th>Сервер</th><th>Назначение</th><th>Запись</th></tr>
+  <tr><td><code>ais-catalog</code></td><td>Знания о проекте: объекты, зависимости, бизнес-правила, сленг</td><td>✅ (save_knowledge)</td></tr>
+  <tr><td><code>opencode-mcp</code></td><td>Знания об OpenCode: PS-скрипты, настройка, MCP, ошибки</td><td>✅ (save_knowledge)</td></tr>
+  <tr><td><code>rules-mcp</code></td><td>Правила проекта: кодировки, баги, сокращения, preflight</td><td>❌ (только чтение)</td></tr>
+  <tr><td><code>sybase-docs</code></td><td>Документация Sybase ASE/PB, валидация кода</td><td>❌ (только чтение)</td></tr>
+  <tr><td><code>atlassian</code></td><td>Jira/Confluence (только чтение)</td><td>❌ (только чтение)</td></tr>
+</table>
+
+<!-- ==================== 7. КОМАНДЫ ==================== -->
+<h2 id="s7">7. Команды OpenCode</h2>
+<table>
+  <tr><th>Команда</th><th>Действие</th></tr>
+  <tr><td><strong>RR</strong> / <strong>РР</strong></td><td>Принудительно русский</td></tr>
+  <tr><td><strong>OUT</strong> / <strong>ОБР</strong></td><td>Анализ <code>temp\last_output.log</code></td></tr>
+  <tr><td><strong>ОБРВСЕ</strong></td><td>Анализ ошибки → исправить → проверить</td></tr>
+  <tr><td><strong>СОХР</strong></td><td>Архив проекта (только по команде!)</td></tr>
+  <tr><td><strong>TASK</strong> &lt;имя&gt;</td><td>Начать задачу</td></tr>
+  <tr><td><strong>ОО</strong></td><td>Продолжить / проверить <code>todowrite</code></td></tr>
+  <tr><td><strong>ОТЧЁТ</strong></td><td>Открыть отчёт по задаче</td></tr>
+  <tr><td><strong>DLLM</strong></td><td>Список/статус моделей</td></tr>
+  <tr><td><strong>КРЗ</strong></td><td>Исправить кракозябры</td></tr>
+  <tr><td><strong>СОКР</strong></td><td>Сокращения проекта</td></tr>
+  <tr><td><strong>ЦИКЛ N</strong></td><td>Автоисправление ОП N</td></tr>
+  <tr><td><strong>ЗАПОМНИ</strong></td><td>Запомнить правило (статическое → файл, динамическое → MCP)</td></tr>
+</table>
+
+<!-- ==================== 8. КОДИРОВКА ==================== -->
+<h2 id="s8">8. Кодировка файлов</h2>
+<table>
+  <tr><th>Тип файла</th><th>Кодировка</th><th>BOM</th><th>Последствия ошибки</th></tr>
+  <tr><td><code>.ps1</code></td><td>UTF-8</td><td><strong>с BOM</strong></td><td>PS 5.1 читает как CP1251 → кракозябры</td></tr>
+  <tr><td><code>.json</code> / <code>.jsonc</code></td><td>UTF-8</td><td><strong>без BOM</strong></td><td>OpenCode не грузит плагины (Bug-044)</td></tr>
+  <tr><td><code>.sql</code></td><td>Windows-1251</td><td>нет</td><td>—</td></tr>
+  <tr><td><code>.bat</code></td><td>Windows-1251</td><td>нет</td><td>—</td></tr>
+  <tr><td><code>.md</code></td><td>UTF-8</td><td>без BOM</td><td>—</td></tr>
+</table>
+
+<div class="note"><strong>BOM для .ps1:</strong> PowerShell 5.1 на русской Windows требует BOM. Без BOM читает как CP1251 → все строковые литералы с кириллицей ломаются.</div>
+
+<h3>8.1. Запуск PowerShell из bash tool</h3>
+<pre>ВСЕГДА:   powershell -NoLogo [-File script.ps1]
+НИКОГДА:  -NoProfile (Bug-046: ломает UTF-8 вывод)</pre>
+
+<!-- ==================== 9. PREFLIGHT ==================== -->
+<h2 id="s9">9. Preflight (проверки перед действием)</h2>
+<table>
+  <tr><th>#</th><th>Действие</th><th>Проверка</th></tr>
+  <tr><td>1</td><td>Пишу <code>.ps1</code></td><td>Добавить BOM (UTF-8 с BOM)</td></tr>
+  <tr><td>2</td><td>Пишу <code>.json</code> / <code>.jsonc</code></td><td>Убрать BOM (UTF-8 без BOM)</td></tr>
+  <tr><td>3</td><td>Пишу <code>.sql</code> / <code>.bat</code></td><td>Windows-1251</td></tr>
+  <tr><td>4</td><td>Вызов bash с <code>$</code> или <code>{}</code></td><td>Только через <code>-File script.ps1</code></td></tr>
+  <tr><td>5</td><td>Перед <code>edit</code></td><td><code>oldString ≠ newString</code> (Bug-039)</td></tr>
+</table>
+
+<!-- ==================== 10. PS 5.1 ==================== -->
+<h2 id="s10">10. Ограничения PS 5.1</h2>
+<table>
+  <tr><th>Ограничение</th><th>Решение</th></tr>
+  <tr><td>Нет <code>??</code>, <code>??=</code>, <code>?.</code></td><td>Только <code>if/else</code></td></tr>
+  <tr><td>Функции после вызова (Bug-041)</td><td>Определять функции <strong>ДО</strong> первого вызова</td></tr>
+  <tr><td><code>|</code> в строках (Bug-026)</td><td>Парсится как pipe, использовать переменные</td></tr>
+  <tr><td><code>$_</code> в KeyDown (Bug-040)</td><td><code>param($sender,$e)</code> вместо <code>$_</code></td></tr>
+  <tr><td>Пароль с <code>'</code> (Bug-017)</td><td>Экранировать <code>''</code></td></tr>
+</table>
+
+<!-- ==================== 11. БАГИ ==================== -->
+<h2 id="s11">11. Ключевые баги</h2>
+<table>
+  <tr><th>Баг</th><th>Суть</th><th>Исправление</th></tr>
+  <tr><td>Bug-044</td><td><code>.jsonc</code> с BOM → OpenCode не грузит плагины</td><td><code>scripts\Remove-BomFromConfigs.ps1</code></td></tr>
+  <tr><td>Bug-046</td><td><code>-NoProfile</code> → кракозябры в выводе</td><td>Использовать <code>-NoLogo</code></td></tr>
+  <tr><td>Bug-041</td><td>Функция после вызова → <code>CommandNotFoundException</code></td><td>Функции в начало скрипта</td></tr>
+  <tr><td>Bug-039</td><td><code>oldString = newString</code> → ошибка edit</td><td>Проверять перед edit</td></tr>
+  <tr><td>Bug-044b</td><td><code>opencode.jsonc</code> с неизвестным ключом → <code>ConfigInvalidError</code></td><td>Проверять ключи по схеме</td></tr>
+</table>
+
+<!-- ==================== СОКРАЩЕНИЯ ==================== -->
+<h2 id="abbr">Сокращения</h2>
+<table class="abbr-table">
+  <tr><th>Сокращение</th><th>Расшифровка</th></tr>
+  <tr><td>AIS</td><td>Автоматизированная Информационная Система</td></tr>
+  <tr><td>ASE</td><td>Adaptive Server Enterprise (Sybase)</td></tr>
+  <tr><td>BOM</td><td>Byte Order Mark (метка кодировки UTF-8)</td></tr>
+  <tr><td>CP1251</td><td>Кодовая страница Windows-1251 (кириллица)</td></tr>
+  <tr><td>DDDW</td><td>DropDown DataWindow (выпадающий список)</td></tr>
+  <tr><td>DLL</td><td>Dynamic Link Library</td></tr>
+  <tr><td>DLLM</td><td>Диалоговое окно LLM (список моделей)</td></tr>
+  <tr><td>ДО</td><td>Диалоговое окно</td></tr>
+  <tr><td>GUI</td><td>Graphical User Interface (графический интерфейс)</td></tr>
+  <tr><td>JSON / JSONC</td><td>JavaScript Object Notation (с комментариями)</td></tr>
+  <tr><td>КРЗ</td><td>Исправить кракозябры</td></tr>
+  <tr><td>LLM</td><td>Large Language Model (большая языковая модель)</td></tr>
+  <tr><td>MCP</td><td>Model Context Protocol</td></tr>
+  <tr><td>МОРДА</td><td>Главное окно GUI Prod-GUI.ps1</td></tr>
+  <tr><td>MSG</td><td>MessageBox (окно сообщения)</td></tr>
+  <tr><td>ОБР</td><td>Обработка вывода (анализ last_output.log)</td></tr>
+  <tr><td>ОО</td><td>Продолжить / проверить todowrite</td></tr>
+  <tr><td>ОП</td><td>Операция (в GUI)</td></tr>
+  <tr><td>ОТЧЁТ</td><td>Открыть отчёт по задаче</td></tr>
+  <tr><td>ПБ</td><td>Прогресс-бар</td></tr>
+  <tr><td>PB</td><td>PowerBuilder</td></tr>
+  <tr><td>PBL</td><td>PowerBuilder Library</td></tr>
+  <tr><td>PBT</td><td>PowerBuilder Template</td></tr>
+  <tr><td>PS</td><td>PowerShell</td></tr>
+  <tr><td>РР</td><td>Принудительно русский язык</td></tr>
+  <tr><td>RFC</td><td>Request for Change (заявка на изменение в Jira)</td></tr>
+  <tr><td>СОКР</td><td>Показать сокращения</td></tr>
+  <tr><td>СОХР</td><td>Сохранить (архив проекта)</td></tr>
+  <tr><td>СОХРМСР</td><td>Сохранить знания в MCP</td></tr>
+  <tr><td>SQL</td><td>Structured Query Language</td></tr>
+  <tr><td>TASK</td><td>Начать работу над задачей</td></tr>
+  <tr><td>VSS</td><td>Visual SourceSafe</td></tr>
+  <tr><td>WPF</td><td>Windows Presentation Foundation</td></tr>
+  <tr><td>ЦИКЛ</td><td>Цикл автоисправления ОП</td></tr>
+</table>
+
+<hr>
+<p style="text-align: center; color: #888; font-size: 12px;">Сгенерировано: 16 июля 2026 г. Источник: <code>ais-catalog</code> (4835 объектов SQL+PB), <code>AGENTS.md</code>, <code>rules/abbreviations.md</code>.</p>
+
+</body>
+</html>

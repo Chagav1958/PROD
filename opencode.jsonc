@@ -1,0 +1,112 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "routerai/anthropic/claude-opus-4.8",
+  "small_model": "routerai/anthropic/claude-haiku-4.5",
+  "instructions": [
+    ".opencode/russian-mandatory.md",
+    ".opencode/russian-language.mdc",
+    ".opencode/preflight.mdc",
+    ".opencode/knowledge-first.mdc",
+    ".opencode/save-analysis.mdc",
+    ".opencode/save-large-prompts.mdc",
+    ".opencode/task-save-results.mdc"
+  ],
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "qwen2.5-coder:32b-q3km": { "name": "Qwen 2.5 Coder 32B [Бесплатно] [8K] [PB9/SQL8]", "cost":{"input":0,"output":0}, "limit":{"context":8192,"output":4096}, "modalities":{"input":["text"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":9, "sql_rating":8, "speed":"1.5" },
+        "deepseek-coder-v2:16b-ctx65536": { "name": "DeepSeek Coder V2 16B [Бесплатно] [64K] [PB8/SQL8]", "cost":{"input":0,"output":0}, "limit":{"context":65536,"output":8192}, "modalities":{"input":["text"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":8, "sql_rating":8, "speed":"0.8" }
+      }
+    },
+    "yandex": {
+      "npm": "@ai-sdk/yandex",
+      "name": "Yandex GPT (отключён)",
+      "options": {
+        "apiKey": "${YANDEX_API_KEY}",
+        "folderId": "b1ghbd3js0u0ru6djp4q"
+      },
+      "models": {
+        "yandexgpt": { "name": "YandexGPT [проверка доступа]", "enabled":false, "pb_rating":6, "sql_rating":6 }
+      }
+    },
+    "anthropic": {
+      "npm": "@ai-sdk/anthropic",
+      "name": "Anthropic (отключён)",
+      "options": {
+        "apiKey": "${ANTHROPIC_API_KEY}"
+      },
+      "models": {
+        "claude-3-7-sonnet-latest": { "name": "Claude 3.7 Sonnet [проверка доступа]", "enabled":false, "pb_rating":10, "sql_rating":10 }
+      }
+    },
+    "routerai": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "RouterAI (основной)",
+      "options": {
+        "baseURL": "https://routerai.ru/api/v1",
+        "apiKey": "{env:ROUTERAI_API_KEY}",
+        "timeout": 600000,
+        "chunkTimeout": 120000
+      },
+      "models": {
+        "anthropic/claude-haiku-4.5": { "name": "Claude Haiku 4.5 [PB7/SQL7] [дёшево,200K]", "cost":{"input":0.8e-6,"output":4e-6}, "limit":{"context":200000,"output":8192}, "modalities":{"input":["text","image"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":7, "sql_rating":7, "speed":"сервер" },
+        "anthropic/claude-sonnet-4.6": { "name": "Claude Sonnet 4.6 [PB10/SQL10] [мощная,200K]", "cost":{"input":4.5e-6,"output":22.5e-6}, "limit":{"context":200000,"output":8192}, "modalities":{"input":["text","image"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":10, "sql_rating":10, "speed":"сервер" },
+        "anthropic/claude-opus-4.8": { "name": "Claude Opus 4.8 [PB11/SQL11] [очень мощная,200K]", "cost":{"input":7.5e-6,"output":37.5e-6}, "limit":{"context":200000,"output":8192}, "modalities":{"input":["text","image"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":11, "sql_rating":11, "speed":"сервер" },
+        "openai/gpt-4o": { "name": "GPT-4o [PB9/SQL9] [цена-качество,128K]", "cost":{"input":2.5e-6,"output":10e-6}, "limit":{"context":128000,"output":16384}, "modalities":{"input":["text","image"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":9, "sql_rating":9, "speed":"сервер" },
+        "deepseek/deepseek-v4-pro": { "name": "DeepSeek V4 Pro [PB10/SQL10] [дешёво,128K]", "cost":{"input":0.14e-6,"output":0.28e-6}, "limit":{"context":131072,"output":8192}, "modalities":{"input":["text"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":10, "sql_rating":10, "speed":"сервер" },
+        "google/gemini-2.5-pro": { "name": "Gemini 2.5 Pro [PB8/SQL9] [1M контекста]", "cost":{"input":1.25e-6,"output":10e-6}, "limit":{"context":1048576,"output":8192}, "modalities":{"input":["text","image"],"output":["text"]}, "reasoning":true, "tool_call":true, "status":"active", "pb_rating":8, "sql_rating":9, "speed":"сервер" }
+      }
+    }
+  },
+  "mcp": {
+    "atlassian": {
+      "type": "local",
+      "command": ["C:\\Users\\vchaga\\AppData\\Roaming\\Python\\Python312\\Scripts\\uvx.exe", "mcp-atlassian"],
+      "enabled": true,
+      "env": {
+        "JIRA_URL": "https://mytask.renins.com",
+        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}",
+        "CONFLUENCE_URL": "https://wiki.renins.com",
+        "CONFLUENCE_PERSONAL_TOKEN": "${CONFLUENCE_PERSONAL_TOKEN}",
+        "READ_ONLY_MODE": "true",
+        "ENABLED_TOOLS": "confluence_search,confluence_get_page,jira_search,jira_get_issue"
+      }
+    },
+    "sybase-docs": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\sybase-docs-mcp\\venv\\Scripts\\python.exe", "-m", "sybase_mcp.server"],
+      "enabled": true,
+      "env": {
+        "DOCS_ROOT": "C:\\AIS\\AI\\sybase-docs-mcp",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+"ais-catalog": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\scripts\\ais_catalog_mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\scripts\\ais_catalog_mcp\\server.py"],
+      "enabled": true
+    },
+    "opencode-mcp": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\scripts\\opencode_mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\scripts\\opencode_mcp\\server.py"],
+      "enabled": true
+    },
+    "rules-mcp": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\sybase-docs-mcp\\venv\\Scripts\\python.exe", "C:\\AIS\\AI\\rules-mcp\\run.py"],
+      "enabled": true
+    }
+  },
+  "plugin": [
+    ".opencode/plugins/save-prompts.js",
+    ".opencode/plugins/russian-compaction.js",
+    ".opencode/plugins/claude-code.js",
+    ".opencode/plugin/loop-guard.js",
+    ".opencode/plugin/task-progress.js"
+  ]
+}

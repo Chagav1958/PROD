@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Голосовой ввод</title>
+<style>
+body{font-family:sans-serif;text-align:center;padding:40px;background:#1a1a2e;color:#eee}
+h2{color:#e94560;margin-bottom:30px}
+#status{font-size:16px;margin:20px 0;min-height:50px;padding:10px;background:#16213e;border-radius:8px}
+button{font-size:20px;padding:14px 40px;border:none;border-radius:30px;cursor:pointer;margin:10px;transition:.2s}
+#btnRec{background:#e94560;color:#fff}
+#btnRec:hover{background:#ff6b81}
+#btnRec.recording{background:#ff4444;animation:pulse 1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,68,68,.7)}70%{box-shadow:0 0 0 15px rgba(255,68,68,0)}100%{box-shadow:0 0 0 0 rgba(255,68,68,0)}}
+#result{font-size:18px;margin-top:20px;padding:15px;background:#0f3460;border-radius:8px;display:none;text-align:left;white-space:pre-wrap;word-break:break-word}
+#copied{color:#4ade80;display:none;margin-top:10px}
+</style></head><body>
+<h2>&#127908; Голосовой ввод промпта</h2>
+<div id="status">Нажмите "Запись" и говорите. Нажмите "Стоп" для обработки.</div>
+<button id="btnRec">Запись</button>
+<div id="result"></div>
+<div id="copied">&#10003; Скопировано в буфер обмена</div>
+<script>
+let isRec=false, audioCtx, src, processor, data=[], stream
+const btn=document.getElementById('btnRec')
+const st=document.getElementById('status')
+const res=document.getElementById('result')
+const cp=document.getElementById('copied')
+
+function encodeWav(samples, sr){
+    const len=samples.length, buf=new ArrayBuffer(44+len*2)
+    const v=new DataView(buf)
+    const w=(o,n)=>v.setUint16(o,n,true)
+    const w4=(o,n)=>v.setUint32(o,n,true)
+    w4(0,0x46464952); w4(4,36+len*2); w4(8,0x45564157)
+    w4(12,0x20746d66); w4(16,16); w(20,1); w(22,1)
+    w4(24,sr); w4(28,sr*2); w(32,2); w(34,16)
+    w4(36,0x61746164); w4(40,len*2)
+    for(let i=0;i<len;i++) w(44+i*2,Math.max(-32768,Math.min(32767,samples[i]*32767))|0)
+    return new Blob([buf],{type:'audio/wav'})
+}
+
+btn.onclick=async()=>{
+    if(isRec){
+        isRec=false; btn.textContent='Запись'; btn.classList.remove('recording')
+        st.textContent='Обработка...'
+        processor.disconnect(); src.disconnect(); audioCtx.close()
+        stream.getTracks().forEach(t=>t.stop())
+        if(data.length===0){st.textContent='Нет данных';return}
+        const sr=audioCtx.sampleRate
+        const total=data.reduce((a,b)=>a+b.length,0)
+        const all=new Float32Array(total)
+        let off=0; for(const d of data){all.set(d,off);off+=d.length}
+        const blob=encodeWav(all,sr)
+        try{
+            const r=await fetch('/upload',{method:'POST',body:blob,headers:{'Content-Type':'audio/wav'}})
+            const j=await r.json()
+            if(j.text){
+                res.textContent=j.text; res.style.display='block'
+                st.textContent='Готово (клик=копировать, Esc=закрыть)'
+                try{await navigator.clipboard.writeText(j.text);cp.style.display='block'}catch(e){}
+            }else if(j.silence){
+                st.textContent='Тишина ('+j.density+')'
+            }else if(j.error){
+                st.textContent='Ошибка: '+j.error
+            }
+        }catch(e){st.textContent='Ошибка: '+e.message}
+        data=[]
+        return
+    }
+    try{
+        stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1}})
+        audioCtx=new(window.AudioContext||window.webkitAudioContext)()
+        src=audioCtx.createMediaStreamSource(stream)
+        processor=audioCtx.createScriptProcessor(4096,1,1)
+        processor.onaudioprocess=e=>{data.push(new Float32Array(e.inputBuffer.getChannelData(0)))}
+        src.connect(processor); processor.connect(audioCtx.destination)
+        isRec=true; btn.textContent='Стоп'; btn.classList.add('recording')
+        st.textContent='Запись... Говорите. Нажмите "Стоп"'
+    }catch(e){
+        st.textContent='Ошибка: '+e.message+'. Проверьте разрешения браузера.'
+    }
+}
+res.onclick=async()=>{
+    try{await navigator.clipboard.writeText(res.textContent);cp.style.display='block'}catch(e){}
+}
+document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){res.style.display='none';cp.style.display='none'}
+})
+</script></body></html>
