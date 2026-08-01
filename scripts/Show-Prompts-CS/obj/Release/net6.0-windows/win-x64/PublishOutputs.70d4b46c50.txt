@@ -1,0 +1,2 @@
+C:\AIS\AI\Prod\scripts\Show-Prompts.pdb
+C:\AIS\AI\Prod\scripts\Show-Prompts.exe

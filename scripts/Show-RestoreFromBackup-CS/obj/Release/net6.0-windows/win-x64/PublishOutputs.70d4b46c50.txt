@@ -1,0 +1,2 @@
+C:\AIS\AI\Prod\scripts\Show-RestoreFromBackup.pdb
+C:\AIS\AI\Prod\scripts\Show-RestoreFromBackup.exe

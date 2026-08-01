@@ -1,0 +1,5 @@
+C:\AIS\AI\Prod\scripts\Show-Rules-CS\bin\Release\net6.0-windows\publish\Show-Rules.exe
+C:\AIS\AI\Prod\scripts\Show-Rules-CS\bin\Release\net6.0-windows\publish\Show-Rules.dll
+C:\AIS\AI\Prod\scripts\Show-Rules-CS\bin\Release\net6.0-windows\publish\Show-Rules.deps.json
+C:\AIS\AI\Prod\scripts\Show-Rules-CS\bin\Release\net6.0-windows\publish\Show-Rules.runtimeconfig.json
+C:\AIS\AI\Prod\scripts\Show-Rules-CS\bin\Release\net6.0-windows\publish\Show-Rules.pdb

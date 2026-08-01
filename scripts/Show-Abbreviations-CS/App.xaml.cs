@@ -1,0 +1,1 @@
+namespace Show_Abbreviations { public partial class App : System.Windows.Application { } }

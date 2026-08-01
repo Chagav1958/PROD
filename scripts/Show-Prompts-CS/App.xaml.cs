@@ -1,0 +1,1 @@
+namespace Show_Prompts { public partial class App : System.Windows.Application { } }

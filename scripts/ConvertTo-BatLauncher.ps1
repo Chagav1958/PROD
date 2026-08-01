@@ -26,34 +26,23 @@ $b64 = [Convert]::ToBase64String($bytes)
 $chunkSize = 4000
 $numChunks = [Math]::Ceiling($b64.Length / $chunkSize)
 
-# Собираем BAT
+# Собираем BAT — base64 в temp-файл (не в переменные окружения, чтобы не переполнить блок среды)
 $bat = @()
 $bat += '@echo off'
-$bat += 'REM Auto-generated launcher (base64 PS1)'
-$bat += 'setlocal enabledelayedexpansion'
-$bat += 'set B64='
+$bat += 'REM Auto-generated launcher (base64 PS1 via temp file)'
+$bat += 'set TEMP_B64=%TEMP%\morda2_b64_tmp.txt'
+$bat += ''
 
+# Записываем base64 в файл построчно
 for ($i = 0; $i -lt $numChunks; $i++) {
     $start = $i * $chunkSize
     $count = [Math]::Min($chunkSize, $b64.Length - $start)
     $chunk = $b64.Substring($start, $count)
-    $bat += "set B64_$i=$chunk"
+    $bat += "echo $chunk>>%TEMP_B64%"
 }
-
-# Команда PowerShell для сборки и запуска
-# %args% в конце — пробрасывает ВСЕ аргументы, переданные в .bat, ВНУТРЬ -Command
-$psCmd = "powershell -NoLogo -ExecutionPolicy RemoteSigned -Command `""
-$psCmd += "`$b=''"
-for ($i = 0; $i -lt $numChunks; $i++) {
-    $psCmd += " + [Environment]::GetEnvironmentVariable('B64_$i','Process')"
-}
-# Invoke-Expression не поддерживает splatting @args, используем [ScriptBlock]::Create + & @args
-# %* встраивается ВНУТРЬ команды (в кавычках), иначе PowerShell их игнорирует
-$psCmd += ";If(`$b){`$d=[Convert]::FromBase64String(`$b);`$s=[Text.Encoding]::UTF8.GetString(`$d);& ([ScriptBlock]::Create(`$s)) %*}"
-$psCmd += '"'
 
 $bat += ''
-$bat += $psCmd
+$bat += 'start /min "" powershell -NoLogo -ExecutionPolicy RemoteSigned -Command "$b=Get-Content $env:TEMP_B64 -Raw; Remove-Item $env:TEMP_B64 -Force -ErrorAction SilentlyContinue; $d=[Convert]::FromBase64String($b); $s=[Text.Encoding]::UTF8.GetString($d); & ([ScriptBlock]::Create($s)) %*"'
 $bat += 'endlocal'
 
 $batText = $bat -join "`r`n"

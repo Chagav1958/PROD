@@ -135,9 +135,11 @@ function Build-AnimationPreview {
 
 function Build-SettingsUI {
     param([System.Windows.Controls.StackPanel]$Panel, [string]$ConfigPath, [string]$ProjectRoot)
+    Write-TechJournal "INFO" "Build-SettingsUI: started"
     $Panel.Children.Clear()
     
     $config = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    Write-TechJournal "INFO" "Build-SettingsUI: config loaded"
     $masterKey = Get-MasterKey -ConfigPath $ConfigPath
     if (-not $masterKey) {
         try {
@@ -147,6 +149,7 @@ function Build-SettingsUI {
             Write-Host "Не удалось создать мастер-ключ: $_"
         }
     }
+    Write-TechJournal "INFO" "Build-SettingsUI: masterKey ready"
     
     function New-SettingsField {
         param([string]$Label, [string]$Value, [string]$FieldName, [string]$Type = "text", [string]$PathType = "folder", [string[]]$Options = @(), [bool]$Required = $false)
@@ -195,12 +198,24 @@ function Build-SettingsUI {
                 if ([string]::IsNullOrEmpty($pwdBox.Password)) { $pwdBox.Background = $pinkBrush; $pwdText.Background = $pinkBrush }
                 else { $pwdBox.Background = $whiteBrush; $pwdText.Background = $whiteBrush }
                 $pwdBox.Add_PasswordChanged({
-                    if ([string]::IsNullOrEmpty($this.Password)) { $this.Background = $pinkBrush; $pwdText.Background = $pinkBrush }
-                    else { $this.Background = $whiteBrush; $pwdText.Background = $whiteBrush }
+                    param($sender, $e)
+                    $parentGrid = $sender.Parent
+                    $ctrlPwdText = $null
+                    foreach ($ch in $parentGrid.Children) {
+                        if ($ch -is [System.Windows.Controls.TextBox] -and $ch.Name -like "txt_*") { $ctrlPwdText = $ch; break }
+                    }
+                    if ([string]::IsNullOrEmpty($sender.Password)) { $sender.Background = $pinkBrush; if ($ctrlPwdText) { $ctrlPwdText.Background = $pinkBrush } }
+                    else { $sender.Background = $whiteBrush; if ($ctrlPwdText) { $ctrlPwdText.Background = $whiteBrush } }
                 })
                 $pwdText.Add_TextChanged({
-                    if ([string]::IsNullOrEmpty($this.Text)) { $this.Background = $pinkBrush; $pwdBox.Background = $pinkBrush }
-                    else { $this.Background = $whiteBrush; $pwdBox.Background = $whiteBrush }
+                    param($sender, $e)
+                    $parentGrid = $sender.Parent
+                    $ctrlPwdBox = $null
+                    foreach ($ch in $parentGrid.Children) {
+                        if ($ch -is [System.Windows.Controls.PasswordBox]) { $ctrlPwdBox = $ch; break }
+                    }
+                    if ([string]::IsNullOrEmpty($sender.Text)) { $sender.Background = $pinkBrush; if ($ctrlPwdBox) { $ctrlPwdBox.Background = $pinkBrush } }
+                    else { $sender.Background = $whiteBrush; if ($ctrlPwdBox) { $ctrlPwdBox.Background = $whiteBrush } }
                 })
             }
             
@@ -469,6 +484,7 @@ function Build-SettingsUI {
     $spOther.Children.Add($grpUtil) | Out-Null
     
     $Panel.Children.Add($tabControl) | Out-Null
+    Write-TechJournal "INFO" "Build-SettingsUI: completed"
 }
 
 function Save-Settings {
@@ -707,14 +723,9 @@ function Save-Settings {
     # Reload config to pick up any auto-generated values (master key, etc.)
     $config = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
     
-    # Rebuild UI with updated values
-    if ($script:settingsPanel -and $script:configPath -and $script:projectRoot) {
-        Build-SettingsUI -Panel $script:settingsPanel -ConfigPath $script:configPath -ProjectRoot $script:projectRoot
-        Attach-SettingsHandlers -Panel $script:settingsPanel -ConfigPath $script:configPath -ProjectRoot $script:projectRoot
-        Validate-AllPaths -Panel $script:settingsPanel -ProjectRoot $script:projectRoot
-    }
-    
-    [System.Windows.MessageBox]::Show("Настройки сохранены", "Успех", "OK", "Information")
+    # НЕ пересоздаём панель настроек после сохранения (блокирует UI-поток).
+    # Значения на панели уже совпадают с сохранёнными.
+    Write-TechJournal "INFO" "Save-Settings: config saved, panel not rebuilt"
 }
 
 function Validate-AllPaths {

@@ -206,6 +206,9 @@ if /i "%OBJ_TYPE%"=="Table" (
 
 del "%BASEDIR%\LOGS\_body.tmp" "%BASEDIR%\LOGS\_single.sql" "%BASEDIR%\LOGS\_gen.sql" 2>nul
 
+echo Converting to UTF-8 BOM (CRLF)...
+powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Convert-ExportEncoding.ps1" -Path "%BASEDIR%" -Extensions "*.sql"
+
 if errorlevel 1 (
     echo [ERROR] Export failed for %OBJ_NAME%
 ) else (

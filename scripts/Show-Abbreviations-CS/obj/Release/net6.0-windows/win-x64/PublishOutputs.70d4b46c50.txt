@@ -1,0 +1,2 @@
+C:\AIS\AI\Prod\scripts\Show-Abbreviations.pdb
+C:\AIS\AI\Prod\scripts\Show-Abbreviations.exe

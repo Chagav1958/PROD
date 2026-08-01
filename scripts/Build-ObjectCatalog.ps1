@@ -54,7 +54,7 @@ foreach ($key in @($sqlObjects.Keys)) {
     if ($idx % 1000 -eq 0) { Write-Host ("  SQL зависимости: $idx / $($sqlObjects.Count)") }
     $f = Get-Item $sqlObjects[$key].file
     $txt = $null
-    try { $txt = Get-Content $f.FullName -Raw -Encoding Default } catch { $txt = $null }
+    try { $sr = New-Object System.IO.StreamReader($f.FullName, [Text.Encoding]::GetEncoding(1251), $true); $txt = $sr.ReadToEnd(); $sr.Close() } catch { $txt = $null }
     if ($null -eq $txt) { $txt = '' }
     $tables = @{}; $calls = @{}; $triggerTables = @{}
     foreach ($m in [regex]::Matches($txt, '(?i)\b(?:from|join|into|update|delete\s+from)\s+([a-z_][a-z0-9_]*)')) {
@@ -96,7 +96,7 @@ foreach ($s in $sources) {
         $name = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
         $lib  = $f.Directory.Name
         $txt = $null
-        try { $txt = Get-Content $f.FullName -Raw -Encoding Unicode } catch { $txt = $null }
+        try { $sr = New-Object System.IO.StreamReader($f.FullName, [Text.Encoding]::GetEncoding(1251), $true); $txt = $sr.ReadToEnd(); $sr.Close() } catch { $txt = $null }
         if ($null -eq $txt) { $txt = '' }
         $sqlRefs = @{}; $pbRefs = @{}; $srdExprs = @{}; $srdDynSQL = @{}; $srdValid = @{}; $srdMasks = @{}; $srdComputed = @{}; $srdFilters = @{}
         if ($txt.Length -gt 0) {

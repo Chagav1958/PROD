@@ -1,0 +1,5 @@
+C:\AIS\AI\Prod\scripts\dist_new\Show-Appl2Standard-CS\ShowAppl2Standard.exe
+C:\AIS\AI\Prod\scripts\dist_new\Show-Appl2Standard-CS\ShowAppl2Standard.dll
+C:\AIS\AI\Prod\scripts\dist_new\Show-Appl2Standard-CS\ShowAppl2Standard.deps.json
+C:\AIS\AI\Prod\scripts\dist_new\Show-Appl2Standard-CS\ShowAppl2Standard.runtimeconfig.json
+C:\AIS\AI\Prod\scripts\dist_new\Show-Appl2Standard-CS\ShowAppl2Standard.pdb

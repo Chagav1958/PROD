@@ -1,0 +1,1 @@
+namespace Show_ProgressState { public partial class App : System.Windows.Application { } }

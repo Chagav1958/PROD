@@ -28,7 +28,7 @@ foreach ($lib in $libs) {
         $ext = $f.Extension.ToLower()
         $objType = $extMap[$ext]
         $text = ""
-        try { $text = Get-Content $f.FullName -Raw -Encoding Default -ErrorAction Stop } catch { continue }
+        try { $sr = New-Object System.IO.StreamReader($f.FullName, [Text.Encoding]::GetEncoding(1251), $true); $text = $sr.ReadToEnd(); $sr.Close() } catch { continue }
         if (-not $text) { $libResults += [PSCustomObject]@{ Name=$name; Type=$objType; Library=$lib.Name; Sql='' }; continue }
 
         $sql = ""

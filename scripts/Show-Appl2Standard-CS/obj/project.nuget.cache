@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "zCH5oTsNaoLi7hJZpPr4ZmdDl2uELX5nQccEohK2y07JLuGyiq/bIytg1qtUw+CSnFNiM0sjwBa5WjetLlZSJA==",
+  "success": true,
+  "projectFilePath": "C:\\AIS\\AI\\Prod\\scripts\\Show-Appl2Standard-CS\\ShowAppl2Standard.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\vchaga\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\6.0.30\\microsoft.netcore.app.runtime.win-x64.6.0.30.nupkg.sha512",
+    "C:\\Users\\vchaga\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\6.0.30\\microsoft.windowsdesktop.app.runtime.win-x64.6.0.30.nupkg.sha512",
+    "C:\\Users\\vchaga\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\6.0.30\\microsoft.aspnetcore.app.runtime.win-x64.6.0.30.nupkg.sha512"
+  ],
+  "logs": []
+}

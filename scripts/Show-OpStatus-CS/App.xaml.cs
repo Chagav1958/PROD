@@ -1,0 +1,1 @@
+namespace Show_OpStatus { public partial class App : System.Windows.Application { } }

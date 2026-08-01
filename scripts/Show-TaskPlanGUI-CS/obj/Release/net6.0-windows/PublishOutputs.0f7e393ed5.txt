@@ -1,0 +1,5 @@
+C:\AIS\AI\Prod\scripts\Show-TaskPlanGUI-CS\bin\Release\net6.0-windows\publish\Show-TaskPlanGUI.exe
+C:\AIS\AI\Prod\scripts\Show-TaskPlanGUI-CS\bin\Release\net6.0-windows\publish\Show-TaskPlanGUI.dll
+C:\AIS\AI\Prod\scripts\Show-TaskPlanGUI-CS\bin\Release\net6.0-windows\publish\Show-TaskPlanGUI.deps.json
+C:\AIS\AI\Prod\scripts\Show-TaskPlanGUI-CS\bin\Release\net6.0-windows\publish\Show-TaskPlanGUI.runtimeconfig.json
+C:\AIS\AI\Prod\scripts\Show-TaskPlanGUI-CS\bin\Release\net6.0-windows\publish\Show-TaskPlanGUI.pdb

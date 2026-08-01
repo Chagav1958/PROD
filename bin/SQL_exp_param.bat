@@ -361,6 +361,9 @@ del "%BASEDIR%\LOGS\_tp.sql" "%BASEDIR%\LOGS\_tf.sql" "%BASEDIR%\LOGS\_tt.sql" "
 del "%BASEDIR%\LOGS\get_procs.sql" "%BASEDIR%\LOGS\get_funcs.sql" "%BASEDIR%\LOGS\get_trigs.sql" "%BASEDIR%\LOGS\get_views.sql" "%BASEDIR%\LOGS\get_tables.sql" 2>nul
 del "%BASEDIR%\LOGS\test.*" 2>nul
 
+echo Converting to UTF-8 BOM (CRLF)...
+powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Convert-ExportEncoding.ps1" -Path "%BASEDIR%" -Extensions "*.sql"
+
 set /a TOTAL_OK=P_OK+F_OK+T_OK+V_OK+I_OK+PK_OK+FK_OK+G_OK
 set /a TOTAL_FAIL=0
 set /a TOTAL_CNT=P_CNT+F_CNT+T_CNT+V_CNT+I_CNT+PK_CNT+FK_CNT+G_CNT

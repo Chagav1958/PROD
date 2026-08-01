@@ -1,0 +1,5 @@
+C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\bin\Release\net6.0-windows\publish\Show-TimeFIX.exe
+C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\bin\Release\net6.0-windows\publish\Show-TimeFIX.dll
+C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\bin\Release\net6.0-windows\publish\Show-TimeFIX.deps.json
+C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\bin\Release\net6.0-windows\publish\Show-TimeFIX.runtimeconfig.json
+C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\bin\Release\net6.0-windows\publish\Show-TimeFIX.pdb

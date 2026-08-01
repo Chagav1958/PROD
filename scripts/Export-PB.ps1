@@ -178,6 +178,13 @@ foreach ($entry in $libEntries) {
     Write-Host "###STEP###"
 }
 
+# Конвертация выгруженных объектов в UTF-8 with BOM, CRLF (не UTF-16)
+$convPs = Join-Path $PSScriptRoot "Convert-ExportEncoding.ps1"
+if (Test-Path $convPs) {
+    Write-Host ""
+    & powershell -NoLogo -ExecutionPolicy RemoteSigned -File $convPs -Path $OutRoot -Extensions '*.sr*'
+}
+
 Write-Host ""
 Write-Host "=== Готово ===" -ForegroundColor Cyan
 Write-Host "Выгружено библиотек: $okCount" -ForegroundColor Green

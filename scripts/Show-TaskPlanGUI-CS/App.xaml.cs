@@ -1,0 +1,1 @@
+namespace Show_TaskPlanGUI { public partial class App : System.Windows.Application { } }

@@ -1,0 +1,336 @@
+---
+description: СТАНДАРТ2 — единый стандарт дизайна всех диалоговых окон (ДО) и сообщений проекта
+alwaysApply: true
+---
+
+# СТАНДАРТ2 — Дизайн диалоговых окон
+
+> Эталонная реализация: `C:\AIS\AI\Prod\scripts\Show-Appl2Standard.exe` (C# WPF, 149 KB)
+> Исходники: `C:\AIS\AI\Prod\scripts\Show-Appl2Standard-CS\MainWindow.xaml` + `.cs`
+
+## Общие принципы
+
+1. **Технология любая** (C#, Python, PS, bat, и т.д.), но **внешний вид — СТАНДАРТ2**
+2. Окно **непрозрачное**, полупрозрачность — **только Title bar**
+3. Все элементы (кнопки, ПБ) — **полупрозрачные** (альфа-канал `#CC` = 80% или `#80` = 50%)
+4. Title bar **темнее окна** по цвету и **полупрозрачный**
+
+## 1. Окно (Window)
+
+| Свойство | Значение |
+|----------|----------|
+| AllowsTransparency | `True` |
+| WindowStyle | `None` |
+| Background | `#E8ECF0` (серо-голубой, opaque) |
+| ResizeMode | `CanResizeWithGrip` |
+| Topmost | `True` |
+| Размер | 520×580 (по умолчанию) |
+
+Скругление углов — через Win32 `CreateRoundRectRgn` + `SetWindowRgn` (радиус 18px → эллипс 36,36):
+```csharp
+IntPtr hRgn = CreateRoundRectRgn(0, 0, w + 1, h + 1, 36, 36);
+SetWindowRgn(hWnd, hRgn, true);
+DeleteObject(hRgn);
+```
+
+Тень — `DropShadowEffect`:
+```xml
+<Border.Effect>
+    <DropShadowEffect Color="#404040" Direction="270" ShadowDepth="4" BlurRadius="10" Opacity="0.5"/>
+</Border.Effect>
+```
+
+Внешняя рамка окна: `BorderBrush="#1A3A60" BorderThickness="1"`.
+
+## 2. Title bar (заголовок окна)
+
+| Свойство | Значение |
+|----------|----------|
+| Высота | 40px |
+| Background | `#807080B0` (50% deep blue-gray) — **полупрозрачный, темнее окна** |
+| CornerRadius | `17,17,0,0` |
+| Нижняя рамка | `BorderBrush="#1A3A60" BorderThickness="0,0,0,1"` |
+| Drag | `MouseLeftButtonDown` → `DragMove()`; DoubleClick → `ToggleMaximize()` |
+
+Текст заголовка — 3D (2 слоя):
+1. **Нижний слой**: белый (White) + смещение (Margin="3,2,0,0"), Opacity="0.9" — тень
+2. **Верхний слой**: `#1A3A60` (тёмно-синий) — основной текст
+
+Шрифт: Segoe UI, 14px, Bold.
+
+Кнопки управления окном (справа, 40×36px):
+| Кнопка | Content | Действие |
+|--------|---------|----------|
+| Свернуть | `━` | `WindowState.Minimized` |
+| Развернуть | `☐` | `ToggleMaximize()` |
+| Закрыть | `✕` | `Close()` |
+
+Стиль кнопок: `Background="Transparent" Foreground="#1A3A60" BorderThickness="0" Cursor="Hand"`.
+
+## 3. Кнопки (Buttons)
+
+### Primary (OK, Сохранить и т.п.)
+```
+CornerRadius=10
+Внешняя рамка: #CC0F3050 (80%)
+Градиент (3-stop): #CC9DC8F0 → #CC3B7BBF → #CC1A4A7A
+Блик сверху: белый градиент #E0FFFFFF → #00FFFFFF, высота 7px
+Текст: White, Bold, 11px
+Размер: 120×38px
+```
+
+### Secondary (Отмена, Назад и т.п.)
+```
+CornerRadius=10
+Внешняя рамка: #CC404040 (80%)
+Градиент: #CCD0D0D0 → #CC909090 → #CC606060
+Блик сверху: белый градиент #E0FFFFFF → #00FFFFFF, высота 7px
+Текст: White, Bold, 11px
+Размер: 120×38px
+```
+
+### Small (▼/▲ поиск)
+Те же стили, размер 30×26px, FontSize=11.
+
+## 4. Progress Bar (ПБ)
+
+| Свойство | Значение |
+|----------|----------|
+| Height | 18px |
+| CornerRadius (рамка) | 4 |
+| CornerRadius (трек) | 3 |
+| Рамка | `#CC0F3050` (80%), Padding=1.5 |
+| Трек (фон) | `#E2E8F0` |
+
+**Indicator** (заполненная часть):
+- `PART_Track` = `Grid` (заполняет всю ширину — важно для правильного ресайза индикатора)
+- `PART_Indicator` = `Border`, `HorizontalAlignment="Left"`
+- Градиент (4-stop): `#CCB8D8F8` → `#CC3B7BBF` → `#CC1A4A7A` → `#CC0F3050`
+- Правая рамка: `BorderBrush="#CC1A3A60" BorderThickness="0,0,1,0"`
+- Блик сверху: белый градиент `#C0FFFFFF` → `#00FFFFFF`
+- Тень снизу (для 3D глубины): `#30000000` → `#80000000`, высота 3px
+
+## 5. DataGrid / Таблица
+
+| Свойство | Значение |
+|----------|----------|
+| VerticalScrollBarVisibility | `Visible` |
+| HorizontalScrollBarVisibility | `Visible` |
+| CanContentScroll | `True` |
+| AlternatingRowBackground | `#F5F7FA` |
+| RowBackground | `White` |
+| BorderBrush | `#CBD5E0` |
+| SelectionMode | `Single`, `FullRow` |
+
+Ширина колонок — **фиксированная**, сумма > ширины DataGrid (чтобы горизонтальный скролл был активен):
+- Объект: 180
+- Тип: 140
+- Статус: 100
+- Описание: 280
+
+### 5.1. Layout — вертикальный скролл + фиксация низа
+
+**DataGrid** должен находиться в строке `Height="*"`, чтобы:
+- Заполнять всё доступное пространство между верхней панелью и нижними элементами
+- Вертикальный скролл работал при любом количестве строк
+
+**ProgressBar** и **кнопки** — в отдельных строках `Height="Auto"` **после** DataGrid:
+```xml
+<Grid.RowDefinitions>
+    <RowDefinition Height="Auto"/>   <!-- 0: верхняя панель (заголовок/поиск) -->
+    <RowDefinition Height="*"/>      <!-- 1: DataGrid (заполняет остаток, скролл) -->
+    <RowDefinition Height="Auto"/>   <!-- 2: ProgressBar (всегда внизу) -->
+    <RowDefinition Height="Auto"/>   <!-- 3: Кнопки (всегда внизу) -->
+</Grid.RowDefinitions>
+```
+
+Такая структура гарантирует:
+- DataGrid скроллится вертикально при переполнении
+- PB, кнопки и нижняя часть таблицы всегда видны при любом размере окна
+- PB и кнопки находятся на фиксированном расстоянии от низа окна (за счёт Auto-строк)
+
+## 6. Search panel (панель поиска)
+
+```
+Счётчик: "N - M" (#4A5568, 11px)
+Поле ввода: Height=26, FontSize=11
+Кнопки: ▼ (search_down) / ▲ (search_up) — Glossy3DButtonSmall
+Enter → search_down
+```
+
+Логика поиска:
+- При вводе текста — фильтрация строк DataGrid
+- При нажатии ▼/▲ — навигация по совпадениям с подсветкой и скроллом
+- Поиск case-insensitive по всем колонкам
+
+## 7. Resize (изменение размера)
+
+Через `WM_NCHITTEST` в `WndProc`:
+- RESIZE_MARGIN = 8px
+- Все 8 направлений: HTLEFT, HTRIGHT, HTTOP, HTBOTTOM + 4 угла
+- Title bar drag: `HTCAPTION` при Y < 42 (исключая края)
+
+### 7.1. Фиксация нижних элементов при ресайзе
+
+**КРИТИЧЕСКОЕ ТРЕБОВАНИЕ**: при любом изменении размеров окна:
+- ProgressBar всегда виден и находится на фиксированном расстоянии от низа окна
+- Кнопки всегда видны и находятся под ProgressBar на фиксированном расстоянии от низа
+- Нижняя часть DataGrid (последние строки) доступна через вертикальный скролл
+
+Реализация: DataGrid в `Height="*"`, PB и кнопки в `Height="Auto"` после него (см. раздел 5.1).
+
+## 8. Поля ввода (Text/Password/Combo)
+
+```
+Рамка: BorderBrush="#CBD5E0", BorderThickness=1, CornerRadius=10
+Внутри: Padding=6,4
+Шрифт: 11px
+Подпись: 10px, #4A5568
+```
+
+## 9. Цветовая схема
+
+| Элемент | Цвет |
+|---------|------|
+| Окно (фон) | `#E8ECF0` |
+| Title bar | `#807080B0` (50% deep blue-gray) |
+| Внешняя рамка | `#1A3A60` |
+| Текст заголовка | `#1A3A60` + белая тень |
+| Рамки полей/таблицы | `#CBD5E0` |
+| Текст | `#4A5568` |
+| Кнопка Primary | `#CC0F3050` + градиент |
+| Кнопка Secondary | `#CC404040` + градиент |
+| ПБ трек | `#E2E8F0` |
+| ПБ индикатор | `#CC0F3050` + градиент |
+| Close (title) | `#1A3A60` |
+
+## 10. Технический журнал (tech_journal)
+
+**ОБЯЗАТЕЛЬНО** для каждого ДО:
+- При запуске ДО создаёт `tech_journal_yyyyMMdd_HHmmss.log` рядом с exe/скриптом
+- Формат строки: `[HH:mm:ss.fff] [LEVEL] сообщение`
+- Все уровни: `INFO`, `ERROR`, `CLICK`, `AUTOTEST`
+- Логирование потокобезопасно (lock)
+
+Обязательные записи при запуске:
+```
+[INFO] Window constructed
+[INFO] EXE path: <путь>
+[INFO] Args: <аргументы>
+[INFO] Loaded <N> rows (если есть данные)
+```
+
+Обязательные записи при работе:
+- Взаимодействие: `[CLICK] <ok|cancel|search_down|search_up|min|max|close>`
+- Ошибки: `[ERROR] <описание>` с try-catch во всех обработчиках
+- Анимация: `[INFO] Animation done` (по завершении)
+- Изменение размера: `[INFO] SizeChanged: <W>x<H>`
+
+## 11. Автотестирование — ОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ
+
+### 11.1. Каждое ДО должно поддерживать `--autotest <file>`
+
+При запуске с аргументом `--autotest <путь_к_файлу>` ДО:
+1. Загружает команды из файла (построчно)
+2. Выполняет их последовательно с паузой 300ms между командами
+3. Все действия логируются в tech_journal
+4. После выполнения всех команд — автозакрытие окна (через 500ms)
+
+### 11.2. Команды автотеста
+
+| Команда | Описание |
+|---------|----------|
+| `log <text>` | Запись в tech_journal |
+| `wait <ms>` | Пауза (Thread.Sleep) |
+| `click <name>` | Клик по кнопке (ok/cancel/search_down/search_up/min/max/close) |
+| `set_text <val>` | Заполнить текстовое поле |
+| `set_pwd <val>` | Заполнить пароль |
+| `set_search <val>` | Заполнить поиск |
+| `search_down` | Поиск вниз |
+| `search_up` | Поиск вверх |
+| `move <x,y>` | Переместить окно |
+| `resize <w,h>` | Изменить размер |
+| `scroll <row,col>` | Скролл таблицы |
+| `close` | Закрыть окно |
+
+### 11.3. Три обязательных этапа тестирования (перед сдачей работы)
+
+**КРИТИЧЕСКОЕ ТРЕБОВАНИЕ**: Запрещено докладывать об успешном выполнении без прохождения всех этапов.
+
+#### Этап 1 — Тест открытия
+- Запустить ДО с `--autotest`
+- Убедиться что tech_journal создался
+- Проверить что нет ERROR в логе
+
+#### Этап 2 — Тест новой функциональности
+- Для каждого пункта из промпта пользователя — команда в автотесте
+- Проверить что функция работает без ошибок
+
+#### Этап 3 — Регрессия
+- Базовые функции (открытие, кнопки, закрытие) не сломаны
+- НЕТ исключений — даже простые изменения могут сломать ДО
+
+### 11.4. Формат отчёта о тестировании
+
+При завершении работы с ДО включить в отчёт:
+```
+### Результаты тестирования:
+1. ✅ ДО открывается, tech_journal создан
+2. ✅ [Функция 1] работает
+3. ✅ [Функция 2] работает
+4. ✅ Старый функционал не затронут
+```
+
+### 11.5. Реализация автотеста (шаблон)
+
+```csharp
+// Парсинг аргументов в конструкторе
+ParseAutoTestArgs();
+
+private void ParseAutoTestArgs()
+{
+    string[] args = Environment.GetCommandLineArgs();
+    for (int i = 1; i < args.Length; i++)
+        if (args[i] == "--autotest" && i + 1 < args.Length)
+        {
+            string file = args[i + 1];
+            if (File.Exists(file))
+            {
+                _autoTestCommands = File.ReadAllLines(file).ToList();
+                _exitAfterAutoTest = true;
+            }
+        }
+}
+
+// Запуск в Window_Loaded через DispatcherTimer (500ms)
+if (_autoTestCommands.Count > 0)
+{
+    DispatcherTimer t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+    t.Tick += (s, ev) => { t.Stop(); RunAutoTestCommand(); };
+    t.Start();
+}
+```
+
+Детальный протокол тестирования — см. `gui-testing-rule.mdc`.
+
+## 12. Эталонный файл
+
+**Исходники СТАНДАРТ2**: `C:\AIS\AI\Prod\scripts\Show-Appl2Standard-CS\`
+- `MainWindow.xaml` — полная разметка окна
+- `MainWindow.xaml.cs` — code-behind (логика, автотест, Win32 API)
+
+**Сборка C# WPF**:
+```powershell
+dotnet publish -c Release -r win-x64 --self-contained false `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+  -o ..\
+```
+> Размер exe ~150-180 KB (framework-dependent, требуется .NET 6 Runtime).
+> `--self-contained true` даёт ~150 MB — НЕ ИСПОЛЬЗОВАТЬ без крайней необходимости.
+
+**Сборка Python**:
+```powershell
+pyinstaller --onefile --windowed --name Show-Имя Show-Имя.pyw
+```
+
+> **Важно**: Независимо от технологии (C#, Python, PS), **внешний вид ДО должен строго соответствовать СТАНДАРТ2**.
