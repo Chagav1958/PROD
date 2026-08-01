@@ -926,4 +926,18 @@ C:\AIS\AI\Prod\
 
 Решение: обязательный чек-лист перед тестом GUI в `rules/testing-rules.md`, сводный план с чек-боксами, записи MCP без дробления.
 
+### TASK-MORDA2: ОП5 Export PB — ПБ не двигался + ложная «Ошибка» (01.08.2026, см. opencode-mcp)
+Две независимые проблемы при ОП5 «Выгрузка PB: Current или Main» в МОРДА2 (Prod-GUI_STANDART2.ps1):
+
+1. **ПБ не двигался во время выгрузки.** Причина: DispatcherTimer в тике проверял только `Async.IsCompleted`, не читая прогресс из фонового Runspace. Хендлер писал маркеры `###PHASE###/###STEP###`, которые никто не парсил. Исправление:
+   - В тике таймера добавлено чтение `$state.Runspace.SessionStateProxy.GetVariable('script:PhaseProgress'/'script:StepProgress')` и обновление PhaseBar/StepBar/PhaseLabel/StepLabel.
+   - Индикатор активности: если операция не обновляет прогресс — плавный пульс PhaseBar до 90% (видно, что обработка идёт).
+   - `Invoke-OpExportPb` переписан: обновляет `$script:PhaseProgress.Value/Text` и `$script:StepProgress.Value/Text` в цикле ожидания процесса вместо маркеров.
+2. **Ложная «Ошибка» в результате.** Причина: `Convert-ExportEncoding.ps1` падал на временно заблокированном файле (`user-mapped section open`) при записи кодировки — файл не успевал освобождаться. Исправление: retry 3 попытки с паузой 500 мс в `Convert-ExportEncoding.ps1`.
+
+Дополнительно: в `Invoke-OpExportPb` заменён `-ExecutionPolicy Bypass` → `RemoteSigned` (антивирус Bug-063).
+
+Автономная проверка: `Export-PB.ps1 -Source Current` — 31 библиотека, 2617 объектов, `###CONVERT###2614###`, ошибок в выводе НЕТ, STDERR пуст.
+
+
 
