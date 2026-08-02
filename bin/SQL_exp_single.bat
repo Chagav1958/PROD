@@ -1,5 +1,4 @@
 @echo off
-chcp 1251 >nul
 setlocal enabledelayedexpansion
 
 if "%~1"=="" goto usage
@@ -48,90 +47,130 @@ if %errorlevel% neq 0 (
 
 set ISQL=isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535
 
-echo =============================================
-echo  Export single %OBJ_TYPE%: %OBJ_NAME%
-echo  Server: %SERVER%, Database: %DATABASE%
-echo  Task: %TASK_NAME%
-echo =============================================
+rem Hex query for objects with syscomments (avoids isql padding)
+set NEED_HEX=0
+if /i "%OBJ_TYPE%"=="Procedure" set NEED_HEX=1
+if /i "%OBJ_TYPE%"=="Function" set NEED_HEX=1
+if /i "%OBJ_TYPE%"=="Trigger" set NEED_HEX=1
+if /i "%OBJ_TYPE%"=="View" set NEED_HEX=1
+if "%NEED_HEX%"=="1" (
+    echo set nocount on>"%BASEDIR%\LOGS\_single.sql"
+    echo select convert(varbinary^(255^), text^) as hx, number, colid from syscomments where id=object_id^('%OBJ_NAME%'^) order by number, colid>>"%BASEDIR%\LOGS\_single.sql"
+    echo go>>"%BASEDIR%\LOGS\_single.sql"
+)
 
 if /i "%OBJ_TYPE%"=="Procedure" (
-    (echo set nocount on & echo select text from syscomments where id=object_id('%OBJ_NAME%'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_single.sql"
-    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_body.tmp"
-    > "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql" (
-        echo USE %DATABASE%
-        echo go
-        echo IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo BEGIN
-        echo     DROP PROCEDURE dbo.%OBJ_NAME%
-        echo     IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo         PRINT '^<^<^< FAILED DROPPING PROCEDURE dbo.%OBJ_NAME% ^>^>^>'
-        echo     ELSE
-        echo         PRINT '^<^<^< DROPPED PROCEDURE dbo.%OBJ_NAME% ^>^>^>'
-        echo END
-        echo go
-        type "%BASEDIR%\LOGS\_body.tmp"
-    )
-    del "%BASEDIR%\LOGS\_body.tmp" 2>nul
+    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+    powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+    echo USE %DATABASE%>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo BEGIN>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     DROP PROCEDURE dbo.%OBJ_NAME%>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< FAILED DROPPING PROCEDURE dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< DROPPED PROCEDURE dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo END>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo EXEC sp_procxmode 'dbo.%OBJ_NAME%', 'unchained'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< CREATED PROCEDURE dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< FAILED CREATING PROCEDURE dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    rem Grant from sysprotects
+    echo set nocount on>"%BASEDIR%\LOGS\_gen.sql"
+    echo if object_id^(N'##gen_gobj'^) is not null drop table ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+    echo go>>"%BASEDIR%\LOGS\_gen.sql"
+    echo select '%OBJ_NAME%' as objname into ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+    echo go>>"%BASEDIR%\LOGS\_gen.sql"
+    type "%SCRIPT_DIR%\gen_single_grant.sql">>"%BASEDIR%\LOGS\_gen.sql"
+    %ISQL% -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\LOGS\_grants.tmp"
+    type "%BASEDIR%\LOGS\_grants.tmp">>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    del "%BASEDIR%\LOGS\_grants.tmp" 2>nul
 )
 
 if /i "%OBJ_TYPE%"=="Function" (
-    (echo set nocount on & echo select text from syscomments where id=object_id('%OBJ_NAME%'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_single.sql"
-    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_body.tmp"
-    > "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql" (
-        echo USE %DATABASE%
-        echo go
-        echo IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo BEGIN
-        echo     DROP FUNCTION dbo.%OBJ_NAME%
-        echo     IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo         PRINT '^<^<^< FAILED DROPPING FUNCTION dbo.%OBJ_NAME% ^>^>^>'
-        echo     ELSE
-        echo         PRINT '^<^<^< DROPPED FUNCTION dbo.%OBJ_NAME% ^>^>^>'
-        echo END
-        echo go
-        type "%BASEDIR%\LOGS\_body.tmp"
-    )
-    del "%BASEDIR%\LOGS\_body.tmp" 2>nul
+    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+    powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+    echo USE %DATABASE%>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo BEGIN>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     DROP FUNCTION dbo.%OBJ_NAME%>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< FAILED DROPPING FUNCTION dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< DROPPED FUNCTION dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo END>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< CREATED FUNCTION dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< FAILED CREATING FUNCTION dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    rem Grant from sysprotects
+    echo set nocount on>"%BASEDIR%\LOGS\_gen.sql"
+    echo if object_id^(N'##gen_gobj'^) is not null drop table ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+    echo go>>"%BASEDIR%\LOGS\_gen.sql"
+    echo select '%OBJ_NAME%' as objname into ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+    echo go>>"%BASEDIR%\LOGS\_gen.sql"
+    type "%SCRIPT_DIR%\gen_single_grant.sql">>"%BASEDIR%\LOGS\_gen.sql"
+    %ISQL% -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\LOGS\_grants.tmp"
+    type "%BASEDIR%\LOGS\_grants.tmp">>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    del "%BASEDIR%\LOGS\_grants.tmp" 2>nul
 )
 
 if /i "%OBJ_TYPE%"=="Trigger" (
-    (echo set nocount on & echo select text from syscomments where id=object_id('%OBJ_NAME%'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_single.sql"
-    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_body.tmp"
-    > "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql" (
-        echo USE %DATABASE%
-        echo go
-        echo IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo BEGIN
-        echo     DROP TRIGGER dbo.%OBJ_NAME%
-        echo     IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo         PRINT '^<^<^< FAILED DROPPING TRIGGER dbo.%OBJ_NAME% ^>^>^>'
-        echo     ELSE
-        echo         PRINT '^<^<^< DROPPED TRIGGER dbo.%OBJ_NAME% ^>^>^>'
-        echo END
-        echo go
-        type "%BASEDIR%\LOGS\_body.tmp"
-    )
-    del "%BASEDIR%\LOGS\_body.tmp" 2>nul
+    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+    powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+    echo USE %DATABASE%>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo BEGIN>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     DROP TRIGGER dbo.%OBJ_NAME%>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< FAILED DROPPING TRIGGER dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< DROPPED TRIGGER dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo END>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< CREATED TRIGGER dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< FAILED CREATING TRIGGER dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
 )
 
 if /i "%OBJ_TYPE%"=="View" (
-    (echo set nocount on & echo select text from syscomments where id=object_id('%OBJ_NAME%'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_single.sql"
-    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_body.tmp"
-    > "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql" (
-        echo USE %DATABASE%
-        echo go
-        echo IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo BEGIN
-        echo     DROP VIEW dbo.%OBJ_NAME%
-        echo     IF OBJECT_ID('dbo.%OBJ_NAME%') IS NOT NULL
-        echo         PRINT '^<^<^< FAILED DROPPING VIEW dbo.%OBJ_NAME% ^>^>^>'
-        echo     ELSE
-        echo         PRINT '^<^<^< DROPPED VIEW dbo.%OBJ_NAME% ^>^>^>'
-        echo END
-        echo go
-        type "%BASEDIR%\LOGS\_body.tmp"
-    )
-    del "%BASEDIR%\LOGS\_body.tmp" 2>nul
+    %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+    powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+    echo USE %DATABASE%>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo BEGIN>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     DROP VIEW dbo.%OBJ_NAME%>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< FAILED DROPPING VIEW dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo         PRINT '^<^<^< DROPPED VIEW dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo END>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo IF OBJECT_ID^('dbo.%OBJ_NAME%'^) IS NOT NULL>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< CREATED VIEW dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo ELSE>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo     PRINT '^<^<^< FAILED CREATING VIEW dbo.%OBJ_NAME% ^>^>^>'>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
+    echo go>>"%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
 )
 
 if /i "%OBJ_TYPE%"=="Index" (
@@ -147,7 +186,7 @@ if /i "%OBJ_TYPE%"=="Index" (
         echo declare @tabname varchar^(255^), @idxname varchar^(255^)
         echo select @tabname = '!TAB_NAME!', @idxname = '!IDX_NAME!'
         type "%SCRIPT_DIR%\gen_single_index.sql"
-    ) > "%BASEDIR%\LOGS\_gen.sql"
+    )>"%BASEDIR%\LOGS\_gen.sql"
     %ISQL% -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
 )
 
@@ -164,7 +203,7 @@ if /i "%OBJ_TYPE%"=="PK" (
         echo declare @tabname varchar^(255^), @pkname varchar^(255^)
         echo select @tabname = '!TAB_NAME!', @pkname = '!PK_NAME!'
         type "%SCRIPT_DIR%\gen_single_pk.sql"
-    ) > "%BASEDIR%\LOGS\_gen.sql"
+    )>"%BASEDIR%\LOGS\_gen.sql"
     %ISQL% -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
 )
 
@@ -181,30 +220,33 @@ if /i "%OBJ_TYPE%"=="FK" (
         echo declare @tabname varchar^(255^), @fkname varchar^(255^)
         echo select @tabname = '!TAB_NAME!', @fkname = '!FK_NAME!'
         type "%SCRIPT_DIR%\gen_single_fk.sql"
-    ) > "%BASEDIR%\LOGS\_gen.sql"
+    )>"%BASEDIR%\LOGS\_gen.sql"
     %ISQL% -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
 )
 
 if /i "%OBJ_TYPE%"=="Grant" (
-    (
-        echo declare @objname varchar^(255^)
-        echo select @objname = '%OBJ_NAME%'
-        type "%SCRIPT_DIR%\gen_single_grant.sql"
-    ) > "%BASEDIR%\LOGS\_gen.sql"
+    echo set nocount on>"%BASEDIR%\LOGS\_gen.sql"
+    echo if object_id^(N'##gen_gobj'^) is not null drop table ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+    echo go>>"%BASEDIR%\LOGS\_gen.sql"
+    echo select '%OBJ_NAME%' as objname into ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+    echo go>>"%BASEDIR%\LOGS\_gen.sql"
+    type "%SCRIPT_DIR%\gen_single_grant.sql">>"%BASEDIR%\LOGS\_gen.sql"
     %ISQL% -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
 )
 
 if /i "%OBJ_TYPE%"=="Table" (
-    echo set nocount on > "%BASEDIR%\LOGS\_single.sql"
-    echo if object_id^(N'##gen_tname'^) is not null drop table ##gen_tname >> "%BASEDIR%\LOGS\_single.sql"
-    echo go >> "%BASEDIR%\LOGS\_single.sql"
-    echo select tname = '%OBJ_NAME%' into ##gen_tname >> "%BASEDIR%\LOGS\_single.sql"
-    echo go >> "%BASEDIR%\LOGS\_single.sql"
-    type "%SCRIPT_DIR%\gen_create_table.sql" >> "%BASEDIR%\LOGS\_single.sql"
+    echo set nocount on>"%BASEDIR%\LOGS\_single.sql"
+    echo if object_id^(N'##gen_tname'^) is not null drop table ##gen_tname>>"%BASEDIR%\LOGS\_single.sql"
+    echo go>>"%BASEDIR%\LOGS\_single.sql"
+    echo select tname = '%OBJ_NAME%' into ##gen_tname>>"%BASEDIR%\LOGS\_single.sql"
+    echo go>>"%BASEDIR%\LOGS\_single.sql"
+    type "%SCRIPT_DIR%\gen_create_table.sql">>"%BASEDIR%\LOGS\_single.sql"
     %ISQL% -i "%BASEDIR%\LOGS\_single.sql" -o "%BASEDIR%\%OUTDIR%\%OBJ_NAME%.sql"
 )
 
-del "%BASEDIR%\LOGS\_body.tmp" "%BASEDIR%\LOGS\_single.sql" "%BASEDIR%\LOGS\_gen.sql" 2>nul
+del "%BASEDIR%\LOGS\_body.tmp" "%BASEDIR%\LOGS\_single.sql" "%BASEDIR%\LOGS\_frags.txt" "%BASEDIR%\LOGS\_gen.sql" 2>nul
+
+chcp 1251 >nul
 
 echo Converting to UTF-8 BOM (CRLF)...
 powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Convert-ExportEncoding.ps1" -Path "%BASEDIR%" -Extensions "*.sql"

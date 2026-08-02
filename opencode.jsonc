@@ -86,7 +86,12 @@
         "PYTHONUNBUFFERED": "1"
       }
     },
-"ais-catalog": {
+    "ais-objects": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\scripts\\ais_objects_mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\scripts\\ais_objects_mcp\\server.py"],
+      "enabled": true
+    },
+    "ais-catalog": {
       "type": "local",
       "command": ["C:\\AIS\\AI\\Prod\\scripts\\ais_catalog_mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\scripts\\ais_catalog_mcp\\server.py"],
       "enabled": true

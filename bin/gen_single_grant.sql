@@ -1,21 +1,25 @@
-set nocount on
-go
+declare @objname varchar(255)
+select @objname = objname from ##gen_gobj
 
 declare @action int, @uid int
 declare @grantee varchar(255)
 declare @msg varchar(500)
+declare @i int, @cnt int
 
-declare g_cursor cursor for
+create table #g (action int, uid int, rownum int identity)
+
+insert into #g (action, uid)
 select p.action, p.uid
 from sysprotects p, sysobjects o
 where p.id = o.id and o.name = @objname and o.uid = 1
 and p.action != 151
 and user_name(p.uid) is not null
 
-open g_cursor
-fetch g_cursor into @action, @uid
-while @@sqlstatus = 0
+select @cnt = @@rowcount, @i = 1
+
+while @i <= @cnt
 begin
+    select @action = action, @uid = uid from #g where rownum = @i
     select @grantee = user_name(@uid)
     select @msg = 'GRANT '
         + case @action
@@ -33,8 +37,8 @@ begin
         + ' TO ' + @grantee
     print @msg
     print 'go'
-    fetch g_cursor into @action, @uid
+    set @i = @i + 1
 end
-close g_cursor
-deallocate cursor g_cursor
+
+drop table #g
 go
