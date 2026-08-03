@@ -1,0 +1,195 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>service-documentation</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px}</style></head><body>
+<h1>Документация сервиса подготовки релизов AIS</h1>
+<br>
+<p>Дата составления: 03.08.2026</p>
+<br>
+<h2>1. Назначение сервиса</h2>
+<br>
+<p>Сервис расположен в каталоге <code>C:\AIS\AI\Prod\</code> и предназначен для автоматизации подготовки релизов корпоративной системы AIS (страховая учётная система на PowerBuilder 12.5 и Sybase ASE 15.5) с помощью больших языковых моделей (LLM) через инструмент OpenCode.</p>
+<br>
+<p>Основные задачи сервиса:</p>
+<br>
+<p>- выгрузка и сравнение объектов PowerBuilder (Current против Main) и SQL (dev_golden против galaxy);</p>
+<p>- анализ и доработка объектов PB и SQL по задачам Jira (SYBASE-<em>, SUPRT-</em>);</p>
+<p>- работа с системой контроля версий VSS (проверка статуса, извлечение, снятие резервирования);</p>
+<p>- ведение базы знаний о проекте (объекты, бизнес-правила, связи, опыт решения задач);</p>
+<p>- управление объёмными задачами с планами реализации и контрольными точками;</p>
+<p>- автоматизированное тестирование диалоговых окон.</p>
+<br>
+<h2>2. Компоненты сервиса (диалоговые окна)</h2>
+<br>
+<h3>2.1. МОРДА — главное окно подготовки релизов (СТАНДАРТ1)</h3>
+<br>
+<p>- Файл: <code>bin\Prod-GUI.ps1</code> (лаунчеры: <code>.vbs</code>, <code>.bat</code>)</p>
+<p>- Технология: PowerShell 5.1 + WPF</p>
+<p>- Назначение: выполнение операций подготовки релиза — настройки, запуск тестов, выгрузка сервиса, сбор объектов для вывода в ПРОД, выгрузка и сравнение PB и SQL, операции VSS и Jira.</p>
+<p>- Журнал: <code>temp\last_output.log</code> (заголовок &#171;=== AIS Output Log ===&#187;), анализ командой ОБР/OUT.</p>
+<br>
+<h3>2.2. МОРДА2 — новое поколение главного окна (СТАНДАРТ2)</h3>
+<br>
+<p>- Файл: <code>bin\Prod-GUI_STANDART2.ps1</code> (лаунчеры: <code>.vbs</code>, <code>.bat</code>)</p>
+<p>- Технология: PowerShell 5.1 + WPF, оформление СТАНДАРТ2 (тёмная шапка, панель прогресс-баров, панель кнопок).</p>
+<p>- Ключевая особенность: асинхронное выполнение операций — каждая операция выполняется в фоновом Runspace (функция <code>Start-OpAsync</code>), интерфейс не блокируется; таймер DispatcherTimer (300 мс) опрашивает завершение и читает реальный прогресс операции из Runspace (переменные PhaseProgress и StepProgress), при отсутствии прогресса включается &#171;пульс&#187; до 90 процентов.</p>
+<p>- Журнал: <code>%TEMP%\tech_journal_*.log</code> (первая строка &#171;MORDA started (ST2)&#187;).</p>
+<p>- Автотест: <code>temp\AutoTest-Morda2-Real.ps1</code> — управление окном через UI Automation, проверка прогресс-баров, полный прогон девяти операций.</p>
+<br>
+<h3>2.3. ObjectInfo — справочник объектов PB и SQL (СТАНДАРТ2)</h3>
+<br>
+<p>- Исходник: <code>scripts\Show-ObjectInfo.cs</code> (C#, WPF, .NET Framework 4.0), скомпилированный файл: <code>bin\Show-ObjectInfo.exe</code>.</p>
+<p>- Данные: <code>temp\pb_full.json</code> (500 объектов PB) и <code>temp\sql_full.json</code> (500 объектов SQL), выгружаются скриптом <code>temp\export_full.py</code> из базы <code>scripts\ais_objects_mcp\objects.db</code>.</p>
+<p>- Возможности: две вкладки (PB и SQL) с таблицами объектов, фильтром и многоуровневой сортировкой; исходный код с поиском контекста; списки &#171;Содержит&#187;, &#171;Содержит SQL&#187;, &#171;Содержится в&#187;; свойства; построчное сравнение версий Main и Current (Merge) с кнопкой запуска TortoiseMerge; копирование данных с заголовками; контекстное меню коллекций &#171;Открыть в окне&#187;.</p>
+<p>- Автотест: <code>scripts\AutoTest-Pipe.ps1</code> — файловый канал команд <code>%TEMP%\objinfo_cmd.txt</code> / <code>objinfo_resp.txt</code> (команды ping, sel_pb, sel_sql, st_pb, st_sql, close).</p>
+<br>
+<h3>2.4. TaskPlan — диспетчер объёмных задач</h3>
+<br>
+<p>- Диалоговое окно: <code>scripts\Show-TaskPlanGUI.ps1</code> (команда запуска TaskPl).</p>
+<p>- Трекер: <code>scripts\TaskPlan-Tracker.ps1</code> — ведение файла ПЛАН_РЕАЛИЗАЦИИ.txt с чек-боксами этапов и зеркала plan_state.json.</p>
+<p>- Менеджер: <code>scripts\TaskPlan-Manager.ps1</code> — реестр множества задач (task_index.json): создание, переключение, приостановка, возобновление, правка промпта, удаление.</p>
+<p>- Анализ ошибок: <code>scripts\Out-TaskPlan.ps1</code> (команда OUTPL) — распознавание восьми типов ошибок с автоисправлением; цикл автоисправления <code>Out-TaskPlan-FixCycle.ps1</code>.</p>
+<p>- Автотесты: <code>scripts\TaskPlan-Tests.ps1</code> (15 тестов), <code>scripts\Out-TaskPlan-Tests.ps1</code> (10 тестов).</p>
+<br>
+<h3>2.5. ПРОДОБР — окно продолжения обработки</h3>
+<br>
+<p>- Файл: <code>scripts\Show-ProdObr-GUI.ps1</code> (команда ПРОДОБР).</p>
+<p>- Назначение: продолжение работы по утверждённым планам — поиск задач со статусом &#171;в работе&#187; или &#171;не начато&#187; в <code>rules\pending-tasks.md</code> и папках задач, отображение прогресса по контрольным точкам, автопереход к следующей.</p>
+<br>
+<h3>2.6. TimeFIX — календарь с интеграцией Outlook</h3>
+<br>
+<p>- Файлы: <code>bin\Show-TimeFIX.ps1</code> (<code>.vbs</code>, <code>.bat</code>).</p>
+<p>- Назначение: WPF-календарь с недельным представлением, чтение встреч Outlook через COM, автопроверка встречи &#171;Дейли AIS&#187; в 9:30.</p>
+<br>
+<h3>2.7. Вспомогательные скрипты</h3>
+<br>
+<tr><th> Скрипт </th><th> Назначение </th></tr>
+<tr><td>---</td><td>---</td></tr>
+<tr><td> `scripts\Add-Bom.ps1` </td><td> Добавление BOM (UTF-8) к файлам .ps1 — защита от кракозябр и антивируса </td></tr>
+<tr><td> `scripts\Preflight-Antivirus.ps1` </td><td> Массовая проверка скриптов на запрещённые паттерны, автофикс BOM </td></tr>
+<tr><td> `scripts\ConvertTo-BatLauncher.ps1` </td><td> Конвертация .ps1 в .bat-лаунчер с base64 (обход детекта антивирусом) </td></tr>
+<tr><td> `scripts\Convert-Docs.ps1` </td><td> Конвертация документации docs\*.md в .html и .pdf </td></tr>
+<tr><td> `scripts\Out-LastOutput.ps1` </td><td> Анализ свежего вывода МОРДА и МОРДА2 (команда ОБР/OUT) </td></tr>
+<tr><td> `scripts\Save-Snapshot.ps1` </td><td> Архивирование проекта (команда СОХР) </td></tr>
+<tr><td> `scripts\Save-UserPrompt.ps1` </td><td> Сохранение промптов пользователя в архив </td></tr>
+<tr><td> `scripts\Export-PB.ps1`, `SQL_exp_single.bat` </td><td> Выгрузка объектов PB и SQL </td></tr>
+<h2>3. MCP-серверы</h2>
+<br>
+<p>MCP (Model Context Protocol) — протокол подключения внешних инструментов к LLM. Все серверы объявлены в файле <code>opencode.jsonc</code>, раздел &#171;mcp&#187;.</p>
+<br>
+<h3>3.1. ais-catalog — база знаний о проекте AIS</h3>
+<br>
+<p>- Расположение: <code>scripts\ais_catalog_mcp\server.py</code> (Python, виртуальное окружение .venv).</p>
+<p>- Назначение: главное хранилище знаний о корпоративном проекте — анализы задач Jira, бизнес-правила, метаданные объектов PB и SQL, связи между объектами, сленг аналитиков.</p>
+<p>- Основные инструменты: сохранение и поиск знаний (save_knowledge, search_knowledge), бизнес-правила (add_business_rule, get_business_rules), метаданные и зависимости объектов (get_object_metadata, find_dependencies), поиск по кодовой базе (search_codebase), теги проектов и проверка кросс-проектного влияния (tag_object, check_cross_project_impact).</p>
+<p>- Хранилище: SQLite с полнотекстовым поиском FTS5. Важно: FTS5 не знает русской морфологии, поэтому при сохранении обязательны явные теги (имена объектов, номера задач).</p>
+<br>
+<h3>3.2. ais-objects — каталог объектов PB и SQL</h3>
+<br>
+<p>- Расположение: <code>scripts\ais_objects_mcp\server.py</code>, база <code>objects.db</code>.</p>
+<p>- Назначение: реестр всех объектов проекта (8464 объекта): PB-объекты из PB_Main (производственная версия) и PB_Current (песочница), SQL-объекты из BD\galaxy и BD\dev_golden.</p>
+<p>- Основные инструменты: импорт объектов из файловой системы (import_objects), карточка объекта (get_object), список и поиск (list_objects, search_objects), сравнение версий Main и Current (compare_objects), граф зависимостей (find_dependencies, add_dependency), анализы и свойства объектов (save_analysis, get_analyses, set_property).</p>
+<br>
+<h3>3.3. opencode-mcp — база знаний об инструменте OpenCode</h3>
+<br>
+<p>- Расположение: <code>scripts\opencode_mcp\server.py</code>.</p>
+<p>- Назначение: хранение опыта работы с самим инструментом OpenCode — настройка провайдеров LLM, шаблоны MCP-серверов, ошибки конфигурации, решения по WPF и PowerShell, история багов.</p>
+<p>- Основные инструменты: save_knowledge, search_knowledge, get_knowledge, list_recent, delete_knowledge, knowledge_stats.</p>
+<p>- Правило выбора хранилища: знания о проекте AIS — в ais-catalog, знания об OpenCode как инструменте — в opencode-mcp.</p>
+<br>
+<h3>3.4. rules-mcp — правила проекта (только чтение)</h3>
+<br>
+<p>- Расположение: <code>C:\AIS\AI\rules-mcp\run.py</code>.</p>
+<p>- Назначение: быстрый доступ к статическим правилам проекта без чтения файлов — расшифровка сокращений (get_abbreviation), требования к кодировкам (get_encoding_rule), тексты правил по темам (get_rule, get_full_rule), предполётная проверка перед записью файла (preflight_check), поиск по истории багов (search_bug).</p>
+<p>- Источники: <code>rules\abbreviations.md</code>, <code>rules\changelog.md</code>, файлы правил <code>.opencode\*.mdc</code>. В этот сервер ничего не сохраняется — он читает файлы напрямую.</p>
+<br>
+<h3>3.5. sybase-docs — документация Sybase ASE 15.5 и PowerBuilder 12.5 (только чтение)</h3>
+<br>
+<p>- Расположение: <code>C:\AIS\AI\sybase-docs-mcp</code> (Python, виртуальное окружение venv).</p>
+<p>- Назначение: поиск по проиндексированной официальной документации Sybase — синтаксис, сообщения об ошибках, справочники.</p>
+<p>- Основные инструменты: поиск по документации (search_docs), получение раздела целиком (get_section), чтение соседних фрагментов (read_context), список документов и продуктов (list_docs_tool, list_products_tool), проверка кода на соответствие документированным паттернам (validate_code).</p>
+<p>- Пример применения: подтверждение причины ошибки 107 (несовпадение квалификаторов колонок и таблиц) по официальному тексту документации.</p>
+<br>
+<h3>3.6. atlassian — Jira и Confluence (только чтение)</h3>
+<br>
+<p>- Запуск: <code>uvx.exe mcp-atlassian</code> (готовый пакет).</p>
+<p>- Назначение: чтение задач Jira (<code>https://mytask.renins.com</code>) и страниц Confluence (<code>https://wiki.renins.com</code>).</p>
+<p>- Включённые инструменты: jira_search, jira_get_issue, confluence_search, confluence_get_page. Режим строго &#171;только чтение&#187; (READ_ONLY_MODE = true) — изменение задач и страниц запрещено.</p>
+<br>
+<h2>4. Плагины OpenCode</h2>
+<br>
+<p>Плагины объявлены в <code>opencode.jsonc</code>, раздел &#171;plugin&#187;. Локальные плагины лежат в <code>.opencode\plugins\</code> и <code>.opencode\plugin\</code>.</p>
+<br>
+<h3>4.1. @betterspec/opencode (внешний пакет)</h3>
+<br>
+<p>Инструменты подготовки спецификаций: помогает формализовать требования до начала разработки.</p>
+<br>
+<h3>4.2. @relf108/opencode-watchdog (внешний пакет)</h3>
+<br>
+<p>Сторожевой контроль сессии разработки:</p>
+<br>
+<p>- блокирует правки кода до записи согласованного объёма работ в <code>.opencode\session\scope.txt</code> (каждая сессия начинается в режиме &#171;только чтение&#187;);</p>
+<p>- ограничивает правки согласованным списком путей;</p>
+<p>- требует базовый прогон тестов в начале сессии (test-baseline) и итоговый в конце (test-latest), сравнивает и сообщает о регрессиях;</p>
+<p>- блокирует git commit при отсутствии файлов базовых прогонов;</p>
+<p>- классифицирует команды оболочки и внешние адреса как безопасные или рискованные (агент watchdog-auditor);</p>
+<p>- предупреждает о большом количестве правок (возможное зацикливание).</p>
+<br>
+<h3>4.3. save-prompts.js (локальный)</h3>
+<br>
+<p>Сохранение всех пользовательских промптов в архив <code>archives\prompts\prompts_archive.log</code> через инструмент save_prompt. Защита от потери формулировок задач при смене LLM или закрытии сессии.</p>
+<br>
+<h3>4.4. russian-compaction.js (локальный)</h3>
+<br>
+<p>Русский язык при сжатии сессии: дополняет стандартный запрос сжатия контекста требованием формировать сводку по-русски (иначе сводки получаются на английском и нарушают языковое правило проекта).</p>
+<br>
+<h3>4.5. claude-code.js (локальный)</h3>
+<br>
+<p>Интеграция Claude Code как инструмента OpenCode: добавляет инструменты claude_pb (анализ и рефакторинг объектов PowerBuilder) и claude_sql (анализ хранимых процедур Sybase). Вызывает claude CLI в неинтерактивном режиме.</p>
+<br>
+<h3>4.6. loop-guard.js (локальный)</h3>
+<br>
+<p>Обнаружение и предотвращение зацикливания: отслеживает повторяющиеся паттерны в ответах ассистента и при обнаружении цикла возвращает системное предупреждение.</p>
+<br>
+<h3>4.7. task-progress.js (локальный)</h3>
+<br>
+<p>Прогресс задач по промпту: при получении промпта показывает диалоговое окно Show-TaskProgressDialog через триггер-файл <code>temp\show_task_dialog.trigger</code>.</p>
+<br>
+<h2>5. Провайдеры LLM</h2>
+<br>
+<p>Настроены в <code>opencode.jsonc</code>, раздел &#171;provider&#187;.</p>
+<br>
+<tr><th> Провайдер </th><th> Статус </th><th> Модели </th><th> Примечание </th></tr>
+<tr><td>---</td><td>---</td><td>---</td><td>---</td></tr>
+<tr><td> routerai </td><td> основной </td><td> Claude Opus 4.8, Claude Sonnet 4.6, Claude Haiku 4.5, GPT-4o, DeepSeek V4 Pro, Gemini 2.5 Pro </td><td> Российский шлюз `https://routerai.ru/api/v1`, оплата по токенам </td></tr>
+<tr><td> ollama </td><td> активен </td><td> Qwen 2.5 Coder 32B, DeepSeek Coder V2 16B </td><td> Локальные бесплатные модели, `http://localhost:11434` </td></tr>
+<tr><td> yandex </td><td> отключён </td><td> YandexGPT </td><td> Проверка доступа </td></tr>
+<tr><td> anthropic </td><td> отключён </td><td> Claude 3.7 Sonnet </td><td> Прямой доступ заблокирован сетью </td></tr>
+<p>Основная модель: Claude Opus 4.8, вспомогательная (small_model): Claude Haiku 4.5. У моделей заданы рейтинги пригодности для PowerBuilder (pb_rating) и SQL (sql_rating), стоимость и лимиты контекста — используются при выборе модели командой DLLM.</p>
+<br>
+<h2>6. Правила и база знаний</h2>
+<br>
+<p>- <code>AGENTS.md</code> — ядро правил: кодировки, команды, антивирус, стратегия решения объёмных задач недорогими LLM.</p>
+<p>- <code>.opencode\*.mdc</code> — тематические правила: русский язык, предполётные проверки, PB-объекты, SQL (включая правило об алиасах при dbo-квалификации — защита от ошибки 107), VSS, Jira, СТАНДАРТ2, глоссарий.</p>
+<p>- <code>rules\abbreviations.md</code> — сокращения проекта (ДО, ОП, ПВКЛ, ПБ и другие).</p>
+<p>- <code>rules\changelog.md</code> — история багов и исправлений (Bug-013 и далее).</p>
+<p>- <code>rules\pending-tasks.md</code> — отложенные задачи с точками возобновления.</p>
+<br>
+<h2>7. Структура каталогов</h2>
+<br>
+<tr><th> Каталог </th><th> Содержимое </th></tr>
+<tr><td>---</td><td>---</td></tr>
+<tr><td> `bin\` </td><td> Диалоговые окна и лаунчеры (МОРДА, МОРДА2, ObjectInfo.exe, TimeFIX) </td></tr>
+<tr><td> `scripts\` </td><td> Рабочие скрипты, MCP-серверы (ais_catalog_mcp, ais_objects_mcp, opencode_mcp) </td></tr>
+<tr><td> `config\` </td><td> `config.json` — все пути проекта </td></tr>
+<tr><td> `docs\` </td><td> Документация (md, html, pdf) </td></tr>
+<tr><td> `rules\` </td><td> Правила, сокращения, история багов, отложенные задачи </td></tr>
+<tr><td> `tasks\` </td><td> Папки задач (Git_, Test_, Ready_, Describe) </td></tr>
+<tr><td> `temp\` </td><td> Временные файлы, журналы, данные ObjectInfo </td></tr>
+<tr><td> `archives\` </td><td> Архивы проекта и промптов </td></tr>
+<tr><td> `BD\` </td><td> Выгрузки SQL: galaxy (Main) и dev_golden (Current) </td></tr>
+<tr><td> `PB_Main\`, `PB_Current\` </td><td> Выгрузки исходников PowerBuilder </td></tr>
+<tr><td> `.opencode\` </td><td> Правила, плагины, команды, сессия </td></tr>
+</body></html>

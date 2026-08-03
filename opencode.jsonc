@@ -108,6 +108,8 @@
     }
   },
   "plugin": [
+    "@betterspec/opencode",
+    "@relf108/opencode-watchdog",
     ".opencode/plugins/save-prompts.js",
     ".opencode/plugins/russian-compaction.js",
     ".opencode/plugins/claude-code.js",

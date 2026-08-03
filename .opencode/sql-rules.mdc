@@ -403,3 +403,24 @@ LOCK TABLE ais_job_status IN EXCLUSIVE MODE WAIT 1
 - Псевдонимы таблиц — короткие (1–3 буквы): `p` для policy, `a` для agreement, `e` для entity.
 - `SELECT` — ключевые слова заглавными.
 - Каждый `SELECT` на новой строке, поля с отступом.
+
+## Квалификаторы колонок и dbo. — ошибка 107 (ОБЯЗАТЕЛЬНО)
+
+ASE сопоставляет квалификатор колонки и имя таблицы во FROM **как строки** — они должны совпадать текстуально (ASE 15.5, blocks.pdf стр. 399 «Using qualified identifiers consistently»).
+
+**Правило:** если во FROM/JOIN таблица указана с владельцем (`dbo.таблица`) — ОБЯЗАТЕЛЬНО ввести алиас и использовать его во всех префиксах колонок (SELECT/WHERE/ON/GROUP/ORDER). Добавлять `dbo.` в префиксы колонок — плохая идея (громоздко, легко пропустить).
+
+```sql
+-- ПРАВИЛЬНО (алиас)
+SELECT p.product_id, p.name
+FROM dbo.ais_cat_product p
+LEFT JOIN dbo.ais_cat_prolongation_type pt ON p.prolongation_type_id = pt.prolongation_type_id
+
+-- НЕПРАВИЛЬНО (рассинхрон: FROM с dbo., префиксы без dbo.)
+SELECT ais_cat_product.product_id, ais_cat_product.name
+FROM dbo.ais_cat_product
+```
+
+**Коварство бага — user-зависимость:** у пользователя, который в БД маппится на `dbo` (например, разработчик), префикс `таблица.` резолвится в `dbo.таблица` и совпадает — ошибки НЕТ. У обычного пользователя (не dbo) префикс резолвится через его имя, НЕ совпадает со строкой `dbo.таблица` → **ошибка 107** («The column prefix ... does not match with a table name or alias name used in the query»). Поэтому у автора правки всё работает, а у других пользователей падает.
+
+Правило распространяется и на SQL внутри PB DataWindow/DDDW (retrieve). Прецедент: `dddw_ais_cat_product`, `d_ais_cat_product` в карточке договора с посредником (знания ais-catalog #204-206).

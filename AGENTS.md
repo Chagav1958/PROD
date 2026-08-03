@@ -321,6 +321,7 @@ TaskPlan — сервис управления объёмными задачам
 ## Остальные правила
 
 - **`.opencode/*.mdc`** — правила PB, SQL, VSS, Jira, GUI, глоссарий (OpenCode загружает автоматически)
+- **`.opencode/objectinfo-rule.mdc`** — правило разработки ДО ObjectInfo (справочник PB/SQL по ТЗ)
 - **`rules/changelog.md`** — полная история исправлений (Bug-013…FEAT-021)
 - **`rules/pending-tasks.md`** — отложенные задачи
 - **`rules/abbreviations.md`** — все сокращения

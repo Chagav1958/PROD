@@ -1,2 +1,2 @@
 @echo off
-powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%~dp0..\scripts\Show-ObjectInfo-GUI.ps1" %*
+start "" "C:\AIS\AI\Prod\bin\Show-ObjectInfo.exe" %*
