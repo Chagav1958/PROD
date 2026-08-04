@@ -4,6 +4,16 @@
 param([string]$TaskName="")
 $R = if($PSScriptRoot -match '[\\/]scripts$'){Split-Path $PSScriptRoot -Parent}else{"C:\AIS\AI\Prod"}
 . (Join-Path $R "scripts\Standard2-Helpers.ps1")
+$exp = Join-Path $R "scripts\ExportFull\bin\Release\net6.0\ExportFull.exe"
+$pbJson = Join-Path $R "temp\pb_full.json"
+$sqlJson = Join-Path $R "temp\sql_full.json"
+if(Test-Path $exp -EA SilentlyContinue){
+    $expTime = (Get-Item $exp).LastWriteTime
+    if(-not (Test-Path $pbJson) -or (Get-Item $pbJson).LastWriteTime -lt $expTime){
+        TJ "INFO" "Running ExportFull.exe..."
+        & $exp 2>&1 | TJ "INFO"
+    }
+}
 Add-Type -AssemblyName PresentationFramework,System.Windows.Forms,System.Drawing,System.Data -EA Stop
 
 $script:TJPath = Join-Path $env:TEMP "objinfo_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"

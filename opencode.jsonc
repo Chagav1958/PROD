@@ -105,6 +105,19 @@
       "type": "local",
       "command": ["C:\\AIS\\AI\\sybase-docs-mcp\\venv\\Scripts\\python.exe", "C:\\AIS\\AI\\rules-mcp\\run.py"],
       "enabled": true
+    },
+    "ews": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\ews-mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\ews-mcp\\run_server.py"],
+      "cwd": "C:\\AIS\\AI\\Prod\\ews-mcp",
+      "environment": {
+        "EWS_AUTH_TYPE": "ntlm",
+        "EWS_INSECURE_SKIP_VERIFY": "true",
+        "TIMEZONE": "Europe/Moscow",
+        "MCP_TRANSPORT": "stdio"
+      },
+      "enabled": true,
+      "timeout": 120000
     }
   },
   "plugin": [

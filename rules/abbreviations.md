@@ -60,6 +60,7 @@
 | **TortoiseMerge** | Визуальное сравнение файлов |
 | **ss.exe** | Microsoft Visual SourceSafe (VSS) — система контроля версий |
 | **VSS-Utils.ps1** | PowerShell модуль для работы с VSS |
+| **TIKTOKEN / ТИКТОКЕН** | Утилита подсчёта токенов (tiktoken OpenAI). `scripts\Count-Token.ps1` |
 
 ## VSS команды
 
@@ -70,6 +71,12 @@
 | **Properties** | Узнать кто использует объект | `Get-VssWhoIsUsing -Project "$/Project"` | `-Project` |
 | **Checkout** | Выполнить Check Out | `Set-VssCheckout -Project "$/Project" -Comment "text" -Recursive` | `-Project`, `-Comment`, `-Recursive` |
 | **Checkin** | Выполнить Check In | `Set-VssCheckin -Project "$/Project" -Comment "text" -Recursive` | `-Project`, `-Comment`, `-Recursive` |
+
+## Git команды
+
+| Команда | Назначение |
+|---------|------------|
+| **GITHUB** | Обновить git (add + commit с авто-сообщением), сделать push в GitHub. Всегда проверяет отсутствие секретов перед push. |
 
 ## Ключевые файлы
 

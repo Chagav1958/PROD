@@ -1,0 +1,71 @@
+# Ignore everything at root by default
+/*
+
+# Python cache and virtual environments (anywhere)
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Large binary files
+*.bin
+
+# Junk files
+*.tmp
+*.temp
+*.log
+vssver2.scc
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Allow specific file extensions at root only
+!/*.ps1
+!/*.md
+!/*.jsonc
+!/*.json
+!/*.bat
+!/*.py
+
+# Allow specific directories (all contents within)
+!/.opencode/
+!/.config/
+!/bin/
+!/config/
+!/docs/
+!/models/
+!/rules/
+!/scripts/
+!/tools/
+
+# Exclude node_modules inside .opencode or anywhere else
+**/node_modules/
+
+# .config junction - exclude backup files at any depth
+.config/**/*.bak*
+
+# --- ОБЯЗАТЕЛЬНАЯ ЗАЩИТА: секреты НИКОГДА не в Git/GitHub ---
+# Логины, пароли, токены, API-ключи, secrets — строго в config/.local_secrets.json
+config/.local_secrets.json
+
+# Шаблон структуры хранилища секретов — ДОПУСКАЕТСА в git (только пустые placeholder-значения)
+# (игнорируется через *.local_secrets* ниже, но затем разрешается через !config/.local_secrets.example.json)
+
+# Файлы конфигурации с зашифрованными паролями/токенами — ИСКЛЮЧЕНЫ из git
+config/config.json
+config/settings_history.json
+config/oc-config-manager.json
+
+# Базы знаний и объектов НЕ коммитить в Git (могут содержать вложения/ссылки)
+*.db
+
+# Секреты в любой конфигурации — ИСКЛЮЧЕНЫ: *.local_secrets*
+*.local_secrets*
+# Шаблон хранилища секретов — ИСКЛЮЧЕНИЕ: разрешить в git (только пустые значения)
+!config/.local_secrets.example.json

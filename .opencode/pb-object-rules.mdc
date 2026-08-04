@@ -148,3 +148,100 @@ function ConvertTo-PBHex {
     "`$`$HEX$len`$`$$hex`$`$ENDHEX`$`$"
 }
 ```
+
+---
+
+## 5. Анализ зависимостей PB-объектов — типы связей
+
+При анализе PB-кода для наполнения `object_dependencies` в MCP (`ais_objects_mcp`) необходимо извлекать ВСЕ типы связей:
+
+### 5.1 `dep_type='calls'` — вызовы функций/методов между PB-объектами
+
+Определяется по:
+- Вызовам функций в PowerScript-коде: `uf_some_function()`, `of_some_method()`
+- Вызовам через точечную нотацию: `uo_class.of_method()`
+
+### 5.2 `dep_type='sql_ref'` — ссылки на SQL-объекты
+
+Определяется по:
+- Встроенному SQL в PowerScript-коде: `SELECT ... FROM table`, `EXEC usp_procedure`
+- Именам SQL-процедур в вызовах: `DECLARE cur CURSOR FOR SELECT ...`
+- DataWindow-свойствам `dataobject` со значениями `d_*` (где `d_` = DataWindow с SQL)
+
+### 5.3 `dep_type='dddw'` — DropDownDataWindow (выпадающие списки)
+
+**Обязательно извлекать!** Определяется по:
+
+1. **В экспортном формате `.srd` (DataWindow):**
+   - Ищем строки вида: `dddw.name="d_currency_list"` или `dddw.name="dddw_project_type"`
+   - Это прямое указание имени DataWindow, используемого как выпадающий список
+   - Имя DDDW может быть в кавычках или без
+
+2. **В PowerScript-коде:**
+   - Конструкции: `DataWindowChild ldwc; dw.GetChild("column_name", ldwc)`
+   - Динамическое присвоение: `dw.Modify("column_name.dddw.Name = 'd_xxx'")`
+   - Прямое обращение: `dw.Object.column_name.dddw.Name = "d_xxx"`
+
+3. **Связь:** `from_object = PB_DataWindow → to_object = DDDW_DataWindow → dep_type = 'dddw'`
+
+### 5.4 `dep_type='contains'` — композиция (объект содержит другой объект)
+
+**Обязательно извлекать!** Определяется по:
+
+1. **В экспортном формате `.srw` (Window), `.sru` (UserObject), `.srm` (Menu):**
+   - Контролы с типом `dw_*` → ссылка на DataWindow через свойство `dataobject`
+   - Контролы с типом `uo_*` → вложенный UserObject
+   - Контролы с типом `cb_*`, `em_*`, `st_*` → стандартные контролы (не порождают связей)
+
+2. **Пример формата .srw:**
+   ```
+   type dw_1 from datawindow within w_bill
+   dataobject="d_bill_list"
+   ```
+   → связь: `from_object = w_bill → to_object = d_bill_list → dep_type = 'contains'`
+
+3. **Визуальные контролы-UserObject:**
+   ```
+   type uo_1 from uo_callback within w_bill
+   ```
+   → связь: `from_object = w_bill → to_object = uo_callback → dep_type = 'contains'`
+
+### 5.5 `dep_type='inherits'` — наследование
+
+Определяется по:
+- Первой строке экспортного формата: `$PBExportHeader$w_bill_card.srw$...`
+- Свойству `type w_bill_card from w_bill_base` — явное указание предка
+- Информация о предке доступна в каталоге объектов (`first_anc` поле)
+
+### 5.6 Приоритет типов связей
+
+| dep_type | Направление | Где искать | Приоритет |
+|----------|-------------|------------|:---------:|
+| `calls` | PB → PB | PowerScript код | Высокий |
+| `sql_ref` | PB → SQL | Встроенный SQL + DataWindow SQL | Высокий |
+| `dddw` | PB → PB | Экспорт .srd + код Modify/GetChild | **Высокий** |
+| `contains` | PB → PB | Экспорт .srw/.sru — контролы | **Высокий** |
+| `inherits` | PB → PB | Экспорт — строка наследования | Средний |
+
+**Правило:** при анализе ЛЮБОГО PB-объекта всегда проверять ВСЕ 5 типов связей. Не ограничиваться только `calls` и `sql_ref`.
+
+---
+
+## 6. Обязательное использование sybase-docs перед анализом PB-кода
+
+При ЛЮБОМ анализе или редактировании PB-объекта:
+1. **Сначала** — поиск в `sybase-docs_search_docs` с запросом по релевантному типу объекта (DataWindow, Window, UserObject) и требуемой функциональности (DDDW, Modify, GetChild, наследование)
+2. **Затем** — чтение `.sr*` файла и анализ с учётом документации
+3. **Сохранять** результаты анализа в MCP (`ais-objects_save_analysis`) с тегом `auto_analysis`
+
+**Документы PB 12.5 доступные через sybase-docs:**
+- `dwref` (1058 стр) — DataWindow Reference: свойства, методы, DDDW
+- `psref` (1220 стр) — PowerScript Reference: полный справочник языка
+- `pbug` (1070 стр) — Users Guide
+- `objcont` (606 стр) — Objects and Controls: композиция
+- `apptech` (716 стр) — Application Techniques
+- `pbnigref` (286 стр) — Nested Reports, Graphs, RichText
+- `pbextref` (370 стр) — External Functions и OLE
+- `dwprgug` (240 стр) — DataWindow Programmers Guide
+- `connpb` (424 стр) — Connecting to Databases
+- `dbparm` (280 стр) — Database Parameters

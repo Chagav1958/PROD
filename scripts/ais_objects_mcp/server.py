@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import hashlib
+import re
 from datetime import datetime
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -178,6 +179,57 @@ def _file_info(path):
     return size, sha, mtime
 
 
+def _analyze_pb_deps(filepath, ext, name, conn):
+    deps = set()
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            content = f.read()
+    except:
+        return deps
+
+    # DDDW (DataWindow export .srd)
+    if ext == ".srd":
+        for m in re.finditer(r'dddw\.name\s*=\s*"[\w_-]+"|dddw\.name\s*=\s*[\w_-]+', content, re.IGNORECASE):
+            dddw_name = re.sub(r'^dddw\.name\s*=\s*"?', '', m.group(0)).strip('"')
+            if dddw_name and dddw_name.lower() != "none":
+                deps.add((name, dddw_name, "dddw"))
+        for m in re.finditer(r"dddw\.name\s*=\s*'([\w_-]+)'", content):
+            dddw_name = m.group(1).strip()
+            if dddw_name and dddw_name.lower() != "none":
+                deps.add((name, dddw_name, "dddw"))
+
+    # Inheritance (all PB files)
+    m = re.search(r"type\s+[\w_]+\s+from\s+([\w_]+)", content)
+    if m:
+        ancestor = m.group(1).strip()
+        if ancestor and ancestor.lower() != name.lower() and ancestor != "datawindow":
+            deps.add((name, ancestor, "inherits"))
+
+    # Object composition: Window (.srw) / UserObject (.sru) controls
+    if ext in (".srw", ".sru"):
+        for m in re.finditer(r'type\s+(\w+)\s+from\s+([\w_]+)\s+within\s+\w+', content):
+            ctrl_name = m.group(1).strip()
+            ctrl_type = m.group(2).strip()
+            if ctrl_type.lower() in ("datawindow", "userobject", "window"):
+                continue
+            if ctrl_type and ctrl_type.lower() not in ("commandbutton", "picture", "statictext", "dropdownlistbox",
+                                                         "editmask", "singlelineedit", "multilineedit", "checkbox",
+                                                         "radiobutton", "groupbox", "richtextedit", "listbox",
+                                                         "picturebutton", "tab", "ole", "olecontrol",
+                                                         "picturelistbox", "dropdownpicturelistbox", "custom", "vscrollbar",
+                                                         "hscrollbar", "htrackbar", "vtrackbar", "hprogressbar",
+                                                         "vprogressbar", "monthcalendar", "line", "oval", "rectangle",
+                                                         "roundrectangle", "graph", "inkedit", "inkpicture", "animationspi",
+                                                         "progressbar"):
+                deps.add((name, ctrl_type, "contains"))
+        for m in re.finditer(r'dataobject\s*=\s*"([\w_]+)"', content):
+            dobj = m.group(1).strip().strip('"')
+            if dobj and dobj.lower() != "none":
+                deps.add((name, dobj, "contains"))
+
+    return deps
+
+
 def _import_pb(src):
     base = SRC_MAP[src]["pb"]
     if not os.path.isdir(base):
@@ -201,6 +253,14 @@ def _import_pb(src):
                     VALUES (?, 'PB', ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (name, src, PB_EXTS[ext], lib, fpath, size, sha, mtime, now))
                 count += 1
+                deps = _analyze_pb_deps(fpath, ext, name, conn)
+                for from_obj, to_obj, dep_type in deps:
+                    try:
+                        conn.execute(
+                            "INSERT OR IGNORE INTO object_dependencies (from_object, from_src, to_object, dep_type, created_at) VALUES (?, ?, ?, ?, ?)",
+                            (from_obj, src, to_obj, dep_type, now))
+                    except:
+                        pass
             except:
                 pass
     conn.commit()
@@ -300,7 +360,7 @@ async def handle_list_tools():
                  "from_object": {"type": "string", "description": "Исходный объект"},
                  "from_src": {"type": "string", "description": "'main' или 'current'"},
                  "to_object": {"type": "string", "description": "Целевой объект"},
-                 "dep_type": {"type": "string", "description": "Тип: calls (PB→PB), sql_ref (PB→SQL), pb_ref (SQL→PB)"}
+                 "dep_type": {"type": "string", "description": "Тип: calls (PB→PB), sql_ref (PB→SQL), pb_ref (SQL→PB), dddw (DDDW), contains (композиция), inherits (наследование)"}
              }, "required": ["from_object", "from_src", "to_object", "dep_type"]}),
 
         Tool(name="find_dependencies", description="Граф зависимостей: кто вызывает объект / кого вызывает объект.",
@@ -480,8 +540,8 @@ async def handle_call_tool(name: str, arguments: dict):
             fs = arguments["from_src"]
             to = arguments["to_object"]
             dt = arguments["dep_type"]
-            if dt not in ("calls", "sql_ref", "pb_ref"):
-                return [TextContent(type="text", text=json.dumps({"error": "dep_type must be: calls, sql_ref, pb_ref"}, ensure_ascii=False))]
+            if dt not in ("calls", "sql_ref", "pb_ref", "dddw", "contains", "inherits"):
+                return [TextContent(type="text", text=json.dumps({"error": "dep_type must be: calls, sql_ref, pb_ref, dddw, contains, inherits"}, ensure_ascii=False))]
             try:
                 conn.execute("INSERT INTO object_dependencies (from_object, from_src, to_object, dep_type, created_at) VALUES (?, ?, ?, ?, ?)",
                              (fo, fs, to, dt, now))

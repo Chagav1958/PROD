@@ -9,7 +9,7 @@ using System.Windows.Media.Effects;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Web.Script.Serialization;
+using System.Text.Json;
 using System.Windows.Threading;
 using System.Windows.Input;
 using System.Windows.Markup;
@@ -467,7 +467,7 @@ namespace AIS.ObjectInfo
 
         List<PbObject> LoadPb() {
             var json = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\temp\\pb_full.json"));
-            var raw = new JavaScriptSerializer().Deserialize<List<Dictionary<string, object>>>(json);
+            var raw = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(json);
             return raw.Select(r => new PbObject {
                 name = S(r,"name"), type = S(r,"type"), lib = S(r,"lib"), size_kb = I(r,"size_kb"), modified = S(r,"modified"),
                 first_anc = S(r,"first_anc"), src = S(r,"src"), versions_match = S(r,"versions_match"), tasks = S(r,"tasks"),
@@ -478,7 +478,7 @@ namespace AIS.ObjectInfo
         }
         List<SqlObject> LoadSql() {
             var json = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\temp\\sql_full.json"));
-            var raw = new JavaScriptSerializer().Deserialize<List<Dictionary<string, object>>>(json);
+            var raw = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(json);
             return raw.Select(r => new SqlObject {
                 name = S(r,"name"), type = S(r,"type"), category = S(r,"category"), server = S(r,"server"), db = S(r,"db"),
                 size_kb = I(r,"size_kb"), modified = S(r,"modified"), purpose = S(r,"purpose"), src = S(r,"src"),
@@ -575,7 +575,14 @@ namespace AIS.ObjectInfo
             }
         }
         static Encoding GetFileEncoding(string path) {
-            return Encoding.UTF8;
+            try {
+                var raw = File.ReadAllBytes(path);
+                if (raw.Length >= 3 && raw[0] == 0xEF && raw[1] == 0xBB && raw[2] == 0xBF)
+                    return Encoding.UTF8;
+                if (raw.Length >= 2 && raw[0] == 0xFF && raw[1] == 0xFE)
+                    return Encoding.Unicode;
+                return Encoding.GetEncoding(1251);
+            } catch { return Encoding.UTF8; }
         }
         static string Trunc(string s) { return s == null ? "" : (s.Length > 120 ? s.Substring(0, 120) + "..." : s); }
 

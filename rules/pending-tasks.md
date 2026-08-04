@@ -17,11 +17,20 @@
 
 ### TASKPLAN-001 — переработка TaskPlan в диспетчер задач (папка: TASKPLAN-001, 19.07.2026)
 
-- **Статус:** план создан, реализация не начата
+- **Статус:** [x] завершена (03.08.2026, все этапы выполнены)
 - **Суть:** текущий TaskPlan — трекер этапов одной задачи. Нужен диспетчер множества задач: создание с промптом, переключение, остановка/возобновление, список невыполненных, удаление/редактирование промпта.
+- **Реализация:**
+  - `TaskPlan-Tracker.ps1` — ядро логики (actions: new, add, set, show, next, sync)
+  - `TaskPlan-Manager.ps1` — консольный менеджер множества задач (create, list, show, switch, suspend, resume, edit-prompt, delete) + `task_index.json`
+  - `Show-TaskPlanGUI.ps1` — WPF ДО с 4 вкладками: «Список задач», «Управление», «Тесты», «Импорт из TASK»
+  - `Show-TaskPlan.ps1` — лаунчер
+  - `TaskPlan-PrepareBrief.ps1` — подготовка брифов для дорогих LLM
+  - `TaskPlan-Tests.ps1` — 15 автотестов (трекер + GUI Automation)
+  - `TaskPlan-Logger.ps1` — логирование для OUTPL
+  - `TaskPlan-Import.ps1` — импорт TASK-задач в TaskPlan
+- **Документация:** `docs\taskplan-gui-guide.md` / `.html` / `.pdf`
 - **Папка задачи:** `C:\AIS\AI\Prod\tasks\TASKPLAN-001`
 - **Продолжение только по команде** «продолжить TASKPLAN-001»
-- **Следующий шаг:** Этап 2 — переписать TaskPlan-Tracker.ps1 в TaskPlan-Manager.ps1 (actions: create, list, switch, suspend, resume, edit-prompt, delete)
 
 ### TASKFIX — TimeFIX (Show-TimeFIX.ps1) (папка: TASKFIX, 23.07.2026)
 
