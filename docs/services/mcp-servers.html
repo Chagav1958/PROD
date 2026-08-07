@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>mcp-servers</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>MCP-сервера проекта AIS — детальное описание</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Общая информация</h2>
+<br>
+<p>MCP (Model Context Protocol) — протокол, позволяющий LLM-моделям взаимодействовать с внешними инструментами. Проект AIS использует 7 MCP-серверов, каждый из которых предоставляет специализированный набор инструментов.</p>
+<br>
+<p>Все сервера работают в режиме <code>stdio</code> (стандартный ввод/вывод) и запускаются процессом OpenCode Desktop автоматически при старте. Конфигурация задаётся в файле <code>opencode.jsonc</code> (секция <code>mcp</code>).</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Сводная таблица серверов</h2>
+<br>
+<table><tr><th>Сервер</th><th>Тип</th><th>Порт</th><th>База данных</th><th>Инструментов</th><th>Назначение</th></tr><tr><td><strong>ais-catalog</strong></td><td>Python</td><td>stdio</td><td>SQLite (knowledge.db)</td><td>15</td><td>База знаний проекта</td></tr><tr><td><strong>ais-objects</strong></td><td>Python</td><td>stdio</td><td>SQLite (objects.db)</td><td>15</td><td>Каталог объектов PB/SQL</td></tr><tr><td><strong>opencode-mcp</strong></td><td>Python</td><td>stdio</td><td>SQLite (knowledge.db)</td><td>8</td><td>Знания по работе с OpenCode</td></tr><tr><td><strong>rules-mcp</strong></td><td>Python</td><td>stdio</td><td>Файловая система</td><td>8</td><td>Правила проекта</td></tr><tr><td><strong>sybase-docs</strong></td><td>Python</td><td>stdio</td><td>ChromaDB/FTS</td><td>5</td><td>Документация Sybase/PB</td></tr><tr><td><strong>atlassian</strong></td><td>Python (mcp-atlassian)</td><td>stdio</td><td>Jira/Confluence API</td><td>4</td><td>Jira и Confluence (чтение)</td></tr><tr><td><strong>ews</strong></td><td>Python</td><td>stdio</td><td>Exchange EWS API</td><td>80+</td><td>Exchange/Outlook</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. Сервер `ais-catalog` — база знаний проекта</h2>
+<br>
+<h3>3.1. Назначение</h3>
+<p>Хранилище корпоративных знаний: бизнес-правила, опыт работы с объектами, результаты анализа задач, связи между сущностями.</p>
+<br>
+<h3>3.2. Инструменты</h3>
+<br>
+<table><tr><th>Инструмент</th><th>Описание</th><th>Пример</th></tr><tr><td><code>search_knowledge</code></td><td>Поиск знаний по запросу (FTS5)</td><td><code>search_knowledge(&quot;SYBASE-11523&quot;)</code></td></tr><tr><td><code>save_knowledge</code></td><td>Сохранить знание в базу</td><td><code>save_knowledge(text=&quot;...&quot;, tags=&quot;SQL,export&quot;)</code></td></tr><tr><td><code>knowledge_stats</code></td><td>Статистика базы знаний</td><td><code>knowledge_stats()</code></td></tr><tr><td><code>get_business_rules</code></td><td>Получить бизнес-правила для процесса/таблицы</td><td><code>get_business_rules(&quot;commission_calc&quot;)</code></td></tr><tr><td><code>add_business_rule</code></td><td>Добавить/обновить бизнес-правило (YAML)</td><td><code>add_business_rule(...)</code></td></tr><tr><td><code>get_object_metadata</code></td><td>Метаданные объекта (структура, зависимости, теги)</td><td><code>get_object_metadata(&quot;usp_policy_lk_list_1tst&quot;)</code></td></tr><tr><td><code>find_dependencies</code></td><td>Граф вызовов объектов</td><td><code>find_dependencies(&quot;w_policy_main&quot;, depth=2)</code></td></tr><tr><td><code>check_cross_project_impact</code></td><td>Используется ли объект в других проектах</td><td><code>check_cross_project_impact(&quot;u_entity&quot;, &quot;AIS&quot;)</code></td></tr><tr><td><code>search_codebase</code></td><td>Семантический поиск по коду</td><td><code>search_codebase(&quot;oss_policy&quot;)</code></td></tr><tr><td><code>tag_object</code></td><td>Проставить тег проекта объекту</td><td><code>tag_object(&quot;usp_...&quot;, &quot;AIS&quot;, &quot;AIS_CORE&quot;)</code></td></tr><tr><td><code>delete_knowledge</code></td><td>Удалить запись по ID</td><td><code>delete_knowledge(id=100)</code></td></tr><tr><td><code>get_knowledge</code></td><td>Получить запись по ID</td><td><code>get_knowledge(id=100)</code></td></tr><tr><td><code>list_recent</code></td><td>Последние сохранённые знания</td><td><code>list_recent(limit=10)</code></td></tr><tr><td><code>list_tags</code></td><td>Список всех тегов</td><td><code>list_tags()</code></td></tr><tr><td><code>reindex_knowledge</code></td><td>Переиндексация FTS</td><td><code>reindex_knowledge()</code></td></tr></table>
+<br>
+<h3>3.3. Структура БД (knowledge.db)</h3>
+<br>
+<p>- <strong>knowledge:</strong> текст знания, теги, дата создания</p>
+<p>- <strong>knowledge_fts:</strong> полнотекстовый индекс (FTS5)</p>
+<p>- <strong>business_rules:</strong> правила в формате YAML</p>
+<p>- <strong>object_metadata:</strong> структура объектов с тегами проектов (AIS_CORE, SHARED_AIS, GLOBAL_DB)</p>
+<br>
+<h3>3.4. Экономическая выгода</h3>
+<br>
+<p>- <strong>Сокращение времени поиска информации</strong> по объекту/задаче с часов до секунд (ранее: ручной просмотр .sru/.sql файлов)</p>
+<p>- <strong>Передача опыта между сессиями LLM:</strong> любая модель мгновенно получает контекст через <code>search_knowledge</code></p>
+<p>- <strong>Автоматический анализ:</strong> при импорте объектов формируются сводки параметров, таблиц и задач Jira</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Сервер `ais-objects` — каталог объектов</h2>
+<br>
+<h3>4.1. Назначение</h3>
+<p>Каталогизация всех объектов PowerBuilder и SQL с их зависимостями, анализами и метаданными.</p>
+<br>
+<h3>4.2. Инструменты</h3>
+<br>
+<table><tr><th>Инструмент</th><th>Описание</th></tr><tr><td><code>search_objects</code></td><td>Поиск объектов по имени/типу</td></tr><tr><td><code>list_objects</code></td><td>Список объектов с фильтрацией (lib, kind, src, obj_type)</td></tr><tr><td><code>get_object</code></td><td>Полная информация об объекте (свойства, анализы, зависимости)</td></tr><tr><td><code>get_analyses</code></td><td>Все анализы объекта</td></tr><tr><td><code>find_dependencies</code></td><td>Граф зависимостей (forward/reverse/both, глубина 1-3)</td></tr><tr><td><code>save_analysis</code></td><td>Сохранить анализ объекта (привязывается к объекту)</td></tr><tr><td><code>search_analyses</code></td><td>Поиск по тексту анализов (FTS5)</td></tr><tr><td><code>compare_objects</code></td><td>Сравнить Main vs Current</td></tr><tr><td><code>set_property</code></td><td>Установить свойство (description, status, purpose, notes)</td></tr><tr><td><code>import_objects</code></td><td>Импорт PB/SQL из файловой системы</td></tr><tr><td><code>add_dependency</code></td><td>Добавить связь между объектами</td></tr><tr><td><code>object_stats</code></td><td>Статистика каталога</td></tr></table>
+<br>
+<h3>4.3. Типы зависимостей</h3>
+<br>
+<table><tr><th>Тип</th><th>Обозначение</th><th>Пример</th></tr><tr><td><code>calls</code></td><td>PB → PB (вызов функции)</td><td><code>w_policy → uf_get_entity</code></td></tr><tr><td><code>sql_ref</code></td><td>PB → SQL (ссылка на процедуру)</td><td><code>w_policy → usp_policy_select</code></td></tr><tr><td><code>pb_ref</code></td><td>SQL → PB</td><td>редко</td></tr><tr><td><code>dddw</code></td><td>DropDown DataWindow</td><td><code>dddw_insure_kind</code></td></tr><tr><td><code>contains</code></td><td>Композиция</td><td><code>w_main → u_tab_policy</code></td></tr><tr><td><code>inherits</code></td><td>Наследование</td><td><code>w_child ← w_base</code></td></tr></table>
+<br>
+<h3>4.4. Экономическая выгода</h3>
+<br>
+<p>- <strong>Анализ влияния изменений:</strong> перед правкой объекта видно, кто его вызывает и кого вызывает он (4600 зависимостей)</p>
+<p>- <strong>Сокращение ошибок:</strong> автоматическая проверка <code>Contains в</code> для 44% PB-объектов (ранее было 3.6%)</p>
+<p>- <strong>Импорт из PB IDE:</strong> массовая загрузка метаданных (2473 PB + 2243 SQL объекта)</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. Сервер `opencode-mcp` — знания об OpenCode</h2>
+<br>
+<h3>5.1. Назначение</h3>
+<p>Хранилище опыта работы с OpenCode как инструментом: настройка провайдеров, баги, решения, скрипты PowerShell.</p>
+<br>
+<h3>5.2. Инструменты</h3>
+<br>
+<table><tr><th>Инструмент</th><th>Описание</th></tr><tr><td><code>search_knowledge</code></td><td>Поиск по базе знаний OpenCode</td></tr><tr><td><code>save_knowledge</code></td><td>Сохранить знание</td></tr><tr><td><code>get_knowledge</code></td><td>Получить запись по ID</td></tr><tr><td><code>delete_knowledge</code></td><td>Удалить запись</td></tr><tr><td><code>list_recent</code></td><td>Последние сохранённые знания</td></tr><tr><td><code>knowledge_stats</code></td><td>Статистика</td></tr></table>
+<br>
+<h3>5.3. Экономическая выгода</h3>
+<br>
+<p>- <strong>Повторное использование решений:</strong> 124 записи опыта (баги, настройки, скрипты)</p>
+<p>- <strong>Быстрая диагностика:</strong> поиск по ключевому слову за секунды (ранее требовал чтения changelog.md)</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Сервер `rules-mcp` — доступ к правилам</h2>
+<br>
+<h3>6.1. Назначение</h3>
+<p>Читает файлы правил напрямую из <code>.opencode/<em>.mdc</code> и <code>rules/</em>.md</code>. <strong>Никогда не используется для сохранения</strong> (read-only).</p>
+<br>
+<h3>6.2. Инструменты</h3>
+<br>
+<table><tr><th>Инструмент</th><th>Описание</th><th>Пример</th></tr><tr><td><code>get_abbreviation</code></td><td>Расшифровка сокращения</td><td><code>get_abbreviation(&quot;ПБ&quot;)</code></td></tr><tr><td><code>get_encoding_rule</code></td><td>Требования к кодировке файла</td><td><code>get_encoding_rule(&quot;test.ps1&quot;)</code></td></tr><tr><td><code>get_rule</code></td><td>Текст правила по теме</td><td><code>get_rule(&quot;sql&quot;)</code></td></tr><tr><td><code>get_full_rule</code></td><td>Полный текст правила из .mdc</td><td><code>get_full_rule(&quot;pb&quot;)</code></td></tr><tr><td><code>preflight_check</code></td><td>Preflight-проверка перед записью</td><td><code>preflight_check(&quot;test.ps1&quot;)</code></td></tr><tr><td><code>search_bug</code></td><td>Поиск по истории багов</td><td><code>search_bug(&quot;BOM&quot;)</code></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. Сервер `sybase-docs` — документация Sybase/PB</h2>
+<br>
+<h3>7.1. Назначение</h3>
+<p>Документация Sybase ASE 15.5 и PowerBuilder 12.5, загруженная в векторную базу для быстрого поиска.</p>
+<br>
+<h3>7.2. Инструменты</h3>
+<br>
+<table><tr><th>Инструмент</th><th>Описание</th></tr><tr><td><code>search_docs</code></td><td>Поиск по документации (snippet + metadata)</td></tr><tr><td><code>get_section</code></td><td>Полный текст раздела по chunk_id</td></tr><tr><td><code>read_context</code></td><td>N блоков до/после для контекста</td></tr><tr><td><code>validate_code</code></td><td>Проверка кода по документированным паттернам</td></tr><tr><td><code>list_docs_tool</code></td><td>Список индексированных документов</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>8. Сервер `atlassian` — Jira и Confluence</h2>
+<br>
+<h3>8.1. Назначение</h3>
+<p>Доступ к задачам Jira и страницам Confluence. <strong>Только чтение</strong> (READ_ONLY_MODE=true).</p>
+<br>
+<h3>8.2. Инструменты</h3>
+<br>
+<table><tr><th>Инструмент</th><th>Описание</th></tr><tr><td><code>jira_search</code></td><td>Поиск задач Jira по JQL</td></tr><tr><td><code>jira_get_issue</code></td><td>Получение задачи по ключу</td></tr><tr><td><code>confluence_search</code></td><td>Поиск страниц Confluence</td></tr><tr><td><code>confluence_get_page</code></td><td>Получение страницы по ID</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>9. Сервер `ews` — Exchange/Outlook</h2>
+<br>
+<h3>9.1. Назначение</h3>
+<p>Работа с корпоративной почтой через Exchange Web Services (EWS).</p>
+<br>
+<h3>9.2. Инструменты (основные из 80+)</h3>
+<br>
+<table><tr><th>Группа</th><th>Инструменты</th></tr><tr><td><strong>Почта</strong></td><td><code>search_emails</code>, <code>read_emails</code>, <code>send_email</code>, <code>reply_email</code>, <code>forward_email</code>, <code>get_email_details</code></td></tr><tr><td><strong>Папки</strong></td><td><code>list_folders</code>, <code>find_folder</code>, <code>manage_folder</code>, <code>move_email</code></td></tr><tr><td><strong>Календарь</strong></td><td><code>get_calendar</code>, <code>create_appointment</code>, <code>find_meeting_times</code>, <code>check_availability</code></td></tr><tr><td><strong>Контакты</strong></td><td><code>create_contact</code>, <code>find_person</code>, <code>analyze_contacts</code></td></tr><tr><td><strong>Задачи</strong></td><td><code>create_task</code>, <code>get_tasks</code>, <code>complete_task</code></td></tr><tr><td><strong>Управление</strong></td><td><code>oof_settings</code>, <code>rule_create</code>, <code>briefing</code>, <code>memory_set/get</code></td></tr></table>
+<br>
+<h3>9.3. Экономическая выгода</h3>
+<br>
+<p>- <strong>Автоматическая обработка почты:</strong> правила пересылки, автоответы (OOF)</p>
+<p>- <strong>Создание встреч:</strong> анализ доступности участников</p>
+<p>- <strong>Поиск контактов:</strong> GAL + личные контакты + история переписки</p>
+<br>
+</body></html>

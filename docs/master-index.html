@@ -1,0 +1,149 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>master-index</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Проект AIS Release Preparation — Главный том документации</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Назначение:</strong> единая точка входа в документацию проекта. Содержит указатели на все сервисы, объекты, правила, MCP-сервера, плагины и подсистемы.</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Общая информация о проекте</h2>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td>Название</td><td>AIS Release Preparation</td></tr><tr><td>Назначение</td><td>Автоматизация подготовки релизов страхового продукта &#171;Ренессанс&#187;</td></tr><tr><td>Язык разработки</td><td>PowerShell 5.1, Python 3.12, C#, BAT</td></tr><tr><td>База данных</td><td>Sybase ASE 15.5</td></tr><tr><td>Контроль версий</td><td>VSS (ss.exe) + Git (GitHub)</td></tr><tr><td>Задачи</td><td>Jira (mytask.renins.com)</td></tr><tr><td>Стандарт GUI</td><td>СТАНДАРТ2 (WPF)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>2. Сервисы (исполняемые подсистемы)</h2>
+<br>
+<h3>2.1. Основные сервисы GUI</h3>
+<br>
+<table><tr><th>Сервис</th><th>Файл</th><th>Назначение</th><th>Документация</th></tr><tr><td><strong>МОРДА2</strong> (СТАНДАРТ2)</td><td><code>bin\Prod-GUI_STANDART2.ps1</code></td><td>Главное окно подготовки релизов (19 операций)</td><td><a href="services/morda2.html">morda2.html</a> + <a href="services/morda2.pdf">.pdf</a></td></tr><tr><td><strong>DLLM</strong></td><td><code>scripts\Show-LLMs.ps1</code></td><td>Диалоговое окно управления LLM-моделями</td><td><code>services/dllm.md</code> (планируется)</td></tr><tr><td><strong>TaskPlan</strong></td><td><code>scripts\Show-TaskPlanGUI.ps1</code></td><td>Планировщик задач с WPF-интерфейсом</td><td><code>services/taskplan.md</code> (планируется)</td></tr><tr><td><strong>ПРОДОБР</strong></td><td><code>scripts\Show-ProdObr-GUI.ps1</code></td><td>Мониторинг обработки задач с прогресс-барами</td><td><code>services/prodobr.md</code> (планируется)</td></tr><tr><td><strong>ObjectInfo</strong></td><td><code>bin\Show-ObjectInfo.bat</code></td><td>Справочник объектов PB/SQL с зависимостями</td><td><code>services/objinfo.md</code> (планируется)</td></tr></table>
+<br>
+<h3>2.2. Сервисы выгрузки</h3>
+<br>
+<table><tr><th>Сервис</th><th>Файл</th><th>Назначение</th><th>Документация</th></tr><tr><td><strong>SQL Export</strong></td><td><code>bin\SQL_exp_param.bat</code>, <code>bin\SQL_exp_single.bat</code>, <code>bin\SqlExport.exe</code></td><td>Выгрузка SQL-объектов из Sybase ASE</td><td><a href="services/sql-export.html">sql-export.html</a> + <a href="services/sql-export.pdf">.pdf</a></td></tr><tr><td><strong>PB Export</strong></td><td><code>scripts\Export-PB.ps1</code></td><td>Выгрузка PowerBuilder-объектов через pbldump</td><td><code>services/pb-export.md</code> (планируется)</td></tr></table>
+<br>
+<h3>2.3. Сервисы сравнения и верификации</h3>
+<br>
+<table><tr><th>Сервис</th><th>Файл</th><th>Назначение</th></tr><tr><td><strong>Compare SQL</strong></td><td><code>scripts\Compare-SQL.ps1</code>, <code>scripts\Compare-SQL-Task.ps1</code></td><td>Сравнение SQL-объектов Current vs Main</td></tr><tr><td><strong>Compare PB</strong></td><td>Встроен в МОРДА2</td><td>Сравнение PB-объектов Current vs Main (MD5)</td></tr><tr><td><strong>Compare &amp; Verify</strong></td><td><code>scripts\Compare-Export.ps1</code></td><td>Сравнение выгрузок, отчёт готовности, RFC в Jira</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. MCP-сервера</h2>
+<br>
+<table><tr><th>Сервер</th><th>Команда запуска</th><th>Назначение</th><th>Документация</th></tr><tr><td><strong>ais-catalog</strong></td><td><code>.venv\python.exe server.py</code></td><td>База знаний проекта (объекты, бизнес-правила, опыт)</td><td><a href="services/mcp-servers.html">mcp-servers.html</a> + <a href="services/mcp-servers.pdf">.pdf</a></td></tr><tr><td><strong>ais-objects</strong></td><td><code>.venv\python.exe server.py</code></td><td>Каталог PB/SQL объектов с зависимостями и анализом</td><td><a href="services/mcp-servers.html">mcp-servers.html</a> + <a href="services/mcp-servers.pdf">.pdf</a></td></tr><tr><td><strong>opencode-mcp</strong></td><td><code>.venv\python.exe server.py</code></td><td>База знаний по работе с OpenCode (баги, скрипты, настройки)</td><td><a href="services/mcp-servers.html">mcp-servers.html</a> + <a href="services/mcp-servers.pdf">.pdf</a></td></tr><tr><td><strong>rules-mcp</strong></td><td><code>run.py</code></td><td>Доступ к правилам проекта (сокращения, кодировки, баги)</td><td><a href="services/mcp-servers.html">mcp-servers.html</a> + <a href="services/mcp-servers.pdf">.pdf</a></td></tr><tr><td><strong>sybase-docs</strong></td><td><code>-m sybase_mcp.server</code></td><td>Документация Sybase ASE 15.5 и PB 12.5</td><td><a href="services/mcp-servers.html">mcp-servers.html</a> + <a href="services/mcp-servers.pdf">.pdf</a></td></tr><tr><td><strong>atlassian</strong></td><td><code>mcp-atlassian</code></td><td>Доступ к Jira и Confluence (только чтение)</td><td><a href="services/mcp-servers.html">mcp-servers.html</a> + <a href="services/mcp-servers.pdf">.pdf</a></td></tr><tr><td><strong>ews</strong></td><td><code>run_server.py</code></td><td>Доступ к Exchange/Outlook (почта, календарь, контакты)</td><td><a href="services/mcp-servers.html">mcp-servers.html</a> + <a href="services/mcp-servers.pdf">.pdf</a></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. LSP-сервер</h2>
+<br>
+<table><tr><th>Сервер</th><th>Файл</th><th>Расширения</th><th>Документация</th></tr><tr><td><strong>PB-LSP</strong></td><td><code>scripts_pb_lsp\LspServer.exe</code></td><td><code>.sru</code>, <code>.srw</code>, <code>.srm</code>, <code>.srs</code>, <code>.srd</code>, <code>.srp</code>, <code>.pbj</code></td><td><a href="services/lsp-pb.html">lsp-pb.html</a> + <a href="services/lsp-pb.pdf">.pdf</a></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Плагины OpenCode</h2>
+<br>
+<table><tr><th>Плагин</th><th>Файл</th><th>Назначение</th><th>Документация</th></tr><tr><td><strong>save-prompts</strong></td><td><code>.opencode\plugins\save-prompts.js</code></td><td>Автосохранение промптов пользователя</td><td><code>services/plugins.md</code> (планируется)</td></tr><tr><td><strong>russian-compaction</strong></td><td><code>.opencode\plugins\russian-compaction.js</code></td><td>Сводки сессий на русском языке</td><td><code>services/plugins.md</code> (планируется)</td></tr><tr><td><strong>claude-code</strong></td><td><code>.opencode\plugins\claude-code.js</code></td><td>Интеграция с Claude Code для анализа PB/SQL</td><td><code>services/plugins.md</code> (планируется)</td></tr><tr><td><strong>loop-guard</strong></td><td><code>.opencode\plugin\loop-guard.js</code></td><td>Защита от бесконечных циклов правок</td><td><code>services/plugins.md</code> (планируется)</td></tr><tr><td><strong>task-progress</strong></td><td><code>.opencode\plugin\task-progress.js</code></td><td>Отслеживание прогресса задач</td><td><code>services/plugins.md</code> (планируется)</td></tr><tr><td><strong>@betterspec/opencode</strong></td><td>npm-пакет</td><td>Улучшенная спецификация промптов</td><td><code>services/plugins.md</code> (планируется)</td></tr><tr><td><strong>@relf108/opencode-watchdog</strong></td><td>npm-пакет</td><td>Система безопасности правок (scope, baseline, commit gate)</td><td><code>services/plugins.md</code> (планируется)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>6. Правила и соглашения</h2>
+<br>
+<table><tr><th>Документ</th><th>Назначение</th></tr><tr><td><code>AGENTS.md</code></td><td>Ядро правил: язык, пути, безопасность, кодировки, команды, антивирус</td></tr><tr><td><code>.opencode\preflight.mdc</code></td><td>Предварительные проверки перед записью файлов</td></tr><tr><td><code>.opencode\knowledge-first.mdc</code></td><td>Правило поиска знаний (сначала MCP, потом файлы)</td></tr><tr><td><code>.opencode\russian-language.mdc</code></td><td>Обязательный русский язык</td></tr><tr><td><code>.opencode\sql-rules.mdc</code></td><td>Правила SQL для Sybase ASE 15.5</td></tr><tr><td><code>.opencode\pb-object-rules.mdc</code></td><td>Правила работы с PB-объектами</td></tr><tr><td><code>.opencode\standard2-gui.mdc</code></td><td>Эталон стилей GUI СТАНДАРТ2</td></tr><tr><td><code>.opencode\gui-testing-rule.mdc</code></td><td>Правило трёх этапов тестирования GUI</td></tr><tr><td><code>rules\abbreviations.md</code></td><td>Сокращения проекта</td></tr><tr><td><code>rules\changelog.md</code></td><td>История изменений и исправленных багов</td></tr><tr><td><code>rules\pending-tasks.md</code></td><td>Отложенные задачи</td></tr><tr><td><code>rules\testing-rules.md</code></td><td>Правила тестирования</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. Ключевые файлы и конфигурация</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>opencode.jsonc</code></td><td>Основная конфигурация OpenCode (провайдеры, модели, MCP, плагины, LSP)</td></tr><tr><td><code>config\config.json</code></td><td>Конфигурация путей и параметров проекта</td></tr><tr><td><code>config\.local_secrets.json</code></td><td>Хранилище секретов (пароли, токены) — НИКОГДА в Git</td></tr><tr><td><code>pb_lsp_config.json</code></td><td>Конфигурация PB-LSP сервера</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>8. Экономическая выгода от применения</h2>
+<br>
+<h3>8.1. Сокращение времени подготовки релиза</h3>
+<br>
+<table><tr><th>Операция</th><th>Ручной способ</th><th>Автоматизированный (МОРДА2)</th><th>Экономия</th></tr><tr><td>Выгрузка SQL (1046 процедур)</td><td>~4 часа (ручной isql + форматирование)</td><td>~3 минуты</td><td><strong>98.8%</strong></td></tr><tr><td>Сравнение PB-объектов</td><td>~2 часа (визуальное сравнение)</td><td>~30 секунд</td><td><strong>99.6%</strong></td></tr><tr><td>Создание RFC в Jira</td><td>~30 минут</td><td>~10 секунд</td><td><strong>99.4%</strong></td></tr><tr><td>Выгрузка PB (2617 объектов)</td><td>~6 часов</td><td>~5 минут</td><td><strong>98.6%</strong></td></tr><tr><td>VSS-операции</td><td>~15 минут на объект</td><td>~5 секунд</td><td><strong>99.4%</strong></td></tr></table>
+<br>
+<h3>8.2. Предотвращение ошибок</h3>
+<br>
+<p>- <strong>Кодировка:</strong> автоматическая нормализация (ANSI ↔ UTF-8) предотвращает кракозябры</p>
+<p>- <strong>Формат dbArtesan:</strong> единый стандарт выгрузки исключает расхождения с аналитиками</p>
+<p>- <strong>HEX-метод:</strong> предотвращает word-wrap и обрезание текста в isql</p>
+<p>- <strong>Валидация:</strong> автотесты (Run-Tests.ps1) проверяют целостность кода, BOM, пути</p>
+<br>
+<h3>8.3. Снижение зависимости от ключевых сотрудников</h3>
+<br>
+<p>- Все знания зафиксированы в <code>ais-catalog</code> (164 записи)</p>
+<p>- Документация по каждому сервису с примерами и скриншотами</p>
+<p>- MCP-сервера обеспечивают доступ к знаниям из любой LLM-сессии</p>
+<p>- TaskPlan позволяет продолжить работу с любой контрольной точки</p>
+<br>
+<p>---</p>
+<br>
+<h2>9. Схема взаимодействия компонентов</h2>
+<br>
+<style>
+.schema { font-family: 'Segoe UI', sans-serif; font-size: 12px; }
+.schema .box { border: 2px solid #1A3A60; border-radius: 8px; padding: 10px 14px; margin: 6px 0; display: inline-block; vertical-align: top; }
+.schema .box h4 { margin: 0 0 5px 0; color: #1A3A60; font-size: 13px; }
+.schema .box p { margin: 2px 0; color: #4A5568; font-size: 12px; }
+.schema .outer { border: 3px solid #2B6CB0; border-radius: 10px; padding: 12px; margin: 10px 0; background: #F0F4F8; }
+.schema .outer h3 { margin: 0 0 8px 0; color: #1A3A60; }
+.schema .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.schema .arrow { font-size: 18px; color: #2B6CB0; text-align: center; margin: 4px 0; }
+</style>
+<div class="schema">
+
+<div class="outer">
+<h3>OpenCode Desktop</h3>
+<div class="row">
+<div class="box"><h4>Плагины (7)</h4><p>save-prompts, russian-compaction, claude-code, loop-guard, task-progress, betterspec, watchdog</p></div>
+<div class="box"><h4>MCP Server'ы (7)</h4><p>ais-catalog, ais-objects, opencode-mcp, rules-mcp, sybase-docs, atlassian, ews</p></div>
+<div class="box"><h4>LSP Server (1)</h4><p>PB-LSP</p></div>
+</div>
+</div>
+<br>
+<div class="arrow">&#8595;</div>
+<br>
+<div class="outer">
+<h3>МОРДА2 (WPF GUI)</h3>
+<div class="row">
+<div class="box"><h4>SQL Export</h4><p>SqlExport.exe + bat</p></div>
+<div class="box"><h4>PB Export</h4><p>pbldump</p></div>
+<div class="box"><h4>VSS</h4><p>ss.exe: Get, Status, Checkout</p></div>
+<div class="box"><h4>Compare</h4><p>MD5, Diff, RFC</p></div>
+<div class="box"><h4>Jira/RFC</h4><p>Jira API</p></div>
+</div>
+</div>
+<br>
+<div class="arrow">&#8595;</div>
+<br>
+<div class="outer">
+<h3>Внешние системы</h3>
+<div class="row">
+<div class="box"><h4>Sybase ASE 15.5</h4><p>isql, golden БД</p></div>
+<div class="box"><h4>VSS (ss.exe)</h4><p>Контроль версий</p></div>
+<div class="box"><h4>Jira / Confluence</h4><p>mytask.renins.com</p></div>
+<div class="box"><h4>pbldump</h4><p>Экспорт .sr*</p></div>
+<div class="box"><h4>Exchange/Outlook</h4><p>EWS API</p></div>
+<div class="box"><h4>RouterAI / Ollama</h4><p>LLM API</p></div>
+</div>
+</div>
+<br>
+</div>
+<br>
+<p>---</p>
+<br>
+<p>---</p>
+<br>
+<h2>10. Указатель томов документации</h2>
+<br>
+<table><tr><th>Том</th><th>.md</th><th>.pdf</th><th>Содержание</th></tr><tr><td><strong>Главный (этот)</strong></td><td>—</td><td>—</td><td>Обзор всех сервисов, MCP, плагинов, правил</td></tr><tr><td>МОРДА2</td><td><a href="services/morda2.html">morda2.html</a></td><td><a href="services/morda2.pdf">morda2.pdf</a></td><td>Детальное описание главного окна, 19 операций</td></tr><tr><td>MCP-сервера</td><td><a href="services/mcp-servers.html">mcp-servers.html</a></td><td><a href="services/mcp-servers.pdf">mcp-servers.pdf</a></td><td>Каталог всех 7 MCP-серверов с API</td></tr><tr><td>SQL Export</td><td><a href="services/sql-export.html">sql-export.html</a></td><td><a href="services/sql-export.pdf">sql-export.pdf</a></td><td>Стандарт dbArtesan, HEX-метод, скрипты</td></tr><tr><td>PB Export</td><td><code>services/pb-export.html</code></td><td>—</td><td>pbldump, кодировки, структура</td></tr><tr><td>PB-LSP</td><td><a href="services/lsp-pb.html">lsp-pb.html</a></td><td><a href="services/lsp-pb.pdf">lsp-pb.pdf</a></td><td>Language Server для PowerBuilder</td></tr><tr><td>DLLM</td><td><code>services/dllm.html</code></td><td>—</td><td>Управление LLM-моделями</td></tr><tr><td>TaskPlan</td><td><code>services/taskplan.html</code></td><td>—</td><td>Планировщик задач</td></tr><tr><td>ПРОДОБР</td><td><code>services/prodobr.html</code></td><td>—</td><td>Обработка задач с прогресс-барами</td></tr><tr><td>ObjectInfo</td><td><code>services/objinfo.html</code></td><td>—</td><td>Справочник объектов PB/SQL</td></tr><tr><td>Плагины</td><td><code>services/plugins.html</code></td><td>—</td><td>Все плагины OpenCode</td></tr><tr><td>VSS-сервис</td><td><code>services/vss-service.html</code></td><td>—</td><td>Контроль версий (Get Latest, Checkout, History)</td></tr><tr><td>Требования МОРДА</td><td><a href="../morda-requirements.html">morda-requirements.html</a></td><td><a href="../morda-requirements.pdf">morda-requirements.pdf</a></td><td>Единый документ требований к GUI</td></tr><tr><td>Сокращения</td><td><code>rules/abbreviations.md</code></td><td>—</td><td>Все сокращения проекта</td></tr><tr><td>История багов</td><td><code>rules/changelog.md</code></td><td>—</td><td>Полная история исправлений</td></tr></table>
+<br>
+</body></html>

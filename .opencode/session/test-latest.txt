@@ -1,0 +1,5 @@
+Latest (итог сессии, 03.08.2026):
+- AutoTest-Pipe.ps1 (ObjectInfo): 6/6 OK, 0 FAILED, PASSED (ping, sel_pb 93, st_pb, sel_sql 0, st_sql, close)
+- AutoTest-Morda2-Real.ps1 (МОРДА2): 9 операций, Passed 9, Failed 0, Blocked 0, VERDICT PASS
+  ПБ в реальном времени: 10%-16%-22%-30%-100%; UI не блокируется (async Runspace)
+Регрессий нет. Новые функции покрыты тестами.

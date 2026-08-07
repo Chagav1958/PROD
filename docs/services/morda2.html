@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>morda2</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>МОРДА2 — главное окно подготовки релизов</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>МОРДА2 (СТАНДАРТ2) — главное WPF-окно автоматизации подготовки релизов AIS. Предоставляет 19 операций, панель параметров, прогресс-бары и окно результата.</p>
+<br>
+<p><strong>Файл:</strong> <code>bin\Prod-GUI_STANDART2.ps1</code> (1664 строки)</p>
+<p><strong>Хелперы:</strong> <code>scripts\Standard2-Helpers.ps1</code> (600 строк)</p>
+<p><strong>Техжурнал:</strong> <code>%TEMP%\tech_journal_*.log</code></p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Структура окна (сверху вниз)</h2>
+<br>
+<table><tr><th>Ряд</th><th>Элемент</th><th>Назначение</th></tr><tr><td>0</td><td>ComboBox <code>cmbOp</code></td><td>Выбор операции (19 пунктов)</td></tr><tr><td>0</td><td><code>txtDesc</code></td><td>Описание выбранной операции</td></tr><tr><td>1</td><td><code>ParamsPanel</code></td><td>Динамическая панель параметров</td></tr><tr><td>2</td><td><strong>ПБ</strong> (2 уровня)</td><td>Верхний (типы), нижний (объекты)</td></tr><tr><td>3</td><td>Кнопки</td><td>Выполнить, История, Выход</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. Прогресс-бары (ПБ)</h2>
+<br>
+<h3>3.1. Дизайн</h3>
+<br>
+<p>Стиль: <strong>GlossyProgress</strong> (как в Prod-GUI.ps1):</p>
+<p>- Вертикальный градиент <code>#2A5080 → #87CEEB</code></p>
+<p>- Скругление 5px, глянцевый блик</p>
+<p>- Высота 14px</p>
+<p>- Лейблы слева (140px, Foreground <code>#4A5568</code>)</p>
+<p>- Фон панели: <code>#E2E8F0</code>, верхняя граница <code>#CBD5E0</code></p>
+<br>
+<h3>3.2. Механизм передачи данных</h3>
+<br>
+<pre>
+# Синхронизированные хеши (общие для UI-потока и Runspace)
+
+$syncPhase = [hashtable]::Synchronized(@{Value=0; Text=&#39;&#39;})
+
+$syncStep  = [hashtable]::Synchronized(@{Value=0; Text=&#39;&#39;})
+
+
+
+# Хендлер операции (в Runspace)
+
+$script:PhaseProgress.Value = 50
+
+$script:PhaseProgress.Text = &quot;Тип: Процедуры&quot;
+
+
+
+# UI-таймер (чтение напрямую, каждые 300мс)
+
+$script:PhaseBar.Value = $script:PhaseProgress.Value
+
+$script:PhaseLabel.Text = $script:PhaseProgress.Text
+
+</pre>
+<br>
+<p><strong>Нижний ПБ</strong> стартует в <code>IsIndeterminate = true</code> (бегущая полоса) и переключается в обычный режим при получении <code>StepProgress.Value &gt; 0</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. 19 операций</h2>
+<br>
+<table><tr><th>№</th><th>Имя</th><th>Русское название</th><th>Пароль</th><th>Обработчик</th></tr><tr><td>0</td><td>Settings</td><td>Настройки параметров</td><td>нет</td><td><code>Invoke-OpSettings</code></td></tr><tr><td>1</td><td>Run Tests</td><td>Запуск тестов</td><td>нет</td><td><code>Invoke-OpRunTests</code></td></tr><tr><td>2</td><td>Export Service</td><td>Export Service</td><td>нет</td><td><code>Invoke-OpExportService</code></td></tr><tr><td>3</td><td>Collect PROD Objects</td><td>Собрать объекты для ПРОД</td><td>нет</td><td><code>Invoke-OpCollectProd</code></td></tr><tr><td>4</td><td>Export PB</td><td>Выгрузка PB</td><td>нет</td><td><code>Invoke-OpExportPb</code></td></tr><tr><td>5</td><td>Compare PB</td><td>Сравнение PB</td><td>нет</td><td><code>Invoke-OpComparePb</code></td></tr><tr><td>6</td><td><strong>SQL Export</strong></td><td>Выгрузка SQL</td><td><strong>да</strong></td><td><code>Invoke-OpSqlExport</code></td></tr><tr><td>7</td><td>Compare SQL</td><td>Сравнение SQL</td><td><strong>да</strong></td><td><code>Invoke-OpCompareSql</code></td></tr><tr><td>8</td><td>Compare &amp; Verify</td><td>Сравнение и проверка</td><td><strong>да</strong></td><td><code>Invoke-OpCompareVerify</code></td></tr><tr><td>9</td><td>Create RFC</td><td>Создание RFC в Jira</td><td><strong>да</strong></td><td><code>Invoke-OpCreateRfc</code></td></tr><tr><td>10</td><td>Jira Release Comment</td><td>Комментарий в Jira</td><td><strong>да</strong></td><td><code>Invoke-OpJiraComment</code></td></tr><tr><td>11</td><td>VSS: Get Latest</td><td>VSS: Получить</td><td>нет</td><td><code>Invoke-OpVssGetLatest</code></td></tr><tr><td>12</td><td>VSS: Check Status</td><td>VSS: Статус</td><td>нет</td><td><code>Invoke-OpVssCheckStatus</code></td></tr><tr><td>13</td><td>VSS: Who Is Using</td><td>VSS: Кто использует</td><td>нет</td><td><code>Invoke-OpVssWhoIsUsing</code></td></tr><tr><td>14</td><td>VSS: Checkout</td><td>VSS: Извлечь</td><td>нет</td><td><code>Invoke-OpVssCheckout</code></td></tr><tr><td>15</td><td>VSS: Checkin</td><td>VSS: Сохранить</td><td>нет</td><td><code>Invoke-OpVssCheckin</code></td></tr><tr><td>16</td><td>VSS: Undo Check Out</td><td>VSS: Отмена</td><td>нет</td><td><code>Invoke-OpVssUndo</code></td></tr><tr><td>17</td><td>VSS: Object History</td><td>VSS: История</td><td>нет</td><td><code>Invoke-OpVssHistory</code></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Ключевые технические решения</h2>
+<br>
+<h3>5.1. Асинхронное выполнение (Runspace)</h3>
+<br>
+<p>Операции выполняются в фоновом Runspace через <code>Start-OpAsync</code>, НЕ блокируя UI-поток. DispatcherTimer опрашивает завершение и прогресс каждые 300мс.</p>
+<br>
+<h3>5.2. Синхронизированные хеши для ПБ</h3>
+<br>
+<p>Вместо <code>SessionStateProxy.GetVariable</code> (возвращает копию) используются <code>[hashtable]::Synchronized()</code> — единый объект в памяти для UI и Runspace. Любое изменение мгновенно видно.</p>
+<br>
+<h3>5.3. Защита от мультиэкземплярности</h3>
+<br>
+<p>При запуске проверяется <code>MainWindowTitle = &quot;МОРДА — Подготовка релизов&quot;</code>. Второй экземпляр не создаётся (<code>exit 0</code>).</p>
+<br>
+<h3>5.4. Скругление углов и перетаскивание</h3>
+<br>
+<p>C# <code>RoundedWindow</code> (CreateRoundRectRgn, SetWindowRgn, радиус 36). Перетаскивание через <code>WM_NCHITTEST</code> (зона заголовка Y &lt; 42px).</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Плагины и расширения</h2>
+<br>
+<table><tr><th>Плагин</th><th>Назначение</th></tr><tr><td><code>@betterspec/opencode</code></td><td>Улучшенная спецификация промптов</td></tr><tr><td><code>@relf108/opencode-watchdog</code></td><td>Защита правок (scope, baseline, commit gate)</td></tr><tr><td><code>save-prompts.js</code></td><td>Автосохранение промптов</td></tr><tr><td><code>russian-compaction.js</code></td><td>Сводки сессий на русском</td></tr><tr><td><code>claude-code.js</code></td><td>Интеграция с Claude Code для PB/SQL</td></tr><tr><td><code>loop-guard.js</code></td><td>Защита от бесконечных циклов</td></tr><tr><td><code>task-progress.js</code></td><td>Отслеживание прогресса</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. Экономическая выгода</h2>
+<br>
+<table><tr><th>Показатель</th><th>Ручной способ</th><th>МОРДА2</th><th>Экономия</th></tr><tr><td>Выгрузка SQL (1046 процедур)</td><td>~4 часа</td><td>~3 минуты</td><td><strong>98.8%</strong></td></tr><tr><td>Сравнение PB-объектов</td><td>~2 часа</td><td>~30 секунд</td><td><strong>99.6%</strong></td></tr><tr><td>Создание RFC в Jira</td><td>~30 минут</td><td>~10 секунд</td><td><strong>99.4%</strong></td></tr><tr><td>VSS: Check Status (100+ объектов)</td><td>~20 минут</td><td>~10 секунд</td><td><strong>99.2%</strong></td></tr><tr><td>Выгрузка PB (2617 объектов)</td><td>~6 часов</td><td>~5 минут</td><td><strong>98.6%</strong></td></tr></table>
+<br>
+<p><strong>Годовая экономия</strong> (при 20 релизах в год): <strong>~200 часов</strong> или <strong>~25 рабочих дней</strong> аналитика.</p>
+<br>
+</body></html>

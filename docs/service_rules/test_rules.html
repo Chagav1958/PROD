@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>test_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса Тестирование (test_sql_export)</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>scripts\test_sql_export.ps1</code></td><td>Автоматизированная проверка целостности SQL-экспорта и кодировки</td></tr></table>
+<br>
+<h2>Зависимости</h2>
+<br>
+<p>- <strong>isql</strong> (Sybase ASE) — для выполнения экспорта</p>
+<p>- Тестовые файлы: <code>check_agent.sql</code> и <code>usp_add_entity_data.sql</code></p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<p>1. <strong>Жёстко закодированные пути</strong></p>
+<p>   - <code>$readyDir = &quot;C:\Temp\TestReady_SQL&quot;</code> — конкретная временная папка</p>
+<p>   - <code>$origDir = &quot;C:\AIS\AI\Prod\BD&quot;</code> — конкретная папка с оригиналами</p>
+<p>   - <strong>Правило:</strong> при переносе проекта обновить эти пути</p>
+<br>
+<p>2. <strong>Только два тестовых файла</strong></p>
+<p>   - <code>check_agent.sql</code> — проверка бинарного соответствия</p>
+<p>   - <code>usp_add_entity_data.sql</code> — проверка русской кодировки (Windows-1251)</p>
+<p>   - <strong>Правило:</strong> при добавлении новых тестов расширять массив <code>$testFiles</code></p>
+<br>
+<p>3. <strong>Кодировка Windows-1251</strong></p>
+<p>   - Проверка: поиск байтов CP1251 кириллицы (0xC0-0xFF, 0xA8, 0xB8)</p>
+<p>   - Проверка на UTF-16 BOM (0xFF 0xFE) и UTF-8 BOM (0xEF 0xBB 0xBF)</p>
+<p>   - Проверка на mojibake: <code>?</code> после не-ASCII байтов</p>
+<p>   - <strong>Правило:</strong> SQL-файлы должны быть в Windows-1251, без BOM</p>
+<br>
+<p>4. <strong>Проверка isql сообщений</strong></p>
+<p>   - <code>Select-String -Pattern &quot;^(Msg |Server &#39;|\(return status)&quot;</code></p>
+<p>   - Если в файле есть строки isql ошибок — тест падает</p>
+<p>   - <strong>Важно:</strong> isql иногда пишет &quot;(return status 0)&quot; в конце файла — это триггерит проверку</p>
+<br>
+<p>5. <strong>Проверка CREATE заголовка</strong></p>
+<p>   - <code>Select-String -Pattern &quot;^\s*create\s+(proc|procedure|function|trigger)\s+&quot;</code></p>
+<p>   - Если файл не содержит CREATE — тест падает</p>
+<p>   - Подходит для процедур, функций, триггеров; не подходит для DDL (таблицы, индексы)</p>
+<br>
+<p>6. <strong>Завершение с exit code</strong></p>
+<p>   - <code>exit (<a href="-not $allPassed">int</a>)</code></p>
+<p>   - 0 = все тесты пройдены, 1 = есть ошибки</p>
+<p>   - <strong>Правило:</strong> проверять <code>$LASTEXITCODE</code> после запуска</p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- Для запуска из GUI: указать пароль Sybase и TaskName</p>
+<p>- Для ручного запуска: <code>.\test_sql_export.ps1 -Password &lt;pwd&gt; -TaskName TEST</code></p>
+<p>- Скрипт можно расширить для проверки всех файлов в BD/ папке</p>
+<p>- Кодировка консоли: <code>[Console]::OutputEncoding = [System.Text.Encoding]::UTF8</code></p>
+<br>
+</body></html>

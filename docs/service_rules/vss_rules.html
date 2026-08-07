@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>vss_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса VSS (Visual SourceSafe)</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>scripts\VSS-Utils.ps1</code></td><td>Модуль функций для работы с VSS (dot-source)</td></tr><tr><td><code>scripts\vss.bat</code></td><td>BAT-обёртка для быстрого вызова ss.exe из командной строки</td></tr><tr><td><code>config\config.json</code> (секция <code>vss</code>)</td><td>Настройки VSS: путь к БД, пользователь, пароль (зашифрован)</td></tr><tr><td><code>config\vss_object_history.json</code></td><td>История введённых объектов VSS для ComboBox</td></tr></table>
+<br>
+<h2>Внешние зависимости</h2>
+<br>
+<p>- <strong>ss.exe</strong> — Microsoft Visual SourceSafe command line</p>
+<p>  - Путь: <code>C:\Program Files (x86)\Microsoft Visual SourceSafe\ss.exe</code></p>
+<p>  - Должен быть установлен отдельно (не входит в проект)</p>
+<p>- <strong>srcsafe.ini</strong> — файл базы данных VSS</p>
+<p>  - Путь: <code>\\ren-msksf01\VSS2005\srcsafe.ini</code></p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<h3>VSS-Utils.ps1</h3>
+<br>
+<p>1. <strong><code>Export-ModuleMember</code> при dot-source</strong> (Bug-005)</p>
+<p>   - <code>Export-ModuleMember</code> вызывает ошибку при dot-sourcing скрипта</p>
+<p>   - <strong>Исправление:</strong> добавлена проверка <code>$MyInvocation.MyCommand.CommandType</code> и <code>-ErrorAction SilentlyContinue</code></p>
+<p>   - <strong>Правило:</strong> при dot-source не полагаться на <code>Export-ModuleMember</code></p>
+<br>
+<p>2. <strong><code>$ErrorActionPreference = &quot;Stop&quot;</code> → <code>&quot;Continue&quot;</code></strong> (Bug-005)</p>
+<p>   - <code>Stop</code> приводит к остановке при minor-ошибках (например, ss.exe exit code 1)</p>
+<p>   - <strong>Исправление:</strong> установлено <code>&quot;Continue&quot;</code> в начале скрипта</p>
+<br>
+<p>3. <strong>ss.exe exit code 1 — это норма</strong> (Bug-019)</p>
+<p>   - <code>ss.exe Status</code> возвращает exit code 1 при наличии checked out файлов</p>
+<p>   - <code>ss.exe Checkout</code> возвращает exit code 100 при успехе (не 0)</p>
+<p>   - <strong>Правило:</strong> не проверять <code>$LASTEXITCODE</code> на <code>0</code> для ss.exe</p>
+<br>
+<p>4. <strong><code>$_</code> не экранирован в here-string</strong> (Bug-019)</p>
+<p>   - В <code>${ @</code> &quot;<code>n</code>$_\<code>r\</code>n&quot;@ }<code> </code>$_<code> интерполировался как </code>$null`</p>
+<p>   - <strong>Исправление:</strong> использовать `<code> </code>$_ `` с обратным апострофом</p>
+<br>
+<p>5. <strong>Get-VssWhoIsUsing: Properties → Status</strong> (Bug-021)</p>
+<p>   - <code>ss.exe Properties</code> показывает только метаданные (не показывает кто извлёк)</p>
+<p>   - <strong>Исправление:</strong> заменён на <code>ss.exe Status</code>, который выводит <code>Checked out to: username</code></p>
+<p>   - <strong>Важно:</strong> при добавлении новых VSS-функций не использовать <code>ss.exe Properties</code> для определения владельца</p>
+<br>
+<p>6. <strong>Короткие имена объектов</strong> (FEAT-004)</p>
+<p>   - Можно указывать только имя файла (с расширением или без): <code>w_ais_request_select.srw</code></p>
+<p>   - Полный VSS-путь строится через поиск в <code>PB_Main</code> и <code>PB_Current</code></p>
+<p>   - <strong>Правило:</strong> функция <code>Resolve-VssObjectPath</code> (в Prod-GUI.ps1) вызывается перед выполнением VSS-операций</p>
+<p>   - Если объект не найден в PB_Main/PB_Current — используется исходное значение (полный путь)</p>
+<br>
+<p>7. <strong>Пароль из Settings — единый источник</strong> (FEAT-005)</p>
+<p>   - VSS-операции не имеют поля <code>VssPass</code> — пароль берётся из config.json</p>
+<p>   - При запуске VSS-операции пароль расшифровывается через <code>Get-MasterKey</code> + <code>Decrypt-Password</code></p>
+<p>   - <strong>Правило:</strong> если пароль не задан в Settings — передаётся пустая строка (может вызвать ошибку аутентификации ss.exe)</p>
+<br>
+<h3>ss.exe особенности</h3>
+<br>
+<p>8. <strong><code>-I-Y</code> флаг обязателен</strong></p>
+<p>   - <code>ss.exe</code> без <code>-I-Y</code> запрашивает подтверждение (Yes/No) на интерактивном вводе</p>
+<p>   - <strong>Правило:</strong> всегда добавлять <code>-I-Y</code> ко всем командам VSS</p>
+<br>
+<p>9. <strong>Параметр <code>-R</code> для рекурсии</strong></p>
+<p>   - <strong>Правило:</strong> добавлять после всех остальных параметров</p>
+<br>
+<p>10. <strong>Формат <code>-Yuser,password</code></strong></p>
+<p>    - Пользователь и пароль разделяются запятой: <code>-Yvchaga,mypassword</code></p>
+<p>    - Вся строка без пробелов</p>
+<p>    - Если пароль содержит запятую — возможны проблемы</p>
+<br>
+<p>11. <strong>Комментарий через <code>-C&quot;текст&quot;</code></strong></p>
+<p>    - Комментарий оборачивается в двойные кавычки</p>
+<p>    - <strong>Важно:</strong> если комментарий содержит двойные кавычки — экранировать их обратным слешем: <code>\&quot;</code></p>
+<br>
+<p>12. <strong>Потоковый вывод в GUI</strong> (Bug-018)</p>
+<p>    - VSS-Utils.ps1 не захватывает вывод — каждая строка ss.exe идёт напрямую</p>
+<p>    - GUI пишет через StreamWriter.WriteLine + Flush — вывод появляется сразу</p>
+<p>    - Таймаут вывода: <code>gui.output_timeout_seconds</code> (по умолчанию 60)</p>
+<p>    - Таймаут срабатывает только если нет данных &gt; N секунд</p>
+<br>
+<p>13. <strong>ss.exe Status с TaskName — таблица статуса</strong> (FEAT-008)</p>
+<p>    - При указании TaskName сканируются папки <code>Ready_*</code> (исключая <code>Ready_</code>)</p>
+<p>    - Для каждого <code>.sr*</code> файла определяется VSS-путь и статус</p>
+<p>    - Результат выводится через <code>###VSS_STATUS###</code> маркер</p>
+<p>    - GUI обнаруживает маркер и показывает <code>Show-VssStatusTableWindow</code></p>
+<br>
+<p>14. <strong>Auto-refresh ComboBox после VSS-операции</strong> (FEAT-001)</p>
+<p>    - <code>Update-VssProjectCombo</code> вызывается после завершения процесса</p>
+<p>    - Сохраняет текущий текст перед обновлением, восстанавливает после (Bug-020)</p>
+<p>    - <strong>Правило:</strong> не стирать <code>$inner.Text</code> без сохранения</p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- Для диагностики проблем: <code>$env:SSDIR</code> — указывает на директорию БД</p>
+<p>- <code>Invoke-VssCommand</code> автоматически устанавливает <code>$env:SSDIR</code> если передан <code>VssPath</code></p>
+<p>- Все функции принимают <code>-Recursive</code> — передаётся в ss.exe как <code>-R</code></p>
+<p>- Команды VSS, доступные через VSS-Utils.ps1:</p>
+<p>  - <code>Get-VssLatest</code>: получение последней версии</p>
+<p>  - <code>Get-VssStatus</code>: статус (Checked In/Out)</p>
+<p>  - <code>Get-VssWhoIsUsing</code>: кто использует (через Status)</p>
+<p>  - <code>Set-VssCheckout</code>: извлечение с комментарием</p>
+<p>  - <code>Set-VssCheckin</code>: сохранение с комментарием</p>
+<p>  - <code>Set-VssUndoCheckout</code>: отмена извлечения</p>
+<br>
+</body></html>

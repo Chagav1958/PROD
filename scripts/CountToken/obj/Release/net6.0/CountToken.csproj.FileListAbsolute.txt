@@ -1,0 +1,17 @@
+C:\AIS\AI\Prod\scripts\CountToken\bin\Release\net6.0\Count-Token.exe
+C:\AIS\AI\Prod\scripts\CountToken\bin\Release\net6.0\Count-Token.deps.json
+C:\AIS\AI\Prod\scripts\CountToken\bin\Release\net6.0\Count-Token.runtimeconfig.json
+C:\AIS\AI\Prod\scripts\CountToken\bin\Release\net6.0\Count-Token.dll
+C:\AIS\AI\Prod\scripts\CountToken\bin\Release\net6.0\Count-Token.pdb
+C:\AIS\AI\Prod\scripts\CountToken\bin\Release\net6.0\SharpToken.dll
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\CountToken.csproj.AssemblyReference.cache
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\CountToken.GeneratedMSBuildEditorConfig.editorconfig
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\CountToken.AssemblyInfoInputs.cache
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\CountToken.AssemblyInfo.cs
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\CountToken.csproj.CoreCompileInputs.cache
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\CountToken.csproj.CopyComplete
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\Count-Token.dll
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\refint\Count-Token.dll
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\Count-Token.pdb
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\CountToken.genruntimeconfig.cache
+C:\AIS\AI\Prod\scripts\CountToken\obj\Release\net6.0\ref\Count-Token.dll

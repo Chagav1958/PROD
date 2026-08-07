@@ -52,12 +52,22 @@
 - Файл: `scripts\Show-ProdObr-GUI.ps1` (команда ПРОДОБР).
 - Назначение: продолжение работы по утверждённым планам — поиск задач со статусом «в работе» или «не начато» в `rules\pending-tasks.md` и папках задач, отображение прогресса по контрольным точкам, автопереход к следующей.
 
-### 2.6. TimeFIX — календарь с интеграцией Outlook
+### 2.6. TimeFIX — календарь с интеграцией EWS
 
-- Файлы: `bin\Show-TimeFIX.ps1` (`.vbs`, `.bat`).
-- Назначение: WPF-календарь с недельным представлением, чтение встреч Outlook через COM, автопроверка встречи «Дейли AIS» в 9:30.
+- Файл: `bin\Show-TimeFIX.exe` (C#, WPF, без PowerShell).
+- Назначение: недельный календарь (Пн-Пт, 8:00-19:00) с цветными блоками мероприятий, загрузка встреч через EWS (Exchange Web Services), автопроверка «Дейли AIS», подтверждение мероприятий.
+- Ранее использовал Outlook OLE/COM и PowerShell — заменён на C# + EWS для защиты от антивируса.
 
-### 2.7. Вспомогательные скрипты
+### 2.7. Setup-Secrets — сервис управления секретными данными
+
+- Файл: `bin\Setup-Secrets.exe` (C#, WPF, СТАНДАРТ2).
+- Назначение: ввод, шифрование (DPAPI) и сохранение паролей, токенов, ключей API при развёртывании проекта на других компьютерах. Замена устаревших секретов на новые.
+- Вкладки: Sybase, VSS, Jira, OpenCode API, EWS (Exchange).
+- Хранилища: `config\.local_secrets.json` (зашифровано, в .gitignore) и `~\.config\ews-mcp\credentials.env` (вне репозитория).
+- Журналирование: `tech_journal_*.log`. Автотест: `--autotest commands.txt`.
+- Подробнее: `docs\setup-secrets-guide.md`.
+
+### 2.8. Вспомогательные скрипты
 
 | Скрипт | Назначение |
 |---|---|
@@ -177,9 +187,9 @@ MCP (Model Context Protocol) — протокол подключения вне�
 
 | Каталог | Содержимое |
 |---|---|
-| `bin\` | Диалоговые окна и лаунчеры (МОРДА, МОРДА2, ObjectInfo.exe, TimeFIX) |
-| `scripts\` | Рабочие скрипты, MCP-серверы (ais_catalog_mcp, ais_objects_mcp, opencode_mcp) |
-| `config\` | `config.json` — все пути проекта |
+| `bin\` | Диалоговые окна (МОРДА, МОРДА2, ObjectInfo.exe, Show-TimeFIX.exe, Setup-Secrets.exe), лаунчеры |
+| `scripts\` | Рабочие скрипты, MCP-серверы, C# проекты (Show-TimeFIX-CS, SetupSecrets, CountToken, PreCommitHook, ExportFull) |
+| `config\` | `config.json` — пути проекта; `.local_secrets.json` — секреты (в .gitignore); `.local_secrets.example.json` — шаблон |
 | `docs\` | Документация (md, html, pdf) |
 | `rules\` | Правила, сокращения, история багов, отложенные задачи |
 | `tasks\` | Папки задач (Git_, Test_, Ready_, Describe) |

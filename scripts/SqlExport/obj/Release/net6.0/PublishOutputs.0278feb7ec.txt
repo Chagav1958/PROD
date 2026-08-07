@@ -1,0 +1,5 @@
+C:\AIS\AI\Prod\bin\SqlExport.exe
+C:\AIS\AI\Prod\bin\SqlExport.dll
+C:\AIS\AI\Prod\bin\SqlExport.deps.json
+C:\AIS\AI\Prod\bin\SqlExport.runtimeconfig.json
+C:\AIS\AI\Prod\bin\SqlExport.pdb

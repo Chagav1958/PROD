@@ -1,11 +1,72 @@
 {
   "version": 3,
   "targets": {
-    "net6.0-windows7.0": {}
+    "net6.0-windows7.0": {
+      "Microsoft.Exchange.WebServices.NETStandard/1.1.3": {
+        "type": "package",
+        "dependencies": {
+          "System.Security.Cryptography.Xml": "4.4.0"
+        },
+        "compile": {
+          "lib/netstandard2.0/Microsoft.Exchange.WebServices.NETStandard.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.Exchange.WebServices.NETStandard.dll": {}
+        }
+      },
+      "System.Security.Cryptography.Xml/4.4.0": {
+        "type": "package",
+        "compile": {
+          "ref/netstandard2.0/System.Security.Cryptography.Xml.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/System.Security.Cryptography.Xml.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "Microsoft.Exchange.WebServices.NETStandard/1.1.3": {
+      "sha512": "b4cNotfW4ziChA6dHmlSqf4WH7wKbplwwf5Uz3bASOhDY+lys23wO+lrdDtbMjauxVGJXT+We9X7bHXhzv9htg==",
+      "type": "package",
+      "path": "microsoft.exchange.webservices.netstandard/1.1.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net46/Microsoft.Exchange.WebServices.NETStandard.dll",
+        "lib/netstandard2.0/Microsoft.Exchange.WebServices.NETStandard.dll",
+        "microsoft.exchange.webservices.netstandard.1.1.3.nupkg.sha512",
+        "microsoft.exchange.webservices.netstandard.nuspec"
+      ]
+    },
+    "System.Security.Cryptography.Xml/4.4.0": {
+      "sha512": "1Xubvo4i+K+DO6YzVh6vBKmCl5xx/cAoiJEze6VQ+XwVQU25KQC9pPrmniz2EbbJnmoQ5Rm2FFjHsfQAi0Rs+Q==",
+      "type": "package",
+      "path": "system.security.cryptography.xml/4.4.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/net461/System.Security.Cryptography.Xml.dll",
+        "lib/netstandard2.0/System.Security.Cryptography.Xml.dll",
+        "ref/net461/System.Security.Cryptography.Xml.dll",
+        "ref/net461/System.Security.Cryptography.Xml.xml",
+        "ref/netstandard2.0/System.Security.Cryptography.Xml.dll",
+        "ref/netstandard2.0/System.Security.Cryptography.Xml.xml",
+        "system.security.cryptography.xml.4.4.0.nupkg.sha512",
+        "system.security.cryptography.xml.nuspec",
+        "useSharedDesignerContext.txt",
+        "version.txt"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net6.0-windows7.0": []
+    "net6.0-windows7.0": [
+      "Microsoft.Exchange.WebServices.NETStandard >= 1.1.3"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\vchaga\\.nuget\\packages\\": {},
@@ -50,6 +111,12 @@
     "frameworks": {
       "net6.0-windows7.0": {
         "targetAlias": "net6.0-windows",
+        "dependencies": {
+          "Microsoft.Exchange.WebServices.NETStandard": {
+            "target": "Package",
+            "version": "[1.1.3, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

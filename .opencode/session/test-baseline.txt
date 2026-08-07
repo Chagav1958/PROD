@@ -1,0 +1,3 @@
+Baseline (начало работ, 03.08.2026):
+- AutoTest-Pipe.ps1 (ObjectInfo, файловый канал): до правок — функционал contained_sql/purpose отсутствовал, тест запускал старый PS-скрипт
+- AutoTest-Morda2-Real.ps1 (МОРДА2): статус на 31.07 — блокировка UI, PhaseBar 0%, Timeout (знания MCP #192, #193)

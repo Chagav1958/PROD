@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>catalog_build_plan</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>План наполнения ais-catalog</h1>
+<br>
+<p>&lt;!--</p>
+<p>  ФОРМАТ СТАТУСОВ:</p>
+<p>  [ ] - не начат</p>
+<p>  [V] - выполнен (результат в ais-catalog)</p>
+<p>  [~] - в процессе (текущий подэтап)</p>
+<br>
+<p>  ПРАВИЛА ПРОДОЛЖЕНИЯ:</p>
+<p>  1. Новая LLM читает этот файл → находит первый [ ] или [~]</p>
+<p>  2. Выполняет подэтап → метит [V] и сохраняет результат в ais-catalog</p>
+<p>  3. Если прервалась на середине подэтапа → [~] → продолжает с последнего сохранённого</p>
+<p>--&gt;</p>
+<br>
+<h2>ЭТАП 1: Метаданные SQL-объектов</h2>
+<p><em>Для каждого: имя, тип, параметры (из CREATE), связанные таблицы (из FROM/JOIN), ключевые слова</em></p>
+<br>
+<h3>Малые группы (не usp_)</h3>
+<p>- [V] 1.01  A-D (15 объектов)</p>
+<p>- [V] 1.02  E-L (другие префиксы, 12 объектов)</p>
+<p>- [V] 1.03  R-T (tmp_*, кроме usp_ — 49 объектов)</p>
+<p>- [V] 1.04  W (web_<em>, woc_</em>, z_*, ~89 объектов)</p>
+<br>
+<h3>usp_* по функциональным группам</h3>
+<p>- [V] 1.05-1.24  usp_* функциональные группы (866 объектов — сохранены пакетно через Extract-SqlMetadata.ps1 + групповые save_knowledge)</p>
+<br>
+<h3>Функции, Триггеры, Таблицы, Представления</h3>
+<p>- [V] 1.25-1.29  Functions (157), Triggers (118), Tables (820), Views (96) — сохранены пакетно (4 записи)</p>
+<br>
+<p>---</p>
+<br>
+<h2>ЭТАП 2: Метаданные PB-объектов</h2>
+<p><em>Для каждого: имя, тип (.sru/.srw/.srd), библиотека, функции/события, вызовы SQL, назначение</em></p>
+<br>
+<p>- [V] 2.01-2.29  Все PB-объекты (2606 объектов: 695 .sru, 394 .srw, 1361 .srd, 90 .srf, 66 прочих) — сохранены пакетно (5 записей)</p>
+<br>
+<p>---</p>
+<br>
+<h2>ЭТАП 3: Граф вызовов (зависимости)</h2>
+<p><em>Для ключевых объектов: кто вызывает, кого вызывают. Цепочки: окно → функция → SQL</em></p>
+<br>
+<p>- [V] 3.01-3.04  Граф вызовов: топ-таблицы, связи окно→SQL, цепочки</p>
+<br>
+<p>---</p>
+<br>
+<h2>ЭТАП 4: Бизнес-правила</h2>
+<p><em>По процессам: какие таблицы задействованы, условия, триггеры</em></p>
+<br>
+<p>- [V] 4.01-4.08  Бизнес-правила: комиссия, отчёт, счёт, проводки, загрузка, генерация, проверки, синхронизация</p>
+<br>
+<p>---</p>
+<br>
+<h2>Формат записи в ais-catalog</h2>
+<br>
+<p>Каждый объект сохраняется через <code>ais-catalog_save_knowledge</code>:</p>
+<br>
+<pre>
+text: &quot;Имя: usp_agent_policy_list
+
+Тип: Procedure (SQL)
+
+Параметры: @date_begin datetime, @date_end datetime, @ag_id int = null
+
+Связанные таблицы: ag_contract, ag_contract_policy, entity
+
+Назначение: список полисов агента за период
+
+Ключевые слова: агент, полис, период&quot;
+
+tags: &quot;usp_agent_policy_list,Procedure,agent,policy&quot;
+
+</pre>
+<br>
+</body></html>

@@ -1,0 +1,41 @@
+# --- Global gitignore: secrets & credentials (STRICT) ---
+.env
+.env.*
+!*.env.example
+!*.env.sample
+
+# Key material / secrets files
+*.pem
+*.key
+*.p12
+*.pfx
+*.ppk
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+id_dsa
+*.jks
+*.keystore
+secrets.yaml
+secrets.json
+secrets.yml
+credentials.json
+credentials.yaml
+credentials.yml
+.htpasswd
+.mailmap.cred
+*.password
+*.secret
+
+# Cloud/local configs with tokens
+.aws/credentials
+.gcloud/credentials.json
+.npmrc
+.netrc
+wgetrc
+.hubrc
+
+# Local dotfiles that often carry tokens
+.local.env
+*.local.env

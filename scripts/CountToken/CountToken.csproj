@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Count-Token</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SharpToken" Version="2.0.3" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,408 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>opencode-transfer-instruction</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Инструкция переноса OpenCode на другой ПК</h1>
+<br>
+<h2>1. Установка OpenCode</h2>
+<br>
+<h3>Windows (рекомендуется WSL, но можно и natively)</h3>
+<br>
+<pre>
+# Через npm (нужен Node.js 18+)
+
+npm install -g opencode-ai
+
+
+
+# Или через Scoop
+
+scoop install opencode
+
+
+
+# Или через Chocolatey
+
+choco install opencode
+
+</pre>
+<br>
+<h3>Проверка установки</h3>
+<br>
+<pre>
+opencode --version
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>2. Бесплатные LLM провайдеры (OpenCode Zen)</h2>
+<br>
+<p>OpenCode Zen предоставляет бесплатные модели (rotating, time-limited):</p>
+<br>
+<table><tr><th>Модель</th><th>Model ID</th><th>Контекст</th><th>Описание</th></tr><tr><td>DeepSeek V4 Flash</td><td><code>zen/deepseek-v4-flash-free</code></td><td>1M</td><td>Быстрая, большая</td></tr><tr><td>MiMo V2.5</td><td><code>zen/mimo-v2.5-free</code></td><td>1M</td><td>Быстрая</td></tr><tr><td>Nemotron 3 Ultra</td><td><code>zen/nemotron-3-ultra-free</code></td><td>1M</td><td>Мощная</td></tr><tr><td>Hy3 Preview</td><td><code>zen/hy3-preview-free</code></td><td>256K</td><td>Preview</td></tr><tr><td>North Mini Code</td><td><code>zen/north-mini-code-free</code></td><td>256K</td><td>Кодинг</td></tr><tr><td>Big Pickle</td><td><code>zen/big-pickle</code></td><td>N/A</td><td>Stealth</td></tr></table>
+<br>
+<h3>Настройка OpenCode Zen</h3>
+<br>
+<p>1. Зарегистрируйтесь на https://opencode.ai/auth</p>
+<p>2. Добавьте биллинг (для бесплатных моделей ключ всё равно нужен)</p>
+<p>3. Скопируйте API key</p>
+<p>4. В OpenCode TUI: <code>/connect</code> → выберите &quot;OpenCode Zen&quot; → вставьте ключ</p>
+<p>5. <code>/models</code> — увидите список доступных моделей</p>
+<br>
+<h3>Конфигурация в opencode.jsonc</h3>
+<br>
+<pre>
+{
+
+  &quot;$schema&quot;: &quot;https://opencode.ai/config.json&quot;,
+
+  &quot;model&quot;: &quot;zen/deepseek-v4-flash-free&quot;,
+
+  &quot;small_model&quot;: &quot;zen/mimo-v2.5-free&quot;,
+
+  &quot;provider&quot;: {
+
+    &quot;opencode&quot;: {
+
+      &quot;name&quot;: &quot;OpenCode Zen (бесплатные)&quot;,
+
+      &quot;whitelist&quot;: [
+
+        &quot;deepseek-v4-flash-free&quot;,
+
+        &quot;mimo-v2.5-free&quot;,
+
+        &quot;nemotron-3-ultra-free&quot;,
+
+        &quot;hy3-preview-free&quot;,
+
+        &quot;north-mini-code-free&quot;,
+
+        &quot;big-pickle&quot;
+
+      ]
+
+    }
+
+  }
+
+}
+
+</pre>
+<br>
+<p>&gt; <strong>Примечание:</strong> Бесплатные модели ротируются — иногда могут быть недоступны.</p>
+<p>&gt; Для стабильной работы используйте <code>opencode-go</code> ($10/мес) или <code>routerai</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. MCP серверы</h2>
+<br>
+<h3>3.1 rules-mcp (правила проекта)</h3>
+<br>
+<p><strong>Зависимости:</strong></p>
+<p>- Python 3.11+</p>
+<p>- fastmcp&gt;=3.0.0</p>
+<br>
+<p><strong>Установка:</strong></p>
+<br>
+<pre>
+# Клонировать/скопировать папку rules-mcp
+
+# Создать venv
+
+cd C:\AIS\AI\rules-mcp
+
+python -m venv venv
+
+venv\Scripts\activate
+
+pip install fastmcp&gt;=3.0.0
+
+</pre>
+<br>
+<p><strong>Структура:</strong></p>
+<pre>
+rules-mcp/
+
+├── pyproject.toml
+
+├── run.py
+
+└── rules_mcp/
+
+    └── server.py
+
+</pre>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+python C:\AIS\AI\rules-mcp\run.py
+
+</pre>
+<br>
+<p><strong>Переменные окружения:</strong></p>
+<p>- <code>AIS_PROD_ROOT</code> — путь к корню проекта (default: <code>C:\AIS\AI\Prod</code>)</p>
+<p>- <code>AIS_RULES_ROOT</code> — путь к rules-mcp (default: <code>C:\AIS\AI\rules-mcp</code>)</p>
+<br>
+<h3>3.2 knowledge (база знаний)</h3>
+<br>
+<p><strong>Зависимости:</strong></p>
+<p>- Python 3.12+</p>
+<p>- mcp&gt;=1.0.0</p>
+<br>
+<p><strong>Установка:</strong></p>
+<br>
+<pre>
+cd C:\AIS\AI\Prod\scripts\knowledge_mcp
+
+python -m venv .venv
+
+.venv\Scripts\activate
+
+pip install -r requirements.txt
+
+</pre>
+<br>
+<p><strong>Структура:</strong></p>
+<pre>
+knowledge_mcp/
+
+├── .venv/
+
+├── knowledge.db          # БД (переносить с собой!)
+
+├── lib/
+
+├── requirements.txt
+
+├── run_server.bat
+
+└── server.py
+
+</pre>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+python -u C:\AIS\AI\Prod\scripts\knowledge_mcp\server.py
+
+</pre>
+<br>
+<p><strong>Важно:</strong> Файл <code>knowledge.db</code> содержит все накопленные знания. Переносите его на новый ПК!</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Конфигурация opencode.jsonc</h2>
+<br>
+<h3>Проектная конфигурация (`C:\AIS\AI\Prod\opencode.jsonc`)</h3>
+<br>
+<p>Копируйте весь файл. Он содержит:</p>
+<p>- Провайдеры (routerai, anthropic, openai, deepseek, yandex)</p>
+<p>- MCP серверы (atlassian, sybase-docs, rules-mcp, knowledge)</p>
+<p>- Плагины</p>
+<br>
+<h3>Пользовательская конфигурация (`~/.config/opencode/opencode.jsonc`)</h3>
+<br>
+<p>Содержит:</p>
+<p>- Ollama (локальные модели)</p>
+<p>- Базовые настройки</p>
+<br>
+<h3>ВАЖНО: Формат MCP в opencode.jsonc</h3>
+<br>
+<p>OpenCode использует ключ <code>mcp</code>, а <strong>НЕ</strong> <code>mcpServers</code> (это формат Claude Desktop).</p>
+<br>
+<p><strong>Правильно:</strong></p>
+<pre>
+{
+
+  &quot;mcp&quot;: {
+
+    &quot;rules-mcp&quot;: { ... },
+
+    &quot;knowledge&quot;: { ... }
+
+  }
+
+}
+
+</pre>
+<br>
+<p><strong>НЕПРАВИЛЬНО (вызовет ConfigInvalidError):</strong></p>
+<pre>
+{
+
+  &quot;mcpServers&quot;: {
+
+    &quot;rules-mcp&quot;: { ... }
+
+  }
+
+}
+
+</pre>
+<br>
+<p>Если при запуске ошибка <code>Unrecognized key: mcpServers</code> — замените <code>mcpServers</code> на <code>mcp</code>.</p>
+<br>
+<h3>Ключевые файлы для копирования</h3>
+<br>
+<pre>
+C:\AIS\AI\Prod\
+
+├── opencode.jsonc                    # Проектная конфигурация
+
+├── AGENTS.md                         # Правила проекта
+
+├── .opencode/                        # Правила и плагины
+
+│   ├── *.mdc                         # Правила (автозагрузка)
+
+│   └── plugins/                      # Плагины
+
+├── rules/                            # Сокращения, changelog
+
+│   ├── abbreviations.md
+
+│   └── changelog.md
+
+├── scripts\
+
+│   └── knowledge_mcp\                # MCP knowledge
+
+│       ├── server.py
+
+│       ├── knowledge.db              # ← ВАЖНО: переносить!
+
+│       └── requirements.txt
+
+├── sybase-docs-mcp\                  # MCP Sybase docs
+
+└── rules-mcp\                        # MCP rules
+
+    ├── run.py
+
+    └── rules_mcp\server.py
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>5. Пошаговый перенос</h2>
+<br>
+<h3>На старом ПК</h3>
+<br>
+<p>1. Убедитесь, что все MCP серверы остановлены</p>
+<p>2. Скопируйте всю папку <code>C:\AIS\AI\Prod\</code> (или её ключевые части)</p>
+<p>3. Скопируйте <code>C:\AIS\AI\rules-mcp\</code></p>
+<p>4. Скопируйте <code>C:\Users\vchaga\.config\opencode\</code></p>
+<p>5. Экспортируйте API ключи (или запомните их)</p>
+<br>
+<h3>На новом ПК</h3>
+<br>
+<p>1. Установите Python 3.12+ и Node.js 18+</p>
+<p>2. Установите OpenCode: <code>npm install -g opencode-ai</code></p>
+<p>3. Скопируйте проект в <code>C:\AIS\AI\Prod\</code></p>
+<p>4. Создайте venv для MCP серверов:</p>
+<p>   ```bash</p>
+<p>   # rules-mcp</p>
+<p>   cd C:\AIS\AI\rules-mcp</p>
+<p>   python -m venv venv</p>
+<p>   venv\Scripts\activate</p>
+<p>   pip install fastmcp&gt;=3.0.0</p>
+<br>
+<p>   # knowledge</p>
+<p>   cd C:\AIS\AI\Prod\scripts\knowledge_mcp</p>
+<p>   python -m venv .venv</p>
+<p>   .venv\Scripts\activate</p>
+<p>   pip install -r requirements.txt</p>
+<br>
+<p>   # sybase-docs-mcp (если нужен)</p>
+<p>   cd C:\AIS\AI\sybase-docs-mcp</p>
+<p>   python -m venv venv</p>
+<p>   venv\Scripts\activate</p>
+<p>   pip install -e .</p>
+<p>   ```</p>
+<p>5. Настройте провайдеры: <code>/connect</code> → OpenCode Zen → вставьте ключ</p>
+<p>6. Проверьте: <code>/models</code> — увидите бесплатные модели</p>
+<p>7. Запустите OpenCode в папке проекта: <code>cd C:\AIS\AI\Prod &amp;&amp; opencode</code></p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Альтернатива: Ollama (полностью локально, бесплатно)</h2>
+<br>
+<p>Если не хотите использовать облачные API:</p>
+<br>
+<pre>
+# Установите Ollama: https://ollama.com
+
+ollama pull qwen2.5-coder:32b
+
+ollama pull qwen2.5-coder:14b
+
+ollama pull deepseek-coder-v2:16b
+
+</pre>
+<br>
+<p>Конфигурация в <code>~/.config/opencode/opencode.jsonc</code>:</p>
+<pre>
+{
+
+  &quot;model&quot;: &quot;ollama/qwen2.5-coder:32b&quot;,
+
+  &quot;small_model&quot;: &quot;ollama/qwen2.5-coder:7b&quot;,
+
+  &quot;provider&quot;: {
+
+    &quot;ollama&quot;: {
+
+      &quot;npm&quot;: &quot;@ai-sdk/openai-compatible&quot;,
+
+      &quot;name&quot;: &quot;Ollama (local)&quot;,
+
+      &quot;options&quot;: {
+
+        &quot;baseURL&quot;: &quot;http://localhost:11434/v1&quot;
+
+      },
+
+      &quot;models&quot;: {
+
+        &quot;qwen2.5-coder:32b&quot;: {
+
+          &quot;name&quot;: &quot;Qwen 2.5 Coder 32B (local)&quot;,
+
+          &quot;limit&quot;: { &quot;context&quot;: 32768, &quot;output&quot;: 8192 }
+
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
+</pre>
+<br>
+<p>&gt; <strong>Требуется:</strong> GPU с 16+ GB VRAM для 32B моделей.</p>
+<br>
+<p>---</p>
+<br>
+<h2>7. Проверка работы</h2>
+<br>
+<p>1. Запустите OpenCode: <code>opencode</code></p>
+<p>2. Проверьте MCP: в чате спросите &quot;покажи сокращение ДО&quot;</p>
+<p>3. Проверьте知识: &quot;найди в базе знаний исправление бага&quot;</p>
+<p>4. Проверьте модель: <code>/models</code> — выберите бесплатную модель</p>
+<p>5. Протестируйте: &quot;создай простой SQL запрос&quot;</p>
+<br>
+<p>---</p>
+<br>
+<h2>Частые проблемы</h2>
+<br>
+<table><tr><th>Проблема</th><th>Решение</th></tr><tr><td>MCP не загружается</td><td>Проверьте путь к Python в <code>opencode.jsonc</code> → <code>command[0]</code></td></tr><tr><td>Нет бесплатных моделей</td><td>Зарегистрируйтесь на opencode.ai/auth, добавьте биллинг</td></tr><tr><td>Ollama не отвечает</td><td><code>ollama serve</code> → проверьте http://localhost:11434</td></tr><tr><td>Кракозябры в выводе</td><td>PowerShell 5.1: не используйте <code>-NoProfile</code></td></tr><tr><td>Python 3.12 не найден</td><td>Установите с https://python.org, добавьте в PATH</td></tr></table>
+<br>
+</body></html>

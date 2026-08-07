@@ -1,0 +1,226 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>lsp-pb</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>PB-LSP — Language Server для PowerBuilder</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>PB-LSP (PowerBuilder Language Server Protocol) — фоновый сервер, обеспечивающий глубокий анализ кода PowerBuilder в редакторе OpenCode Desktop. Предоставляет функции навигации, автодополнения и диагностики для файлов <code>.sru</code>, <code>.srw</code>, <code>.srd</code> и других PB-расширений.</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Архитектура</h2>
+<br>
+<h3>2.1. Компоненты</h3>
+<br>
+<table><tr><th>Компонент</th><th>Тип</th><th>Назначение</th></tr><tr><td><code>LspServer.exe</code></td><td>C# (.NET 8)</td><td>Основной LSP-сервер (stdio)</td></tr><tr><td><code>LspProxy.cs</code></td><td>C#</td><td>Прокси для отладки и мониторинга</td></tr><tr><td><code>LspQuery.dll</code></td><td>C# (.NET 8)</td><td>Библиотека запросов к LSP</td></tr><tr><td><code>PbParser.exe</code></td><td>C#</td><td>Парсер синтаксиса PowerBuilder</td></tr><tr><td><code>SqlParser.cs</code></td><td>C#</td><td>Парсер встроенного SQL</td></tr><tr><td><code>WatchParser.exe</code></td><td>C#</td><td>Мониторинг изменений файлов</td></tr><tr><td><code>MonitoringDialog.exe</code></td><td>C#</td><td>Окно мониторинга работы LSP</td></tr><tr><td><code>run_lsp.ps1</code></td><td>PowerShell</td><td>Лаунчер с переменными окружения БД</td></tr></table>
+<br>
+<h3>2.2. Схема взаимодействия</h3>
+<br>
+<pre>
+OpenCode Desktop
+
+    │
+
+    ├── languages.powerbuilder.lsp
+
+    │       │
+
+    │       └── запускает run_lsp.ps1
+
+    │               │
+
+    │               └── LspServer.exe (stdio)
+
+    │                       │
+
+    │                       ├── PbParser.exe (анализ .sru)
+
+    │                       ├── SqlParser (анализ SQL)
+
+    │                       └── WatchParser.exe (мониторинг)
+
+    │
+
+    └── Status Tab → показывает PB-LSP (Running/Stopped)
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>3. Возможности</h2>
+<br>
+<h3>3.1. Анализ кода</h3>
+<br>
+<table><tr><th>Функция</th><th>Описание</th><th>Статус</th></tr><tr><td><code>textDocument/didOpen</code></td><td>Анализ при открытии файла</td><td>✅</td></tr><tr><td><code>textDocument/didChange</code></td><td>Инкрементальный анализ при изменении</td><td>✅</td></tr><tr><td><code>textDocument/documentSymbol</code></td><td>Символы документа (функции, переменные)</td><td>✅</td></tr><tr><td><code>workspace/symbol</code></td><td>Символы по всему workspace</td><td>✅</td></tr><tr><td><code>textDocument/hover</code></td><td>Информация при наведении</td><td>🔄</td></tr><tr><td><code>textDocument/completion</code></td><td>Автодополнение</td><td>🔄</td></tr><tr><td><code>textDocument/definition</code></td><td>Переход к определению</td><td>✅</td></tr></table>
+<br>
+<h3>3.2. Валидация SQL</h3>
+<br>
+<p>Сервер проверяет встроенный SQL (DataWindow SQL, embedded SQL в скриптах) на соответствие синтаксису Sybase ASE 15.5, используя подключение к БД.</p>
+<br>
+<h3>3.3. Инкрементальная индексация</h3>
+<br>
+<p>При изменении файла переиндексируется только изменённая часть, а не весь workspace.</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Конфигурация</h2>
+<br>
+<h3>4.1. Файл `pb_lsp_config.json`</h3>
+<br>
+<pre>
+{
+
+  &quot;server&quot;: {
+
+    &quot;host&quot;: &quot;localhost&quot;,
+
+    &quot;port&quot;: 6091,
+
+    &quot;logLevel&quot;: &quot;verbose&quot;,
+
+    &quot;environment&quot;: &quot;production&quot;
+
+  },
+
+  &quot;database&quot;: {
+
+    &quot;provider&quot;: &quot;EnvDbProvider&quot;
+
+  },
+
+  &quot;paths&quot;: {
+
+    &quot;scripts&quot;: &quot;C:\\AIS\\AI\\Prod\\scripts_pb_lsp&quot;,
+
+    &quot;logs&quot;: &quot;C:\\AIS\\AI\\Prod\\logs\\pb_lsp&quot;,
+
+    &quot;backups&quot;: &quot;C:\\AIS\\AI\\Prod\\backups\\pb_lsp&quot;
+
+  },
+
+  &quot;features&quot;: {
+
+    &quot;sqlValidation&quot;: true,
+
+    &quot;incrementalIndex&quot;: true,
+
+    &quot;documentSymbols&quot;: true,
+
+    &quot;workspaceSymbols&quot;: true
+
+  }
+
+}
+
+</pre>
+<br>
+<h3>4.2. Регистрация в `opencode.jsonc`</h3>
+<br>
+<pre>
+&quot;languages&quot;: {
+
+  &quot;powerbuilder&quot;: {
+
+    &quot;extensions&quot;: [&quot;.sru&quot;, &quot;.srw&quot;, &quot;.srm&quot;, &quot;.srs&quot;, &quot;.srd&quot;, &quot;.srp&quot;, &quot;.pbj&quot;],
+
+    &quot;lsp&quot;: {
+
+      &quot;type&quot;: &quot;stdio&quot;,
+
+      &quot;command&quot;: [&quot;powershell&quot;, &quot;-NoLogo&quot;, &quot;-File&quot;, &quot;C:\\AIS\\AI\\Prod\\scripts_pb_lsp\\run_lsp.ps1&quot;],
+
+      &quot;name&quot;: &quot;PB-LSP&quot;,
+
+      &quot;enabled&quot;: true
+
+    }
+
+  }
+
+}
+
+</pre>
+<br>
+<h3>4.3. Переменные окружения БД</h3>
+<br>
+<p>Сервер использует переменные окружения для подключения к Sybase ASE:</p>
+<br>
+<table><tr><th>Переменная</th><th>Источник</th><th>Назначение</th></tr><tr><td><code>PB_LSP_DB_SERVER</code></td><td><code>.local_secrets.json → pb_lsp.db_server</code></td><td>Сервер БД</td></tr><tr><td><code>PB_LSP_DB_DATABASE</code></td><td><code>.local_secrets.json → pb_lsp.db_database</code></td><td>База данных</td></tr><tr><td><code>PB_LSP_DB_UID</code></td><td><code>.local_secrets.json → pb_lsp.db_uid</code></td><td>Логин</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Запуск и мониторинг</h2>
+<br>
+<h3>5.1. Автоматический запуск</h3>
+<br>
+<p>LSP-сервер запускается OpenCode Desktop автоматически при открытии файла с расширением <code>.sru</code>/<code>.srw</code>/<code>.srd</code>.</p>
+<br>
+<h3>5.2. Мониторинг</h3>
+<br>
+<pre>
+# Проверка статуса LSP
+
+powershell -File C:\AIS\AI\Prod\scripts_pb_lsp\monitor_lsp.ps1
+
+
+
+# Окно мониторинга
+
+C:\AIS\AI\Prod\scripts_pb_lsp\MonitoringDialog.exe
+
+</pre>
+<br>
+<h3>5.3. Логи</h3>
+<br>
+<p>Логи сервера сохраняются в <code>C:\AIS\AI\Prod\logs\pb_lsp\</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Процесс восстановления после сбоя</h2>
+<br>
+<pre>
+# 1. Перезапуск LSP
+
+powershell -File C:\AIS\AI\Prod\scripts_pb_lsp\run_lsp.ps1
+
+
+
+# 2. Очистка логов (при необходимости)
+
+Remove-Item C:\AIS\AI\Prod\logs\pb_lsp\* -Force -ErrorAction SilentlyContinue
+
+
+
+# 3. Перезапуск OpenCode Desktop (если LSP не поднимается)
+
+Get-Process OpenCode | Stop-Process -Force
+
+Start-Process &quot;C:\Users\vchaga\AppData\Local\ai.opencode.desktop\OpenCode.exe&quot;
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>7. Экономическая выгода</h2>
+<br>
+<h3>7.1. Сокращение времени анализа кода</h3>
+<br>
+<table><tr><th>Задача</th><th>Без LSP</th><th>С LSP</th><th>Экономия</th></tr><tr><td>Поиск определения функции</td><td>Открытие PB IDE + поиск (~2 мин)</td><td><code>Ctrl+Click</code> (~1 сек)</td><td><strong>99%</strong></td></tr><tr><td>Проверка синтаксиса SQL</td><td>Ручная проверка (~10 мин)</td><td>Автоматически при сохранении</td><td><strong>100%</strong></td></tr><tr><td>Навигация по проекту</td><td>Открытие PBL в IDE + поиск (~5 мин)</td><td><code>workspace/symbol</code> (~2 сек)</td><td><strong>99%</strong></td></tr></table>
+<br>
+<h3>7.2. Предотвращение ошибок</h3>
+<br>
+<p>- <strong>Валидация SQL:</strong> синтаксические ошибки обнаруживаются до компиляции</p>
+<p>- <strong>Поиск неиспользуемого кода:</strong> символы без ссылок (в разработке)</p>
+<p>- <strong>Контроль зависимостей:</strong> видно, кто вызывает объект</p>
+<br>
+</body></html>

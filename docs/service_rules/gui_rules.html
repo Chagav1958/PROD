@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>gui_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса GUI (Prod-GUI.ps1 + Settings-Module.ps1)</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>bin\Prod-GUI.bat</code></td><td>Точка входа: запускает Prod-GUI.ps1</td></tr><tr><td><code>bin\Prod-GUI.ps1</code></td><td>Основное WPF-приложение с 15 операциями</td></tr><tr><td><code>scripts\Settings-Module.ps1</code></td><td>Модуль настроек (шифрование, валидация, экспорт/импорт)</td></tr><tr><td><code>config\config.json</code></td><td>Конфигурация путей и параметров</td></tr></table>
+<br>
+<h2>Зависимости</h2>
+<br>
+<p>- <strong>PowerShell 5.1</strong> (Windows PowerShell, не PowerShell 7)</p>
+<p>- <strong>WPF</strong> (Windows Presentation Foundation) — для GUI</p>
+<p>- <strong>DPAPI</strong> (Data Protection API) — для шифрования мастер-ключа (только Windows)</p>
+<p>- <strong>Google Chrome</strong> — для генерации PDF из HTML-документации</p>
+<p>- <strong>TortoiseSVN</strong> (TortoiseMerge) — опционально, для сравнения файлов</p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<h3>Prod-GUI.ps1 — общее</h3>
+<br>
+<p>1. <strong>Stop button: guiProcess → currentProcess</strong> (Bug-012)</p>
+<p>   - В обработчике кнопки Stop использовалась неверная переменная <code>$script:guiProcess</code> вместо <code>$script:currentProcess</code></p>
+<p>   - <strong>Правило:</strong> всегда использовать <code>$script:currentProcess</code> для доступа к запущенному процессу</p>
+<br>
+<p>2. <strong>Дубликат кода Settings</strong> (Bug-013)</p>
+<p>   - Найден дубликат обработчика <code>$op.HasCustomUI</code> для Settings</p>
+<p>   - Второй блок никогда не выполнялся (unreachable из-за <code>return</code> в первом)</p>
+<p>   - <strong>Правило:</strong> при добавлении новых операций проверять нет ли дубликатов</p>
+<br>
+<p>3. <strong>$_ не экранирован в here-string wrapper</strong> (Bug-019)</p>
+<p>   - В <code>@&quot; &quot;@</code> here-string <code>$_</code> интерполируется как <code>$null</code></p>
+<p>   - <strong>Правило:</strong> использовать `<code> </code>$_ `` в here-string для экранирования</p>
+<br>
+<p>4. <strong>Таймаут вывода</strong> (Bug-018)</p>
+<p>   - Добавлен <code>$script:uiLastDataTime</code> — обнуляется при каждом новом выводе</p>
+<p>   - Таймаут срабатывает только если нет данных &gt; N секунд</p>
+<p>   - Настраивается через <code>gui.output_timeout_seconds</code> в config.json</p>
+<p>   - <strong>Правило:</strong> не уменьшать таймаут ниже 60 секунд для VSS-операций</p>
+<br>
+<p>5. <strong>Пароль в temp-скрипте</strong> (Bug-017)</p>
+<p>   - Пароль экранируется: <code>$escapedPassword = $password -replace &quot;&#39;&quot;, &quot;&#39;&#39;&quot;</code></p>
+<p>   - <strong>Важно:</strong> пароль не должен выводиться в лог в открытом виде</p>
+<br>
+<p>6. <strong>Экранирование одинарных кавычек в script block</strong> (Bug-023)</p>
+<p>   - Скрипт-блок вставляется в <code>{ $escapedSbText }</code> (НЕ в кавычки)</p>
+<p>   - Экранирование <code>&#39; → &#39;&#39;</code> НЕ нужно внутри фигурных скобок</p>
+<p>   - <strong>Правило:</strong> <code>$escapedSbText = $sbText</code> (без <code>-replace</code>)</p>
+<br>
+<h3>Prod-GUI.ps1 — VSS операции</h3>
+<br>
+<p>7. <strong>VSS пароль из Settings</strong> (FEAT-005)</p>
+<p>   - VSS-операции не имеют поля <code>VssPass</code> — пароль расшифровывается из config.json</p>
+<p>   - Run handler injector: <code>$params[&#39;VssPass&#39;] = $vssPwd</code></p>
+<p>   - <strong>Правило:</strong> при изменении VSS-операций не добавлять поле для пароля</p>
+<br>
+<p>8. <strong>Update-VssProjectCombo стирает имя объекта</strong> (Bug-020)</p>
+<p>   - <code>$inner.Items.Clear()</code> — сохранять <code>$currentText = $inner.Text</code> перед очисткой</p>
+<p>   - <strong>Правило:</strong> всегда сохранять и восстанавливать <code>$inner.Text</code></p>
+<br>
+<p>9. <strong>ComboBox Text не фиксируется при клике Run</strong> (Bug-022)</p>
+<p>   - Editable ComboBox не обновляет <code>.Text</code> до потери фокуса</p>
+<p>   - <strong>Исправление:</strong> <code>Get-ComboBoxText</code> + <code>Get-InnerTextBox</code> — рекурсивный BFS-поиск TextBox через <code>VisualTreeHelper</code></p>
+<p>   - <strong>Резерв:</strong> <code>Template.FindName(&quot;PART_EditableTextBox&quot;)</code>, <code>ApplyTemplate()</code></p>
+<br>
+<p>10. <strong>Multi-select в DataGrid VSS Status</strong> (Bug-024)</p>
+<p>    - <code>SelectionMode = &#39;Extended&#39;</code>, <code>SelectionUnit = &#39;FullRow&#39;</code></p>
+<p>    - Обработчики Checkout/Undo используют <code>$dg.SelectedItems</code> с обходом через <code>foreach</code></p>
+<p>    - Для <code>SelectedItems</code> создаётся копия в <code>ArrayList</code> перед циклом (проблемы с живой коллекцией)</p>
+<p>    - После операции — <code>$dg.Items.Refresh()</code> для обновления без перезагрузки</p>
+<br>
+<p>11. <strong>$LASTEXITCODE теряется после Out-Null</strong> (Bug-025)</p>
+<p>    - <code>Out-Null</code> после вызова <code>ss.exe</code> теряет <code>$LASTEXITCODE</code></p>
+<p>    - <strong>Правило:</strong> вызывать VSS-функцию напрямую и проверять <code>$LASTEXITCODE</code> сразу после, без конвейера</p>
+<br>
+<h3>Settings-Module.ps1</h3>
+<br>
+<p>12. <strong>Get-MasterKey failure при первом запуске</strong> (Bug-014)</p>
+<p>    - <code>ConvertTo-SecureString</code> падает при первой загрузке на новой машине (DPAPI ключ привязан к пользователю/компьютеру)</p>
+<p>    - <strong>Исправление:</strong> <code>Get-MasterKey</code> возвращает <code>$null</code> при ошибке</p>
+<p>    - <code>Build-SettingsUI</code> и <code>Save-Settings</code> создают ключ автоматически</p>
+<br>
+<p>13. <strong>Пароль VSS: шифрование AES-256</strong> (Bug-014)</p>
+<p>    - Пароль VSS шифруется AES-256 с мастер-ключом через Windows DPAPI</p>
+<p>    - Хранится в <code>config.json</code> в поле <code>password_encrypted</code></p>
+<p>    - Мастер-ключ: <code>master_key_encrypted</code> (DPAPI SecureString)</p>
+<p>    - <strong>При переносе на другой компьютер:</strong> мастер-ключ создаётся заново</p>
+<br>
+<p>14. <strong>Отступы в полях настроек</strong> (Bug-015, Bug-016)</p>
+<p>    - GroupBox margin: <code>0,0,6,0</code></p>
+<p>    - Field margin: <code>0,0,2,0</code></p>
+<p>    - Label margin: <code>0,0,0,0</code></p>
+<p>    - <strong>Правило:</strong> не увеличивать отступы без необходимости — окно станет слишком высоким</p>
+<br>
+<p>15. <strong>Тестирование после изменений Settings</strong></p>
+<p>    - После любого изменения Build-SettingsUI, Attach-SettingsHandlers или Save-Settings:</p>
+<p>      1. Все поля отображаются после Save, Reset, переключения вкладок</p>
+<p>      2. Поля сгруппированы по назначению</p>
+<p>      3. Вертикальные отступы минимальны</p>
+<br>
+<h3>WPF особенности</h3>
+<br>
+<p>16. <strong>WPF в PowerShell 5.1</strong></p>
+<p>    - Загрузка сборок: <code>[System.Reflection.Assembly]::LoadWithPartialName</code></p>
+<p>    - XML-разметка: <code>[xml]</code> — разбор XAML</p>
+<p>    - <strong>Правило:</strong> не использовать функционал из WPF 4.5+, только то, что доступно в .NET 3.5/4.x</p>
+<br>
+<p>17. <strong>Потокобезопасность</strong></p>
+<p>    - UI-элементы обновляются ТОЛЬКО из UI-потока</p>
+<p>    - Для фоновых задач используется <code>System.Windows.Forms.Timer</code></p>
+<p>    - Вывод в <code>$outputBox.Text += &quot;...&quot;</code> только из callback таймера</p>
+<br>
+<p>18. <strong>Ссылка на PDF в HTML-документации</strong></p>
+<p>    - HTML содержит ссылку на PDF и наоборот</p>
+<p>    - При изменении HTML нужно перегенерировать PDF через Chrome headless</p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- Все пути настраиваются через config.json (никаких hardcoded путей в GUI)</p>
+<p>- История операций хранится в <code>vss_object_history.json</code> (макс. объектов настраивается)</p>
+<p>- История Task Name хранится в том же файле по ключу <code>&quot;TaskName_Shared&quot;</code></p>
+<p>- После любого изменения GUI — тестировать все 15 операций</p>
+<p>- Кнопка Run находится под селектором операций (Run per operation); Stop — внизу окна</p>
+<p>- Результат операции выводится в popup-окне; Output содержит только протокол выполнения</p>
+<br>
+</body></html>

@@ -1,0 +1,258 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>morda-requirements</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Единый документ требований МОРДА / МОРДА2 (СТАНДАРТ2)</h1>
+<br>
+<p>&gt; <strong>Назначение:</strong> единственный источник истины по требованиям к приложению МОРДА (главное окно подготовки релизов) и МОРДА2 (<code>Prod-GUI_STANDART2.ps1</code>, сборка СТАНДАРТ2). Документ создан 06.08.2026 для того, чтобы МОРДА восстанавливалась заново после антивирусных атак (Kaspersky/Defender удаляют <code>.ps1</code>, Bug-063/064/065) без потери накопленных требований.</p>
+<p>&gt;</p>
+<p>&gt; <strong>Дубли:</strong> во всех остальных источниках требований (<code>.opencode/<em>.mdc</code>, <code>rules/</em>.md</code>, описания задач) вместо дублирования текста давать ссылку на этот файл: <code>docs\morda-requirements.md</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Общие сведения</h2>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td>Приложение</td><td>МОРДА — Подготовка релизов (AIS Release GUI)</td></tr><tr><td>Реализация 1 (СТАНДАРТ1)</td><td><code>Prod-GUI.ps1</code> / <code>bin\Prod-GUI.ps1</code></td></tr><tr><td>Реализация 2 (СТАНДАРТ2)</td><td><code>bin\Prod-GUI_STANDART2.ps1</code> (МОРДА2, актуальная, ~1615 строк)</td></tr><tr><td>Хелперы СТАНДАРТ2</td><td><code>scripts\Standard2-Helpers.ps1</code> (стили ПБ, окна, сообщения, DataGrid, кнопки)</td></tr><tr><td>Эталон внешнего вида</td><td><code>scripts\Show-Appl2Standard-CS\MainWindow.xaml</code> (C#/WPF, официальный образец СТАНДАРТ2)</td></tr><tr><td>Техжурнал</td><td><code>%TEMP%\tech_journal_&lt;дата&gt;_&lt;время&gt;_&lt;PID&gt;.log</code>, первая строка <code>[..] [INFO] MORDA started (ST2)</code></td></tr><tr><td>Мультиэкземплярность</td><td>запрещена; признак окна — <code>MainWindowTitle -eq &quot;МОРДА — Подготовка релизов&quot;</code></td></tr><tr><td>Конфигурация</td><td><code>config\config.json</code> (пути <code>bd_main_export</code>, <code>bd_current_export</code>, <code>release_root</code>, <code>vss.*</code>, <code>paths.*</code>, <code>jira.*</code>)</td></tr><tr><td>Секреты</td><td><code>config\.local_secrets.json</code> (никогда не в Git; пароли/токены передаются в операциях, не хранятся)</td></tr></table>
+<br>
+<h3>1.1. Иерархия требований</h3>
+<br>
+<p>1. Этот документ — <strong>единственный источник истины</strong> по требованиям к GUI МОРДА/МОРДА2.</p>
+<p>2. <code>.opencode\standard2-gui.mdc</code> — эталон СТАНДАРТ2 (детали стилей окна; ссылается на этот документ).</p>
+<p>3. <code>scripts\Show-Appl2Standard-CS\MainWindow.xaml</code> — канонические XAML-стили (кнопки, ПБ, поля).</p>
+<p>4. Остальные файлы правил — только ссылки, без дублирования.</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Требования к GUI (СТАНДАРТ2)</h2>
+<br>
+<h3>2.1. Окно</h3>
+<br>
+<table><tr><th>Требование</th><th>Значение</th></tr><tr><td>Прозрачность окна</td><td>Окно <strong>непрозрачное</strong>; полупрозрачны только Title bar и элементы (<code>#CC</code> = 80 %, <code>#80</code> = 50 %)</td></tr><tr><td>Размер по умолчанию</td><td>520 &#215; 580 (эталон); главное окно МОРДА2 — 620 &#215; 620</td></tr><tr><td><code>WindowStyle</code></td><td><code>None</code> (без системной рамки)</td></tr><tr><td><code>ResizeMode</code></td><td><code>CanResizeWithGrip</code></td></tr><tr><td><code>Topmost</code></td><td><code>True</code></td></tr><tr><td>Расположение</td><td><code>CenterScreen</code></td></tr><tr><td>Фон окна</td><td><code>#E8ECF0</code></td></tr><tr><td>Скругление углов</td><td>Win32 <code>CreateRoundRectRgn</code>, радиус 18 px (18,18,36,36): <code>RoundedWindow::Apply</code> при <code>Loaded</code> и <code>SizeChanged</code></td></tr><tr><td>Тень</td><td><code>DropShadowEffect Color=#404040 Direction=270 ShadowDepth=4 BlurRadius=10 Opacity=0.5</code></td></tr><tr><td>Рамка</td><td><code>BorderBrush=#1A3A60</code>, <code>Thickness=1</code></td></tr><tr><td><code>AllowsTransparency</code></td><td><code>True</code> (эталон)</td></tr><tr><td>Перетаскивание</td><td>Title bar → <code>MouseLeftButtonDown</code> (WM_NCHITTEST: если <code>pt.Y &lt; 42</code>, <code>pt.X &gt;= 8</code>, <code>pt.X &lt;= ActualWidth-8</code> → <code>HT_CAPTION</code> = 2)</td></tr></table>
+<br>
+<h3>2.2. Title bar (шапка окна)</h3>
+<br>
+<table><tr><th>Требование</th><th>Значение</th></tr><tr><td>Высота</td><td>40 px</td></tr><tr><td>Фон</td><td><code>#807080B0</code> (полупрозрачный 50 %, глубокий сине-серый)</td></tr><tr><td>Скругление</td><td><code>17,17,0,0</code></td></tr><tr><td>Нижняя граница</td><td><code>BorderBrush=#1A3A60</code>, <code>Thickness=0,0,0,1</code></td></tr><tr><td>Заголовок</td><td>&#171;МОРДА — Подготовка релизов&#187; (главное окно); для ДО — название ДО</td></tr><tr><td>Стиль текста</td><td>3D: белый сдвинутый слой (White, Opacity 0.9, Margin 3,2,0,0) + тёмно-синий передний слой <code>#1A3A60</code>; шрифт Segoe UI, Bold, 14</td></tr><tr><td>Кнопки управления</td><td><code>━</code> (свернуть), <code>☐</code> (развернуть), <code>✕</code> (закрыть) — прозрачный фон, <code>Foreground=#1A3A60</code>, ширина 40, высота 36</td></tr></table>
+<br>
+<h3>2.3. Кнопки (Glossy 3D)</h3>
+<br>
+<table><tr><th>Требование</th><th>Значение</th></tr><tr><td>Базовая кнопка</td><td>120 &#215; 38, Bold 11, <code>Cursor=Hand</code>, текст белый, <code>Margin=4,0</code></td></tr><tr><td>Шаблон</td><td>Внешний <code>Border CornerRadius=10 Background=#CC0F3050</code>; внутренний <code>Border CornerRadius=9 Margin=1.5</code> с вертикальным градиентом <code>#CC9DC8F0 → #CC3B7BBF → #CC1A4A7A</code>; верхний блик <code>Height=7 CornerRadius=9 Margin=2,2,2,20</code> градиент <code>#E0FFFFFF → #00FFFFFF</code></td></tr><tr><td>Отмена (Cancel)</td><td>Серый: внешний <code>#CC404040</code>, градиент <code>#CCD0D0D0 → #CC909090 → #CC606060</code></td></tr><tr><td>Малая кнопка (поиск ▼/▲)</td><td>30 &#215; 26, FontSize 11</td></tr><tr><td>Главные кнопки МОРДА2</td><td><code>btnRun</code> (&#171;Выполнить&#187;), <code>btnHistory</code> (&#171;История&#187;), <code>btnExit</code> (&#171;Выход&#187;) — в панели <code>New-Standard2ButtonPanel</code></td></tr></table>
+<br>
+<h3>2.4. Поля ввода, пароль, выпадающие списки</h3>
+<br>
+<table><tr><th>Элемент</th><th>Требование</th></tr><tr><td>Подпись поля</td><td><code>FontSize=10</code>, <code>Foreground=#4A5568</code>, <code>Margin=3,0,0,1</code></td></tr><tr><td>Рамка поля</td><td><code>BorderBrush=#CBD5E0</code>, <code>Thickness=1</code>, <code>CornerRadius=10</code>, <code>Padding=6,4</code></td></tr><tr><td>TextBox/ComboBox внутри</td><td><code>BorderThickness=0</code>, <code>Background=Transparent</code>, <code>FontSize=11</code></td></tr><tr><td>PasswordBox</td><td>внутри такой же рамки; <strong>пароль никогда не выводится в журнал/отчёты</strong> (в техжурнале <code>pwd=***</code>)</td></tr><tr><td>ComboBox операций</td><td><code>Name=&quot;cmbOp&quot;</code>, FontSize 12, Height 30</td></tr></table>
+<br>
+<h3>2.5. DataGrid</h3>
+<br>
+<table><tr><th>Требование</th><th>Значение</th></tr><tr><td>Режим</td><td><code>AutoGenerateColumns=False</code>, <code>IsReadOnly=True</code>, <code>HeadersVisibility=Column</code>, <code>RowHeaderWidth=0</code></td></tr><tr><td>Фон</td><td>чередование <code>White</code> / <code>AlternatingRowBackground=#F5F7FA</code>; <code>GridLinesVisibility=None</code></td></tr><tr><td>Сортировка</td><td><code>CanUserSortColumns=True</code></td></tr><tr><td>Выбор</td><td><code>SelectionMode=Single</code>, <code>SelectionUnit=FullRow</code></td></tr><tr><td>Прокрутка</td><td>вертикальная и горизонтальная — <code>Visible</code></td></tr><tr><td>Шрифт</td><td>11</td></tr></table>
+<br>
+<h3>2.6. Панель поиска</h3>
+<br>
+<p><code>lblMatch</code> (счётчик &#171;0 - 0&#187;), <code>txtSearch</code> (высота 26, <code>KeyDown</code> Enter/WM_CHAR, <code>TextChanged</code>), кнопки <code>▼</code> / <code>▲</code> (малый Glossy 3D) — переход к следующему/предыдущему совпадению.</p>
+<br>
+<h3>2.7. Прогресс-бары (ПБ) — детальные требования</h3>
+<br>
+<p>Стиль <code>New-Standard2ProgressStyle</code> (в <code>Standard2-Helpers.ps1</code>), основан на эталонном <code>GlossyProgress</code>.</p>
+<br>
+<table><tr><th>Требование</th><th>Значение</th></tr><tr><td>Форма</td><td><strong>Овальные</strong> (скруглённые), <code>CornerRadius</code> 12 (индикатор) / 10 (трек)</td></tr><tr><td>Фон (трек)</td><td>Полупрозрачный <code>#990F3050</code> (эталон: <code>#CC0F3050</code> внешний + <code>#E2E8F0</code> дорожка)</td></tr><tr><td>Объёмность (3D)</td><td><strong>ГОРИЗОНТАЛЬНЫЙ объём</strong>: блик и тень идут по горизонтали (слева→справа), создавая эффект трубы/стержня; <strong>не</strong> вертикальный объём (блик сверху — запрещено, Bug ОП7)</td></tr><tr><td>Градация цвета индикатора</td><td><strong>ГОРИЗОНТАЛЬНАЯ</strong>: <code>LinearGradientBrush StartPoint=0,0 EndPoint=1,0</code> (слева направо), голубой → фиолетовый → синий (пример: <code>#CCB8D8F8 → #CC3B7BBF → #CC1A4A7A → #CC0F3050</code>)</td></tr><tr><td>Высота</td><td>18 px (эталон)</td></tr><tr><td>Блик</td><td>Белый глосс по верхней части ПБ, градиент <code>#C0FFFFFF → #00FFFFFF</code></td></tr><tr><td>Тень</td><td>Нижняя тень для глубины, <code>IsHitTestVisible=False</code>, градиент <code>#30000000 → #80000000</code></td></tr><tr><td>Минимум/максимум</td><td><code>Minimum=0</code>, <code>Maximum=100</code></td></tr><tr><td><strong>Текст поверх ПБ</strong></td><td>Обязателен: подписи фаз и шагов отображаются ПОВЕРХ самого ПБ (белый текст с тенью), а не рядом. Обновление через <code>DispatcherTimer</code> из Runspace; <strong>текст обновляется всегда, включая <code>Value=0</code></strong></td></tr><tr><td>Подписи</td><td><code>lblPhase</code> (&#171;Фаза: …&#187;), <code>lblStep</code> (&#171;Шаг: (3 - 10)&#187;), FontSize 11, <code>Foreground=#4A5568</code>; в МОРДА2 — <code>PhaseProgress</code>/<code>StepProgress</code> с полями <code>Value</code> и <code>Text</code></td></tr><tr><td>Обработка <code>###PHASE###</code> / <code>###STEP###</code></td><td>При парсинге вывода операций обновлять ПБ: фаза → <code>Value</code> по индексу типа, шаг → <code>Value = step/total</code>, <code>Text = &quot;N из M&quot;</code></td></tr><tr><td>Текст шага при экспорте</td><td><code>StepProgress.Text += &quot; — &lt;имя объекта&gt;&quot;</code> по строке <code>Exporting &lt;тип&gt;: &lt;имя&gt;</code></td></tr></table>
+<br>
+<p><strong>Требование восстановления:</strong> при перерисовке/смене операции текст поверх ПБ не должен пропадать; значение и текст ПБ выставляются в начало операции и обновляются по мере поступления прогресса.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Главное окно МОРДА2 (`Prod-GUI_STANDART2.ps1`)</h2>
+<br>
+<h3>3.1. Структура (сверху вниз)</h3>
+<br>
+<p>1. <strong>Строка &#171;Операция&#187;</strong> — ComboBox <code>cmbOp</code> с 19 операциями + описание выбранной операции (<code>txtDesc</code>).</p>
+<p>2. <strong>Панель параметров</strong> <code>ParamsPanel</code> — динамически строится из <code>Fields</code>/<code>Checkboxes</code> выбранной операции (TextBox, PasswordBox, ComboBox с <code>Items</code>).</p>
+<p>3. <strong>ПБ фаз и шагов</strong> (<code>PhaseProgress</code>, <code>StepProgress</code>).</p>
+<p>4. <strong>Кнопки</strong>: <code>btnRun</code> (Выполнить), <code>btnHistory</code> (История), <code>btnExit</code> (Выход).</p>
+<br>
+<h3>3.2. Поведение</h3>
+<br>
+<p>- Выбор операции в <code>cmbOp</code> → <code>Select-Operation</code> (пересборка полей; PasswordBox для <code>NeedsPassword=$true</code>).</p>
+<p>- <code>btnRun</code> → <code>Run-SelectedOperation</code>: валидация обязательных полей (<code>Required=$true</code>), чтение пароля, запуск Handler в Runspace (не блокировать UI), обновление ПБ через <code>DispatcherTimer</code>.</p>
+<p>- <code>btnHistory</code> → <code>Show-HistoryWindow</code> (&#171;История операций — в разработке&#187;).</p>
+<p>- <code>btnExit</code> → закрытие окна.</p>
+<p>- При закрытии — запись <code>Write-TechJournal &quot;INFO&quot; &quot;Application closed&quot;</code>.</p>
+<br>
+<h3>3.3. Защита от мультиэкземплярности</h3>
+<br>
+<pre>
+Get-Process | Where-Object { $_.MainWindowTitle -eq &quot;МОРДА — Подготовка релизов&quot; -and $_.Id -ne $PID }
+
+</pre>
+<p>- обычный запуск → <code>exit 0</code> (не создавать второй экземпляр);</p>
+<p>- режим <code>--autotest</code> → старые процессы принудительно завершаются (<code>Stop-Process -Force</code>).</p>
+<br>
+<h3>3.4. Скругление углов и перетаскивание</h3>
+<br>
+<p><code>Add-Type</code> C# <code>RoundedWindow</code> (<code>CreateRoundRectRgn</code>, <code>SetWindowRgn</code>, радиус 36/36). Применяется на <code>Loaded</code> и пересчитывается на <code>SizeChanged</code>. Перетаскивание — hook <code>WM_NCHITTEST</code> (0x0084): зона <code>Y&lt;42</code>, <code>X∈[8, ActualWidth-8]</code> → <code>HT_CAPTION</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Операции (19) — полный перечень</h2>
+<br>
+<p>Индексы в ComboBox <code>cmbOp</code> — с 0 в порядке списка ниже.</p>
+<br>
+<table><tr><th>№</th><th>Имя (<code>Name</code>)</th><th>Русское название</th><th>Пароль</th><th>Поля</th><th>Обработчик</th></tr><tr><td>0</td><td>Settings</td><td>Настройки параметров</td><td>нет</td><td>—</td><td><code>Invoke-OpSettings</code></td></tr><tr><td>1</td><td>Run Tests</td><td>Запуск тестов</td><td>нет</td><td>Чекбокс <code>QuickMode</code></td><td><code>Invoke-OpRunTests</code></td></tr><tr><td>2</td><td>Export Service</td><td>Export Service (выгрузка проекта)</td><td>нет</td><td><code>DestPath</code></td><td><code>Invoke-OpExportService</code></td></tr><tr><td>3</td><td>Collect PROD Objects</td><td>Собрать объекты для вывода в ПРОД</td><td>нет</td><td><code>TaskName</code>*, <code>CollectPath</code></td><td><code>Invoke-OpCollectProd</code></td></tr><tr><td>4</td><td>Export PB</td><td>Выгрузка PB: Current или Main</td><td>нет</td><td><code>Source</code>(Current/Main), <code>TaskName</code></td><td><code>Invoke-OpExportPb</code></td></tr><tr><td>5</td><td>Compare PB</td><td>Сравнение PB: Current и Main</td><td>нет</td><td><code>TaskName</code>, <code>OutputFile</code></td><td><code>Invoke-OpComparePb</code></td></tr><tr><td>6</td><td><strong>SQL Export</strong></td><td>Выгрузка SQL</td><td><strong>да</strong></td><td><code>Source</code>, <code>Server</code>, <code>Db</code>, <code>ObjectType</code>, <code>TaskName</code></td><td><code>Invoke-OpSqlExport</code></td></tr><tr><td>7</td><td>Compare SQL</td><td>Сравнение SQL: Current и Main</td><td><strong>да</strong></td><td><code>TaskName</code></td><td><code>Invoke-OpCompareSql</code></td></tr><tr><td>8</td><td>Compare &amp; Verify</td><td>Сравнение и проверка</td><td><strong>да</strong></td><td><code>TaskName</code>*; чекбоксы <code>ShowDiff</code>, <code>CreateRFC</code></td><td><code>Invoke-OpCompareVerify</code></td></tr><tr><td>9</td><td>Create RFC</td><td>Создание RFC в Jira</td><td><strong>да</strong></td><td><code>TaskName</code>*</td><td><code>Invoke-OpCreateRfc</code></td></tr><tr><td>10</td><td>Jira Release Comment</td><td>Комментарий в Jira</td><td><strong>да</strong></td><td><code>TaskName</code>*, <code>ProjectName</code>(AIS)</td><td><code>Invoke-OpJiraComment</code></td></tr><tr><td>11</td><td>VSS: Get Latest</td><td>VSS: Получить последнюю версию</td><td>нет</td><td><code>VssPath</code>, <code>VssUser</code>, <code>TaskName</code>, <code>Project</code>, <code>PbtFile</code>; чекбокс <code>Recursive</code></td><td><code>Invoke-OpVssGetLatest</code></td></tr><tr><td>12</td><td>VSS: Check Status</td><td>VSS: Проверить статус</td><td>нет</td><td><code>VssPath</code>, <code>VssUser</code>, <code>Project</code>, <code>TaskName</code>; чекбокс <code>Recursive</code></td><td><code>Invoke-OpVssCheckStatus</code></td></tr><tr><td>13</td><td>VSS: Who Is Using</td><td>VSS: Кто использует</td><td>нет</td><td><code>VssPath</code>, <code>VssUser</code>, <code>Project</code>, <code>TaskName</code>; чекбокс <code>Recursive</code></td><td><code>Invoke-OpVssWhoIsUsing</code></td></tr><tr><td>14</td><td>VSS: Checkout</td><td>VSS: Checkout (Извлечь)</td><td>нет</td><td><code>VssPath</code>, <code>VssUser</code>, <code>Project</code>, <code>Comment</code>; чекбокс <code>Recursive</code></td><td><code>Invoke-OpVssCheckout</code></td></tr><tr><td>15</td><td>VSS: Checkin</td><td>VSS: Checkin (Сохранить)</td><td>нет</td><td><code>VssPath</code>, <code>VssUser</code>, <code>Project</code>, <code>Comment</code>*; чекбокс <code>Recursive</code></td><td><code>Invoke-OpVssCheckin</code></td></tr><tr><td>16</td><td>VSS: Undo Check Out</td><td>VSS: Undo Check Out</td><td>нет</td><td><code>VssPath</code>, <code>VssUser</code>, <code>Project</code>, <code>Comment</code>; чекбокс <code>Recursive</code></td><td><code>Invoke-OpVssUndo</code></td></tr><tr><td>17</td><td>VSS: Object History</td><td>VSS: История объекта</td><td>нет</td><td><code>VssPath</code>, <code>VssUser</code>, <code>TaskName</code>, <code>Project</code></td><td><code>Invoke-OpVssHistory</code></td></tr></table>
+<br>
+<p>Примечания:</p>
+<p>- <code>*</code> — поле обязательно (<code>Required=$true</code>).</p>
+<p>- Пароль (<code>NeedsPassword=$true</code>) читается из PasswordBox; в техжурнале и аргументах маскируется как <code>***</code>.</p>
+<p>- Валидация VSS Checkin: пустой <code>Comment</code> → <code>throw</code> &#171;Комментарий обязателен для Checkin&#187;.</p>
+<p>- Папки задач ищутся по префиксу <code>TaskName<em></code> (правило TASK, суффикс <code>_&lt;число&gt;</code> = родительская задача), <code>Ready_</em></code> — последняя по имени.</p>
+<br>
+<h3>4.1. SQL-типы выгрузки (ОП7)</h3>
+<br>
+<p><code>SQL_exp_param.bat</code> / <code>SQL_exp_single.bat</code> из <code>bin\</code>, типы: <code>Procedures</code>, <code>Functions</code>, <code>Triggers</code>, <code>Tables</code>, <code>Views</code>, <code>Indexes</code>, <code>PrimaryKeys</code>, <code>ForeignKeys</code>, <code>Grants</code>. Выбор <code>ObjectType</code> из списка <code>(&quot;&quot;, &quot;Procedure&quot;, &quot;Functions&quot;, &quot;Triggers&quot;, &quot;Tables&quot;, &quot;Views&quot;, &quot;Indexes&quot;, &quot;PK&quot;, &quot;FK&quot;, &quot;Grants&quot;)</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. Операция SQL Export (ОП7) — детальные требования и зафиксированные баги</h2>
+<br>
+<h3>5.1. Режим «полной выгрузки» (без TaskName)</h3>
+<br>
+<p>- Источник <code>Source</code> → сервер: <strong>Current → <code>dev_golden</code></strong>, <strong>Main → <code>galaxy</code></strong>.</p>
+<p>- <strong>Баг ОП7-1 (зафиксирован, требует проверки):</strong> при смене <code>Source</code> (Current/Main) в интерфейсе наименование <code>Server</code> <strong>не меняется автоматически</strong>. Требование: смена <code>Source</code> должна автоматически выставлять <code>Server = dev_golden</code> (Current) или <code>galaxy</code> (Main), а также цель выгрузки: <code>bd_current_export</code> (dev_golden) или <code>bd_main_export</code> (galaxy).</p>
+<p>- <code>Db</code> по умолчанию <code>golden</code>.</p>
+<p>- Пароль передаётся в <code>SqlExport.exe</code>; в техжурнал — <code>pwd=***</code> (без раскрытия).</p>
+<p>- <code>SqlExport.exe</code> (<code>scripts\SqlExport\Program.cs</code>) вызывает <code>cmd /c bin\SQL_exp_param.bat &lt;server&gt; &lt;db&gt; &lt;password&gt; &quot;&quot; &lt;exportPath&gt; [objectType]</code>, транслирует <code>###PHASE###&lt;имя&gt;|&lt;N&gt;###</code> и <code>###STEP###</code> → <code>###STEP###N|M###</code>.</p>
+<p>- МОРДА2 парсит вывод: <code>###PHASE###</code> → обновление <code>PhaseProgress</code> (фаза &#171;Тип: …&#187;, Value по индексу в <code>knownTypes</code>), <code>###STEP###N|M###</code> → <code>StepProgress</code> (<code>N из M</code>), строка <code>Exporting &lt;тип&gt;: &lt;имя&gt;</code> → дописывает имя в текст шага.</p>
+<p>- Итог: статистика &#171;Выгружено: &lt;тип&gt;: &lt;кол-во&gt;… Всего файлов: N&#187;.</p>
+<br>
+<h3>5.2. Режим «по задаче» (с TaskName)</h3>
+<br>
+<p>- Сканируются папки задачи <code>Ready_<em></code> и <code>Git_</em></code> на <code>*.sql</code>.</p>
+<p>- Определение типа по первым 20 строкам (<code>CREATE PROC/EDURE</code>, <code>CREATE FUNCTION</code>, <code>CREATE TRIGGER</code>, <code>CREATE TABLE</code>, <code>CREATE VIEW</code>).</p>
+<p>- Каждый объект выгружается через <code>SQL_exp_single.bat &lt;тип&gt; &lt;имя&gt; &lt;server&gt; &lt;db&gt; &lt;password&gt;</code> в <code>bd_main_export\&lt;тип&gt;\&lt;имя&gt;.sql</code> или <code>bd_current_export\&lt;тип&gt;\&lt;имя&gt;.sql</code>.</p>
+<p>- Отчёт: <code>Успешно: N, Ошибок: M, Всего: K</code>. Пусто → <code>###SQL_TASK_NONE###</code>.</p>
+<br>
+<h3>5.3. Связанные операции (индексы 7-8, 6-7 в MCP-знании id 99)</h3>
+<br>
+<p>- &#171;Выгрузка SQL&#187; — индекс 6, &#171;Сравнение SQL: Current и Main&#187; — индекс 7. Ручная регрессия SQL-операций — PASS; пароль вводится через SendKeys в PasswordBox <code>pwdField</code> (эталонное имя поля).</p>
+<br>
+<h3>5.4. Баги ОП7 (непроверенные, внести в `rules/changelog.md` после подтверждения)</h3>
+<br>
+<table><tr><th>№</th><th>Баг</th><th>Требование</th></tr><tr><td>ОП7-1</td><td>Сервер не меняется при смене источника</td><td>Автоподстановка <code>Server</code> из <code>Source</code> (Current→dev_golden, Main→galaxy) и целевой папки выгрузки</td></tr><tr><td>ОП7-2</td><td>У ПБ вертикальный объём</td><td><strong>Горизонтальный</strong> объём (блик/тень по горизонтали)</td></tr><tr><td>ОП7-3</td><td>Нет градации цвета</td><td>Горизонтальная градация голубой→фиолетовый→синий (<code>StartPoint=0,0 EndPoint=1,0</code>)</td></tr><tr><td>ОП7-4</td><td>Нет текста у ПБ</td><td>Текст поверх ПБ виден всегда, обновление при любом <code>Value</code> (включая 0)</td></tr></table>
+<br>
+<h3>5.5. Требования к формату выгрузки SQL (Стандарт dbArtesan)</h3>
+<br>
+<p>Для обеспечения версионности и корректного сравнения объектов, выгружаемых разными способами, установлен единый стандарт формирования <code>.sql</code> файлов:</p>
+<br>
+<p>1.  <strong>Кодировка:</strong> Windows-1251 (ANSI) без BOM.</p>
+<p>2.  <strong>Заголовок (Wrapper):</strong></p>
+<p>    - <code>USE &lt;database&gt;</code></p>
+<p>    - <code>go</code></p>
+<p>    - Блок <code>IF OBJECT_ID(&#39;dbo.&lt;object_name&gt;&#39;) IS NOT NULL BEGIN DROP ... END</code></p>
+<p>    - <code>go</code></p>
+<p>3.  <strong>Метод получения тела:</strong> запрещено использовать прямой <code>SELECT text</code> из <code>syscomments</code> (из-за word-wrap и обрезания строк в <code>isql</code>). Выгрузка производится только через конвертацию в HEX (<code>convert(varbinary(255), text)</code>) с последующей сборкой на клиенте (скрипт <code>Rebuild-Object.ps1</code>).</p>
+<p>4.  <strong>Подвал (Footer):</strong></p>
+<p>    - <code>go</code></p>
+<p>    - Установка режима: <code>EXEC sp_procxmode &#39;dbo.&lt;object_name&gt;&#39;, &#39;unchained&#39;</code> (для процедур).</p>
+<p>    - <code>go</code></p>
+<p>    - Выдача прав: блоки <code>GRANT ...</code> на основе <code>sysprotects</code>.</p>
+<p>    - <code>go</code></p>
+<br>
+<h3>5.6. Требования к формату объектов PowerBuilder (PB)</h3>
+<br>
+<p>1.  <strong>Инструмент выгрузки:</strong> <code>pbldump</code> (версия 1.3.1 stable).</p>
+<p>2.  <strong>Кодировка (Локально):</strong> файлы в папках <code>PB_Current</code>, <code>PB_Main</code>, <code>Test_<em></code>, <code>Ready_</em></code> должны быть в <strong>UTF-8 с BOM</strong> для корректной работы с Git и внешними редакторами.</p>
+<p>3.  <strong>Кодировка (VSS):</strong> при импорте/экспорте из VSS (ss.exe) используется кодировка <strong>Windows-1251 (ANSI) без BOM</strong>.</p>
+<p>4.  <strong>Нормализация:</strong> все файлы должны иметь окончания строк <strong>CRLF</strong>.</p>
+<br>
+<p><strong>Реализация в проекте:</strong> скрипты <code>scripts\Export-PB.ps1</code> и <code>scripts\Convert-ExportEncoding.ps1</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Требования к результату операций</h2>
+<br>
+<h3>6.1. Кодировки (обязательно)</h3>
+<br>
+<table><tr><th>Файл</th><th>Кодировка</th><th>BOM</th></tr><tr><td><code>.ps1</code></td><td>UTF-8</td><td><strong>с BOM</strong> (PS 5.1 читает как CP1251 без BOM → кракозябры)</td></tr><tr><td><code>.json</code> / <code>.jsonc</code></td><td>UTF-8</td><td><strong>без BOM</strong> (Bug-044)</td></tr><tr><td><code>.sql</code></td><td>Windows-1251</td><td>нет</td></tr><tr><td><code>.bat</code></td><td>Windows-1251</td><td>нет</td></tr><tr><td><code>.md</code></td><td>UTF-8</td><td>без BOM</td></tr><tr><td>Отчёты/результаты операций</td><td>UTF-8 без BOM (<code>[System.IO.File]::WriteAllText(path, text, UTF8Encoding($false))</code>)</td><td>без BOM</td></tr><tr><td>Вывод консольных операций</td><td>Сохранять через `</td><td>Out-String`, показывать в ДО результата</td><td>—</td></tr></table>
+<br>
+<h3>6.2. Отображение результата</h3>
+<br>
+<p>- Результат операции показывать в <strong>диалоге результата</strong> (<code>Show-ResultWindow</code> / <code>Build-ResultWindowUI</code>, СТАНДАРТ2): заголовок, многострочный текст результата, кнопка закрытия.</p>
+<p>- <strong>Фрагменты кода не вставлять в отчёты</strong> — только ссылки на файлы и описания.</p>
+<p>- SQL-дампы и PB-экспорт — <strong>только справочные</strong>, сами файлы не изменять.</p>
+<p>- Запрещён доклад &#171;успешно&#187; без трёх этапов тестирования (см. раздел 8).</p>
+<br>
+<h3>6.3. Логирование (Tech Journal)</h3>
+<br>
+<p>- Файл: <code>%TEMP%\tech_journal_yyyyMMdd_HHmmss_&lt;PID&gt;.log</code>, формат строки <code>[ЧЧ:ММ:СС.fff] [УРОВЕНЬ] сообщение</code>.</p>
+<p>- Уровни: <code>INFO</code>, <code>ERROR</code>, <code>CLICK</code>, <code>SHOT</code>, <code>CHECK</code>, <code>FIELDS</code>, <code>OPS</code>, <code>OVERLAP</code>, <code>AUTOTEST</code>.</p>
+<p>- Обязательно логировать: запуск (<code>MORDA started (ST2)</code>, <code>EXE path</code>, <code>Args</code>), загрузку конфига, каждую операцию (входные параметры <strong>без пароля</strong>), ошибки, нажатия кнопок, завершение.</p>
+<p>- При сбое записи — fallback-файл <code>&lt;журнал&gt;.fallback</code>.</p>
+<p>- МОРДА (СТАНДАРТ1) пишет в <code>temp\last_output.log</code> (заголовок <code>=== AIS Output Log ===</code>) — читается командой OUT/ОБР.</p>
+<br>
+<h3>6.4. Отчёты операций</h3>
+<br>
+<table><tr><th>Операция</th><th>Файл отчёта</th></tr><tr><td>Compare PB</td><td><code>compare_pb_report.txt</code> (по умолчанию <code>C:\AIS\AI\Prod\compare_pb_report.txt</code>)</td></tr><tr><td>SQL Export</td><td>статистика в ДО результата + файлы в <code>bd_main_export</code> / <code>bd_current_export</code></td></tr><tr><td>Compare &amp; Verify</td><td>отчёт готовности + (опционально) RFC в Jira</td></tr><tr><td>VSS: Object History</td><td>вывод через <code>VSS-History-Show.ps1</code> (окно TortoiseMerge, поиск текста)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. Автотестирование (--autotest) и проверка GUI</h2>
+<br>
+<h3>7.1. Режим `--autotest <файл>`</h3>
+<br>
+<p>Файл команд (по строке, <code>#</code> — комментарий). Команды:</p>
+<p><code>log &lt;текст&gt;</code>, <code>wait &lt;мс&gt;</code>, <code>click &lt;кнопка&gt;</code>, <code>set_search &lt;текст&gt;</code>, <code>select_op &lt;N&gt;</code>, <code>resize &lt;W&gt;,&lt;H&gt;</code>, <code>shot &lt;имя&gt;</code>, <code>check_visible &lt;имя&gt;</code>, <code>check_fields</code>, <code>check_overlap</code>, <code>expect_ops &lt;N&gt;</code>, <code>close</code>,</p>
+<p><code>check_file &lt;путь&gt;</code>, <code>check_files &lt;путь&gt; &lt;мин&gt;</code>, <code>expect_result &lt;паттерн&gt;</code>, <code>expect_output &lt;паттерн&gt;</code>, <code>run_op &lt;индекс&gt; &lt;таймаут_сек&gt;</code>, <code>assert &lt;паттерн&gt;</code>, <code>exit_ok</code>, <code>exit_fail</code>.</p>
+<br>
+<p>Скриншоты: <code>%TEMP%\autotest_shots\&lt;имя&gt;.png</code>, анализ пустоты (порог заполнения ≥ 1 % → OK, иначе <code>EMPTY</code>).</p>
+<br>
+<h3>7.2. Правило трёх этапов тестирования (gui-testing-rule.mdc)</h3>
+<br>
+<p>Нельзя сообщать об успехе, пока не выполнены все три этапа:</p>
+<p>1. <strong>Открытие</strong> окна и его элементов (<code>check_visible</code>, <code>check_fields</code>, <code>check_overlap</code>, <code>expect_ops</code>).</p>
+<p>2. <strong>Новая функциональность</strong> (проверка конкретной доработки).</p>
+<p>3. <strong>Регрессия</strong> всех ранее работавших функций.</p>
+<br>
+<p>Автоматическое тестирование ввода — SendKeys (пароль в <code>pwdField</code>). Проверка результата — <code>check_file</code>/<code>check_files</code>/<code>expect_result</code>/<code>expect_output</code>.</p>
+<br>
+<h3>7.3. Автотесты проекта</h3>
+<br>
+<p>- <code>scripts\Run-Tests.ps1</code> — парсер PS, кодировка BOM, операции, пути (быстрый режим <code>-Quick</code>).</p>
+<p>- <code>scripts\TaskPlan-Tests.ps1</code>, <code>scripts\Out-TaskPlan-Tests.ps1</code> — тесты TaskPlan (отдельный сервис).</p>
+<br>
+<p>---</p>
+<br>
+<h2>8. Требования безопасности и антивирус (Bug-063/064/065)</h2>
+<br>
+<p>- <code>.ps1</code> — всегда UTF-8 <strong>с BOM</strong>; после записи запускать <code>scripts\Add-Bom.ps1 &lt;файл&gt;</code> или <code>Preflight-Antivirus.ps1 -AutoFix</code>.</p>
+<p>- <strong>Запрещено:</strong> <code>-ExecutionPolicy Bypass</code> (только <code>RemoteSigned</code>), скрытый запуск <code>WindowStyle Hidden</code>, <code>IEX</code> от подозрительных строк, base64 в <code>.bat</code> (детект HEUR:Trojan.PowerShell.Obfus), P/Invoke-обфускация.</p>
+<p>- VBS-обёртки — только <code>Shell.Application.ShellExecute …, &quot;open&quot;, 1</code>.</p>
+<p>- Секреты — только в <code>config\.local_secrets.json</code>, никогда в Git/GitHub.</p>
+<p>- Исключения антивируса: <code>C:\AIS\AI\Prod\</code>, <code>%APPDATA%\ai.opencode.desktop\Cache\</code>.</p>
+<p>- STELLS — скрытие консоли PS чистыми методами .NET (антивирус не детектит).</p>
+<br>
+<p>---</p>
+<br>
+<h2>9. Процесс восстановления МОРДЫ после атаки</h2>
+<br>
+<p>1. Проверить/пересоздать <code>.ps1</code> по этому документу: <code>bin\Prod-GUI_STANDART2.ps1</code>, <code>scripts\Standard2-Helpers.ps1</code>.</p>
+<p>2. Добавить BOM всем <code>.ps1</code>: <code>scripts\Add-Bom.ps1</code>.</p>
+<p>3. Запустить <code>scripts\Preflight-Antivirus.ps1 -AutoFix</code>.</p>
+<p>4. Убедиться в отсутствии запрещённых паттернов (раздел 8).</p>
+<p>5. Проверить синтаксис: <code>powershell -NoLogo -File &lt;файл&gt;</code> → SYNTAX_OK.</p>
+<p>6. Запустить МОРДА2 и прогнать автотест <code>--autotest</code> (раздел 7).</p>
+<p>7. Обновить MCP-знания <code>opencode-mcp</code>/<code>ais-catalog</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>10. Источники требований (ссылки)</h2>
+<br>
+<p>- <code>docs\morda-requirements.md</code> — <strong>этот документ (источник истины)</strong>.</p>
+<p>- <code>.opencode\standard2-gui.mdc</code> — эталон стилей СТАНДАРТ2.</p>
+<p>- <code>scripts\Show-Appl2Standard-CS\MainWindow.xaml</code> — канонические XAML-стили.</p>
+<p>- <code>.opencode\gui-testing-rule.mdc</code> — правило трёх этапов тестирования.</p>
+<p>- <code>rules\gui-rules.md</code> — история багов GUI (BUG-004…007 и далее).</p>
+<p>- <code>rules\abbreviations.md</code>, <code>rules\pending-tasks.md</code>, <code>rules\changelog.md</code>.</p>
+<p>- <code>tasks\TASK-MORDA2\ПЛАН_РЕАЛИЗАЦИИ.txt</code> — план восстановления МОРДА2 (19 пунктов).</p>
+<p>- MCP: <code>opencode-mcp</code> (id 96-102, 118 — реестр ДО; id 84 — антивирус), <code>ais-catalog</code> (id 188).</p>
+<br>
+</body></html>

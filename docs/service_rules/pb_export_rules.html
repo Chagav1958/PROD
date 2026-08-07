@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>pb_export_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса PB-экспорт (PowerBuilder Export)</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>scripts\AIS_export.ps1</code></td><td>Основной скрипт: экспорт объектов из PBL через pbldump</td></tr><tr><td><code>bin\Export.bat</code></td><td>Универсальная BAT-обёртка с параметрами SRC, OUT, PBT</td></tr><tr><td><code>bin\AIS_export.bat</code></td><td>BAT с жёсткими путями (Main → PB)</td></tr><tr><td><code>bin\AIS_export_flexible.bat</code></td><td>BAT с параметрами SRC, OUT, PBT (аналог Export.bat)</td></tr></table>
+<br>
+<h2>Внешние зависимости</h2>
+<br>
+<p>- <strong>pbldump.exe</strong> — утилита экспорта PowerBuilder-объектов из PBL</p>
+<p>  - Ожидается в <code>bin\pbldump-1.3.1stable\PblDump.exe</code></p>
+<p>  - <strong>Важно:</strong> не входит в проект, должна быть установлена отдельно</p>
+<p>- <strong>PBL</strong> — библиотеки PowerBuilder в <code>C:\SRC125\gold</code> (Main) или <code>C:\Work\gold</code> (Current)</p>
+<p>- <strong>PBT</strong> — файл проекта PowerBuilder (содержит LibList)</p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<h3>AIS_export.ps1</h3>
+<br>
+<p>1. <strong>PowerShell 5.1 — <code>$PSScriptRoot</code> может быть пустым</strong></p>
+<p>   - Если скрипт выполняется через <code>powershell -File</code> из BAT — <code>$PSScriptRoot</code> заполняется</p>
+<p>   - Если скрипт выполняется вручную через <code>.\script.ps1</code> — тоже заполняется</p>
+<p>   - <strong>Правило:</strong> не полагаться на <code>$PSScriptRoot</code> при вызове скрипта из нестандартных сред</p>
+<br>
+<p>2. <strong>LibList в PBT-файле</strong></p>
+<p>   - Парсинг: <code>$raw -match &#39;LibList\s+&quot;([^&quot;]+)&quot;&#39;</code></p>
+<p>   - Строка имеет формат: <code>LibList &quot;lib1.pbl;lib2.pbl;...&quot;</code></p>
+<p>   - Разделитель <code>;</code></p>
+<p>   - <strong>Ошибка:</strong> если формат отличается — <code>$matches[1]</code> будет <code>$null</code>, функция кинет <code>throw</code></p>
+<br>
+<p>3. <strong>Полные пути в LibList</strong></p>
+<p>   - <code>GetFullPath((Join-Path $MisRoot $rel))</code> — разрешает относительные пути относительно MisRoot</p>
+<p>   - <strong>Важно:</strong> если LibList содержит полные пути — будет дублирование с MisRoot</p>
+<br>
+<p>4. <strong>pbldump exit code</strong></p>
+<p>   - <code>$null -eq $LASTEXITCODE</code> — защита от ситуаций, когда <code>$LASTEXITCODE</code> не установлен</p>
+<p>   - <strong>Правило:</strong> проверять <code>$null -eq $LASTEXITCODE</code> перед <code>[int]$LASTEXITCODE</code></p>
+<br>
+<p>5. <strong>Удаление <code>HA</code>-префикса</strong></p>
+<p>   - <code>Remove-HaPrefix</code> — проверяет первые 4 байта файла на <code>HA</code> и удаляет их</p>
+<p>   - Это legacy-формат PowerBuilder</p>
+<p>   - <strong>Правило:</strong> функция удаления префикса должна быть вызвана для всех .sr* файлов</p>
+<br>
+<p>6. <strong>Декодирование HEX-текста</strong></p>
+<p>   - <code>Convert-HexEncodedText</code> — ищет <code>$$HEX&lt;length&gt;$$&lt;hex&gt;$$ENDHEX$$</code> и декодирует в UTF-16</p>
+<p>   - Это русский текст, закодированный в hex-формате</p>
+<p>   - <strong>Правило:</strong> при изменении экспорта не забывать про пост-обработку .sr* файлов</p>
+<br>
+<p>7. <strong>Локальный overlay SCC-файлов</strong></p>
+<p>   - <code>Copy-LocalSrOverlay</code> — копирует .sr* файлы из папки с PBL (SCC checkout) в экспорт</p>
+<p>   - Это перекрывает дамп pbldump</p>
+<p>   - <strong>Правило:</strong> overlay должен выполняться после pbldump, чтобы локальные изменения не были потеряны</p>
+<br>
+<h3>AIS_export.bat / Export.bat / AIS_export_flexible.bat</h3>
+<br>
+<p>8. <strong>Путь к PowerShell 5.1</strong></p>
+<p>   - <code>%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe</code> — явный путь к Windows PowerShell</p>
+<p>   - <strong>Важно:</strong> НЕ использовать просто <code>powershell.exe</code> — может запуститься PowerShell 7 (Core)</p>
+<br>
+<p>9. <strong><code>%~dp0</code> для путей к pbldump и AIS_export.ps1</strong></p>
+<p>   - <code>%~dp0pbldump-1.3.1stable\PblDump.exe</code> — путь относительно BAT-файла</p>
+<p>   - <strong>Правило:</strong> pbldump должен находиться в <code>bin\pbldump-1.3.1stable\</code></p>
+<br>
+<p>10. <strong>Чистка артефактов Export.bat</strong></p>
+<p>    - <code>for %%E in (pbw pbt pbp pbr ini cfg txt log sql)</code> — копируются вспомогательные файлы из SRC в OUT</p>
+<br>
+<p>11. <strong>Отсутствие <code>PBT_NAME</code> в AIS_export.bat</strong></p>
+<p>    - В <code>AIS_export.bat</code> (hardcoded) <code>PBT_NAME</code> не задана — переменная пустая</p>
+<p>    - Команда <code>&quot;%PS_CMD%&quot; -NoProfile -ExecutionPolicy Bypass -File &quot;%~dp0AIS_export.ps1&quot; -MisRoot &quot;%SRC%&quot; -OutRoot &quot;%OUT%&quot; -PbldumpExe &quot;%PBLDUMP%&quot; -PbtPath &quot;%SRC%\%PBT_NAME%.pbt&quot; -LogDir &quot;%LOG%&quot;</code></p>
+<p>    - Результат: <code>-PbtPath &quot;C:\SRC125\gold\.pbt&quot;</code> — несуществующий файл → ошибка</p>
+<p>    - <strong>Исправление:</strong> <code>AIS_export.bat</code> явно не работоспособен без <code>PBT_NAME</code>, нужно использовать <code>Export.bat</code> или <code>AIS_export_flexible.bat</code></p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- Для экспорта Main использовать: <code>Export.bat C:\SRC125\gold C:\AIS\AI\Prod\PB_Main gold</code></p>
+<p>- Для экспорта Current использовать: <code>Export.bat C:\Work\gold C:\AIS\AI\Prod\PB_Current gold</code></p>
+<p>- Логи экспорта сохраняются в <code>bin\Log\</code> (временная папка рядом с исполняемыми файлами)</p>
+<p>- Скрипт <code>Export.bat</code> является универсальной заменой для <code>AIS_export.bat</code> и <code>AIS_export_flexible.bat</code></p>
+<br>
+</body></html>

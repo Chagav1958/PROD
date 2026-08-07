@@ -117,8 +117,39 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\procs.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting proc: !ONAME!
-        (echo set nocount on & echo select text from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tp.sql"
-        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_tp.sql" -o "%BASEDIR%\Procedure\!ONAME!.sql"
+        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tp.sql"
+        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tp.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+        powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+        echo USE %DATABASE%>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo BEGIN>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo     DROP PROCEDURE dbo.!ONAME!>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo     IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo         PRINT '^<^<^< FAILED DROPPING PROCEDURE dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo     ELSE>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo         PRINT '^<^<^< DROPPED PROCEDURE dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo END>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo EXEC sp_procxmode 'dbo.!ONAME!', 'unchained'>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo     PRINT '^<^<^< CREATED PROCEDURE dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo ELSE>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo     PRINT '^<^<^< FAILED CREATING PROCEDURE dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Procedure\!ONAME!.sql"
+        rem Grant from sysprotects
+        echo set nocount on>"%BASEDIR%\LOGS\_gen.sql"
+        echo if object_id^(N'##gen_gobj'^) is not null drop table ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+        echo go>>"%BASEDIR%\LOGS\_gen.sql"
+        echo select '!ONAME!' as objname into ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+        echo go>>"%BASEDIR%\LOGS\_gen.sql"
+        type "%SCRIPT_DIR%\gen_single_grant.sql">>"%BASEDIR%\LOGS\_gen.sql"
+        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\LOGS\_grants.tmp"
+        type "%BASEDIR%\LOGS\_grants.tmp">>"%BASEDIR%\Procedure\!ONAME!.sql"
+        del "%BASEDIR%\LOGS\_grants.tmp" 2>nul
         if not errorlevel 1 set /a P_OK+=1
         set /a P_CNT+=1
         echo ###STEP###
@@ -152,8 +183,37 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\funcs.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting func: !ONAME!
-        (echo set nocount on & echo select text from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tf.sql"
-        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_tf.sql" -o "%BASEDIR%\Functions\!ONAME!.sql"
+        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tf.sql"
+        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tf.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+        powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+        echo USE %DATABASE%>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo BEGIN>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo     DROP FUNCTION dbo.!ONAME!>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo     IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo         PRINT '^<^<^< FAILED DROPPING FUNCTION dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo     ELSE>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo         PRINT '^<^<^< DROPPED FUNCTION dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo END>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Functions\!ONAME!.sql"
+        type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo     PRINT '^<^<^< CREATED FUNCTION dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo ELSE>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo     PRINT '^<^<^< FAILED CREATING FUNCTION dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Functions\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Functions\!ONAME!.sql"
+        rem Grant from sysprotects
+        echo set nocount on>"%BASEDIR%\LOGS\_gen.sql"
+        echo if object_id^(N'##gen_gobj'^) is not null drop table ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+        echo go>>"%BASEDIR%\LOGS\_gen.sql"
+        echo select '!ONAME!' as objname into ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+        echo go>>"%BASEDIR%\LOGS\_gen.sql"
+        type "%SCRIPT_DIR%\gen_single_grant.sql">>"%BASEDIR%\LOGS\_gen.sql"
+        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\LOGS\_grants.tmp"
+        type "%BASEDIR%\LOGS\_grants.tmp">>"%BASEDIR%\Functions\!ONAME!.sql"
+        del "%BASEDIR%\LOGS\_grants.tmp" 2>nul
         if not errorlevel 1 set /a F_OK+=1
         set /a F_CNT+=1
         echo ###STEP###
@@ -187,8 +247,27 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\trigs.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting trig: !ONAME!
-        (echo set nocount on & echo select text from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tt.sql"
-        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_tt.sql" -o "%BASEDIR%\Triggers\!ONAME!.sql"
+        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tt.sql"
+        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tt.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+        powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+        echo USE %DATABASE%>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo BEGIN>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo     DROP TRIGGER dbo.!ONAME!>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo     IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Triggers\!ONAME!.sql"
+            echo         PRINT '^<^<^< FAILED DROPPING TRIGGER dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo     ELSE>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo         PRINT '^<^<^< DROPPED TRIGGER dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo END>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo     PRINT '^<^<^< CREATED TRIGGER dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo ELSE>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo     PRINT '^<^<^< FAILED CREATING TRIGGER dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Triggers\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Triggers\!ONAME!.sql"
         if not errorlevel 1 set /a T_OK+=1
         set /a T_CNT+=1
         echo ###STEP###
@@ -258,8 +337,37 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\views.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting view: !ONAME!
-        (echo set nocount on & echo select text from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tv.sql"
-        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_tv.sql" -o "%BASEDIR%\Views\!ONAME!.sql"
+        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tv.sql"
+        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tv.sql" -o "%BASEDIR%\LOGS\_frags.txt"
+        powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
+        echo USE %DATABASE%>"%BASEDIR%\Views\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo BEGIN>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo     DROP VIEW dbo.!ONAME!>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo     IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo         PRINT '^<^<^< FAILED DROPPING VIEW dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo     ELSE>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo         PRINT '^<^<^< DROPPED VIEW dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo END>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Views\!ONAME!.sql"
+        type "%BASEDIR%\LOGS\_body.tmp">>"%BASEDIR%\Views\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo IF OBJECT_ID^('dbo.!ONAME!'^) IS NOT NULL>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo     PRINT '^<^<^< CREATED VIEW dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo ELSE>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo     PRINT '^<^<^< FAILED CREATING VIEW dbo.!ONAME! ^>^>^>'>>"%BASEDIR%\Views\!ONAME!.sql"
+        echo go>>"%BASEDIR%\Views\!ONAME!.sql"
+        rem Grant from sysprotects
+        echo set nocount on>"%BASEDIR%\LOGS\_gen.sql"
+        echo if object_id^(N'##gen_gobj'^) is not null drop table ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+        echo go>>"%BASEDIR%\LOGS\_gen.sql"
+        echo select '!ONAME!' as objname into ##gen_gobj>>"%BASEDIR%\LOGS\_gen.sql"
+        echo go>>"%BASEDIR%\LOGS\_gen.sql"
+        type "%SCRIPT_DIR%\gen_single_grant.sql">>"%BASEDIR%\LOGS\_gen.sql"
+        isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_gen.sql" -o "%BASEDIR%\LOGS\_grants.tmp"
+        type "%BASEDIR%\LOGS\_grants.tmp">>"%BASEDIR%\Views\!ONAME!.sql"
+        del "%BASEDIR%\LOGS\_grants.tmp" 2>nul
         if not errorlevel 1 set /a V_OK+=1
         set /a V_CNT+=1
         echo ###STEP###

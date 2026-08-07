@@ -3,7 +3,8 @@
 <style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
 h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
 pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
-table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px}</style></head><body>
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
 <h1>Документация сервиса подготовки релизов AIS</h1>
 <br>
 <p>Дата составления: 03.08.2026</p>
@@ -58,23 +59,25 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6p
 <p>- Файл: <code>scripts\Show-ProdObr-GUI.ps1</code> (команда ПРОДОБР).</p>
 <p>- Назначение: продолжение работы по утверждённым планам — поиск задач со статусом &#171;в работе&#187; или &#171;не начато&#187; в <code>rules\pending-tasks.md</code> и папках задач, отображение прогресса по контрольным точкам, автопереход к следующей.</p>
 <br>
-<h3>2.6. TimeFIX — календарь с интеграцией Outlook</h3>
+<h3>2.6. TimeFIX — календарь с интеграцией EWS</h3>
 <br>
-<p>- Файлы: <code>bin\Show-TimeFIX.ps1</code> (<code>.vbs</code>, <code>.bat</code>).</p>
-<p>- Назначение: WPF-календарь с недельным представлением, чтение встреч Outlook через COM, автопроверка встречи &#171;Дейли AIS&#187; в 9:30.</p>
+<p>- Файл: <code>bin\Show-TimeFIX.exe</code> (C#, WPF, без PowerShell).</p>
+<p>- Назначение: недельный календарь (Пн-Пт, 8:00-19:00) с цветными блоками мероприятий, загрузка встреч через EWS (Exchange Web Services), автопроверка &#171;Дейли AIS&#187;, подтверждение мероприятий.</p>
+<p>- Ранее использовал Outlook OLE/COM и PowerShell — заменён на C# + EWS для защиты от антивируса.</p>
 <br>
-<h3>2.7. Вспомогательные скрипты</h3>
+<h3>2.7. Setup-Secrets — сервис управления секретными данными</h3>
 <br>
-<tr><th> Скрипт </th><th> Назначение </th></tr>
-<tr><td>---</td><td>---</td></tr>
-<tr><td> `scripts\Add-Bom.ps1` </td><td> Добавление BOM (UTF-8) к файлам .ps1 — защита от кракозябр и антивируса </td></tr>
-<tr><td> `scripts\Preflight-Antivirus.ps1` </td><td> Массовая проверка скриптов на запрещённые паттерны, автофикс BOM </td></tr>
-<tr><td> `scripts\ConvertTo-BatLauncher.ps1` </td><td> Конвертация .ps1 в .bat-лаунчер с base64 (обход детекта антивирусом) </td></tr>
-<tr><td> `scripts\Convert-Docs.ps1` </td><td> Конвертация документации docs\*.md в .html и .pdf </td></tr>
-<tr><td> `scripts\Out-LastOutput.ps1` </td><td> Анализ свежего вывода МОРДА и МОРДА2 (команда ОБР/OUT) </td></tr>
-<tr><td> `scripts\Save-Snapshot.ps1` </td><td> Архивирование проекта (команда СОХР) </td></tr>
-<tr><td> `scripts\Save-UserPrompt.ps1` </td><td> Сохранение промптов пользователя в архив </td></tr>
-<tr><td> `scripts\Export-PB.ps1`, `SQL_exp_single.bat` </td><td> Выгрузка объектов PB и SQL </td></tr>
+<p>- Файл: <code>bin\Setup-Secrets.exe</code> (C#, WPF, СТАНДАРТ2).</p>
+<p>- Назначение: ввод, шифрование (DPAPI) и сохранение паролей, токенов, ключей API при развёртывании проекта на других компьютерах. Замена устаревших секретов на новые.</p>
+<p>- Вкладки: Sybase, VSS, Jira, OpenCode API, EWS (Exchange).</p>
+<p>- Хранилища: <code>config\.local_secrets.json</code> (зашифровано, в .gitignore) и <code>~\.config\ews-mcp\credentials.env</code> (вне репозитория).</p>
+<p>- Журналирование: <code>tech_journal_*.log</code>. Автотест: <code>--autotest commands.txt</code>.</p>
+<p>- Подробнее: <code>docs\setup-secrets-guide.md</code>.</p>
+<br>
+<h3>2.8. Вспомогательные скрипты</h3>
+<br>
+<table><tr><th>Скрипт</th><th>Назначение</th></tr><tr><td><code>scripts\Add-Bom.ps1</code></td><td>Добавление BOM (UTF-8) к файлам .ps1 — защита от кракозябр и антивируса</td></tr><tr><td><code>scripts\Preflight-Antivirus.ps1</code></td><td>Массовая проверка скриптов на запрещённые паттерны, автофикс BOM</td></tr><tr><td><code>scripts\ConvertTo-BatLauncher.ps1</code></td><td>Конвертация .ps1 в .bat-лаунчер с base64 (обход детекта антивирусом)</td></tr><tr><td><code>scripts\Convert-Docs.ps1</code></td><td>Конвертация документации docs\*.md в .html и .pdf</td></tr><tr><td><code>scripts\Out-LastOutput.ps1</code></td><td>Анализ свежего вывода МОРДА и МОРДА2 (команда ОБР/OUT)</td></tr><tr><td><code>scripts\Save-Snapshot.ps1</code></td><td>Архивирование проекта (команда СОХР)</td></tr><tr><td><code>scripts\Save-UserPrompt.ps1</code></td><td>Сохранение промптов пользователя в архив</td></tr><tr><td><code>scripts\Export-PB.ps1</code>, <code>SQL_exp_single.bat</code></td><td>Выгрузка объектов PB и SQL</td></tr></table>
+<br>
 <h2>3. MCP-серверы</h2>
 <br>
 <p>MCP (Model Context Protocol) — протокол подключения внешних инструментов к LLM. Все серверы объявлены в файле <code>opencode.jsonc</code>, раздел &#171;mcp&#187;.</p>
@@ -161,12 +164,8 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6p
 <br>
 <p>Настроены в <code>opencode.jsonc</code>, раздел &#171;provider&#187;.</p>
 <br>
-<tr><th> Провайдер </th><th> Статус </th><th> Модели </th><th> Примечание </th></tr>
-<tr><td>---</td><td>---</td><td>---</td><td>---</td></tr>
-<tr><td> routerai </td><td> основной </td><td> Claude Opus 4.8, Claude Sonnet 4.6, Claude Haiku 4.5, GPT-4o, DeepSeek V4 Pro, Gemini 2.5 Pro </td><td> Российский шлюз `https://routerai.ru/api/v1`, оплата по токенам </td></tr>
-<tr><td> ollama </td><td> активен </td><td> Qwen 2.5 Coder 32B, DeepSeek Coder V2 16B </td><td> Локальные бесплатные модели, `http://localhost:11434` </td></tr>
-<tr><td> yandex </td><td> отключён </td><td> YandexGPT </td><td> Проверка доступа </td></tr>
-<tr><td> anthropic </td><td> отключён </td><td> Claude 3.7 Sonnet </td><td> Прямой доступ заблокирован сетью </td></tr>
+<table><tr><th>Провайдер</th><th>Статус</th><th>Модели</th><th>Примечание</th></tr><tr><td>routerai</td><td>основной</td><td>Claude Opus 4.8, Claude Sonnet 4.6, Claude Haiku 4.5, GPT-4o, DeepSeek V4 Pro, Gemini 2.5 Pro</td><td>Российский шлюз <code>https://routerai.ru/api/v1</code>, оплата по токенам</td></tr><tr><td>ollama</td><td>активен</td><td>Qwen 2.5 Coder 32B, DeepSeek Coder V2 16B</td><td>Локальные бесплатные модели, <code>http://localhost:11434</code></td></tr><tr><td>yandex</td><td>отключён</td><td>YandexGPT</td><td>Проверка доступа</td></tr><tr><td>anthropic</td><td>отключён</td><td>Claude 3.7 Sonnet</td><td>Прямой доступ заблокирован сетью</td></tr></table>
+<br>
 <p>Основная модель: Claude Opus 4.8, вспомогательная (small_model): Claude Haiku 4.5. У моделей заданы рейтинги пригодности для PowerBuilder (pb_rating) и SQL (sql_rating), стоимость и лимиты контекста — используются при выборе модели командой DLLM.</p>
 <br>
 <h2>6. Правила и база знаний</h2>
@@ -179,17 +178,6 @@ table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6p
 <br>
 <h2>7. Структура каталогов</h2>
 <br>
-<tr><th> Каталог </th><th> Содержимое </th></tr>
-<tr><td>---</td><td>---</td></tr>
-<tr><td> `bin\` </td><td> Диалоговые окна и лаунчеры (МОРДА, МОРДА2, ObjectInfo.exe, TimeFIX) </td></tr>
-<tr><td> `scripts\` </td><td> Рабочие скрипты, MCP-серверы (ais_catalog_mcp, ais_objects_mcp, opencode_mcp) </td></tr>
-<tr><td> `config\` </td><td> `config.json` — все пути проекта </td></tr>
-<tr><td> `docs\` </td><td> Документация (md, html, pdf) </td></tr>
-<tr><td> `rules\` </td><td> Правила, сокращения, история багов, отложенные задачи </td></tr>
-<tr><td> `tasks\` </td><td> Папки задач (Git_, Test_, Ready_, Describe) </td></tr>
-<tr><td> `temp\` </td><td> Временные файлы, журналы, данные ObjectInfo </td></tr>
-<tr><td> `archives\` </td><td> Архивы проекта и промптов </td></tr>
-<tr><td> `BD\` </td><td> Выгрузки SQL: galaxy (Main) и dev_golden (Current) </td></tr>
-<tr><td> `PB_Main\`, `PB_Current\` </td><td> Выгрузки исходников PowerBuilder </td></tr>
-<tr><td> `.opencode\` </td><td> Правила, плагины, команды, сессия </td></tr>
+<table><tr><th>Каталог</th><th>Содержимое</th></tr><tr><td><code>bin\</code></td><td>Диалоговые окна (МОРДА, МОРДА2, ObjectInfo.exe, Show-TimeFIX.exe, Setup-Secrets.exe), лаунчеры</td></tr><tr><td><code>scripts\</code></td><td>Рабочие скрипты, MCP-серверы, C# проекты (Show-TimeFIX-CS, SetupSecrets, CountToken, PreCommitHook, ExportFull)</td></tr><tr><td><code>config\</code></td><td><code>config.json</code> — пути проекта; <code>.local_secrets.json</code> — секреты (в .gitignore); <code>.local_secrets.example.json</code> — шаблон</td></tr><tr><td><code>docs\</code></td><td>Документация (md, html, pdf)</td></tr><tr><td><code>rules\</code></td><td>Правила, сокращения, история багов, отложенные задачи</td></tr><tr><td><code>tasks\</code></td><td>Папки задач (Git_, Test_, Ready_, Describe)</td></tr><tr><td><code>temp\</code></td><td>Временные файлы, журналы, данные ObjectInfo</td></tr><tr><td><code>archives\</code></td><td>Архивы проекта и промптов</td></tr><tr><td><code>BD\</code></td><td>Выгрузки SQL: galaxy (Main) и dev_golden (Current)</td></tr><tr><td><code>PB_Main\</code>, <code>PB_Current\</code></td><td>Выгрузки исходников PowerBuilder</td></tr><tr><td><code>.opencode\</code></td><td>Правила, плагины, команды, сессия</td></tr></table>
+<br>
 </body></html>

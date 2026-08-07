@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>antivirus-reply</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Ответ на письмо Фунтиковой П.</h1>
+<br>
+<p>---</p>
+<br>
+<p><strong>От:</strong> Чага Валерий</p>
+<p><strong>Кому:</strong> Фунтикова Полина</p>
+<p><strong>Тема:</strong> Re: Исключения антивируса — AIS Release Preparation</p>
+<br>
+<p>---</p>
+<br>
+<p>Добрый день, Полина!</p>
+<br>
+<p>Благодарю за разъяснение. Полностью согласен, что исключение целого каталога — избыточное решение. Предлагаю более точечный подход.</p>
+<br>
+<h3>Конкретный файл для анализа</h3>
+<br>
+<p>Основной файл, вызывающий срабатывание — <strong><code>Hide-ConsoleWindow.ps1</code></strong>:</p>
+<br>
+<pre>
+# Скрипт скрытия вспомогательной консоли (19 строк)
+
+$psi = New-Object Diagnostics.ProcessStartInfo
+
+$psi.FileName = &quot;powershell.exe&quot;
+
+$psi.Arguments = &quot;-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -STA -File ...&quot;
+
+$psi.UseShellExecute = $false
+
+$psi.CreateNoWindow = $true
+
+[Diagnostics.Process]::Start($psi) | Out-Null
+
+</pre>
+<br>
+<p><strong>Почему срабатывает:</strong> <code>Start-Process -WindowStyle Hidden</code> + <code>CreateNoWindow = true</code> — эвристика классифицирует как &quot;скрытый запуск процесса&quot;.</p>
+<br>
+<p><strong>Что делает скрипт:</strong> скрывает вспомогательную консоль при запуске GUI-приложения. Пользователь видит только графическое окно, консоль работает в фоне.</p>
+<br>
+<p><strong>Файл для передачи в Kaspersky:</strong> <code>C:\AIS\AI\Prod\scripts\Hide-ConsoleWindow.ps1</code></p>
+<br>
+<h3>Что я уже сделал для снижения рисков</h3>
+<br>
+<p>Ранее в проекте использовался <code>user32.dll</code> P/Invoke (<code>ShowWindow</code>) — он вызывал срабатывания. Я <strong>уже заменил</strong> его на управляемый .NET-аналог. Текущая реализация максимально безопасна, но эвристика всё равно реагирует на скрытый запуск.</p>
+<br>
+<h3>Конкретная просьба об исключениях</h3>
+<br>
+<p>Прошу рассмотреть <strong>targeted-исключения</strong> для следующих файлов:</p>
+<br>
+<table><tr><th>Файл</th><th>Тип</th><th>Назначение</th></tr><tr><td><code>C:\AIS\AI\Prod\scripts\Hide-ConsoleWindow.ps1</code></td><td>.ps1</td><td>Скрытие консоли</td></tr><tr><td><code>C:\AIS\AI\Prod\bin\Prod-GUI.ps1</code></td><td>.ps1</td><td>GUI-приложение (4600+ строк)</td></tr><tr><td><code>C:\AIS\AI\Prod\tools\pbldump-1.3.1stable\PblDump.exe</code></td><td>.exe</td><td>Экспорт объектов PowerBuilder</td></tr><tr><td><code>C:\Program Files (x86)\Microsoft Visual SourceSafe\ss.exe</code></td><td>.exe</td><td>Контроль версий VSS</td></tr></table>
+<br>
+<p><strong>Не прошу</strong> исключения дляBAT-файлов и всего каталога <code>scripts/</code>.</p>
+<br>
+<h3>Контекст проекта</h3>
+<br>
+<p>Проект AIS Release Preparation — внутренний инструмент для подготовки релизов. Используется для:</p>
+<p>- Сравнения SQL-объектов между тестовой и боевой БД</p>
+<p>- Выгрузки объектов PowerBuilder</p>
+<p>- Интеграции с Jira/RFC</p>
+<p>- Контроля версий (VSS)</p>
+<br>
+<p>Проект работает только на рабочей станции разработчика, не распространяется.</p>
+<br>
+<p>---</p>
+<br>
+<p>Буду благодарен за возможность передать <code>Hide-ConsoleWindow.ps1</code> на анализ в Kaspersky. Готов предоставить любую дополнительную информацию.</p>
+<br>
+<p>С уважением,</p>
+<p>Чага Валерий</p>
+<br>
+</body></html>

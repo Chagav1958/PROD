@@ -1,0 +1,15 @@
+C:\AIS\AI\Prod\scripts\SqlExport\bin\Release\net6.0\SqlExport.exe
+C:\AIS\AI\Prod\scripts\SqlExport\bin\Release\net6.0\SqlExport.deps.json
+C:\AIS\AI\Prod\scripts\SqlExport\bin\Release\net6.0\SqlExport.runtimeconfig.json
+C:\AIS\AI\Prod\scripts\SqlExport\bin\Release\net6.0\SqlExport.dll
+C:\AIS\AI\Prod\scripts\SqlExport\bin\Release\net6.0\SqlExport.pdb
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.csproj.AssemblyReference.cache
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.GeneratedMSBuildEditorConfig.editorconfig
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.AssemblyInfoInputs.cache
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.AssemblyInfo.cs
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.csproj.CoreCompileInputs.cache
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.dll
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\refint\SqlExport.dll
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.pdb
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\SqlExport.genruntimeconfig.cache
+C:\AIS\AI\Prod\scripts\SqlExport\obj\Release\net6.0\ref\SqlExport.dll

@@ -234,19 +234,31 @@ function New-Standard2DataGrid {
 # --- PROGRESS BAR PANEL (СТАНДАРТ2 §4) ---
 function New-Standard2ProgressBarPanel {
     param()
+    Add-Type -AssemblyName PresentationFramework -ErrorAction SilentlyContinue
+
+    $wrap = New-Object System.Windows.Controls.Border
+    $wrap.Background = "#E2E8F0"
+    $wrap.BorderThickness = "0,1,0,0"
+    $wrap.BorderBrush = "#CBD5E0"
+    $wrap.Height = 44
 
     $panel = New-Object Windows.Controls.StackPanel
-    $panel.Margin = "10,6,10,0"
+    $panel.Margin = "8,2,8,2"
 
-    # Phase bar
+    # Phase bar (верхний)
     $phaseGrid = New-Object Windows.Controls.Grid
-    $phaseGrid.Margin = "0,0,0,4"
-    $phaseGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width=120}))
-    $phaseGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width=[System.Windows.GridLength]::new(1,"Star")}))
+    $phaseGrid.Height = 18
+    $phaseGrid.Margin = "0,0,0,2"
+    [void]$phaseGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width="140"}))
+    [void]$phaseGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width="*"}))
 
     $lblPhase = New-Object Windows.Controls.TextBlock
-    $lblPhase.Text = "Фаза: загрузка данных"
-    $lblPhase.FontSize = 11; $lblPhase.Foreground = "#4A5568"; $lblPhase.VerticalAlignment = "Center"
+    $lblPhase.Text = "Выполнение..."
+    $lblPhase.VerticalAlignment = "Center"
+    $lblPhase.FontSize = 11
+    $lblPhase.Foreground = "#4A5568"
+    $lblPhase.TextTrimming = "CharacterEllipsis"
+    $lblPhase.Margin = "0,0,4,0"
     [System.Windows.Controls.Grid]::SetColumn($lblPhase, 0)
     [void]$phaseGrid.Children.Add($lblPhase)
 
@@ -254,20 +266,26 @@ function New-Standard2ProgressBarPanel {
     $pbPhase.Name = "PhaseBar"
     [System.Windows.Automation.AutomationProperties]::SetName($pbPhase, "PhaseBar")
     $pbPhase.Minimum = 0; $pbPhase.Maximum = 100; $pbPhase.Value = 0
-    $pbPhase.VerticalAlignment = "Center"
-    $pbPhase.Height = 18
+    $pbPhase.Height = 14
+    $pbPhase.Margin = "0,3,0,3"
     $pbPhase.Style = New-Standard2ProgressStyle
     [System.Windows.Controls.Grid]::SetColumn($pbPhase, 1)
     [void]$phaseGrid.Children.Add($pbPhase)
 
-    # Step bar
+    [void]$panel.Children.Add($phaseGrid)
+
+    # Step bar (нижний)
     $stepGrid = New-Object Windows.Controls.Grid
-    $stepGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width=120}))
-    $stepGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width=[System.Windows.GridLength]::new(1,"Star")}))
+    $stepGrid.Height = 18
+    [void]$stepGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width="140"}))
+    [void]$stepGrid.ColumnDefinitions.Add((New-Object Windows.Controls.ColumnDefinition -Property @{Width="*"}))
 
     $lblStep = New-Object Windows.Controls.TextBlock
-    $lblStep.Text = "Шаг: (0 - 0)"
-    $lblStep.FontSize = 11; $lblStep.Foreground = "#4A5568"; $lblStep.VerticalAlignment = "Center"
+    $lblStep.Text = "0 из 0"
+    $lblStep.VerticalAlignment = "Center"
+    $lblStep.FontSize = 11
+    $lblStep.Foreground = "#4A5568"
+    $lblStep.Margin = "0,0,4,0"
     [System.Windows.Controls.Grid]::SetColumn($lblStep, 0)
     [void]$stepGrid.Children.Add($lblStep)
 
@@ -275,17 +293,17 @@ function New-Standard2ProgressBarPanel {
     $pbStep.Name = "StepBar"
     [System.Windows.Automation.AutomationProperties]::SetName($pbStep, "StepBar")
     $pbStep.Minimum = 0; $pbStep.Maximum = 100; $pbStep.Value = 0
-    $pbStep.VerticalAlignment = "Center"
-    $pbStep.Height = 18
+    $pbStep.Height = 14
+    $pbStep.Margin = "0,3,0,3"
     $pbStep.Style = New-Standard2ProgressStyle
     [System.Windows.Controls.Grid]::SetColumn($pbStep, 1)
     [void]$stepGrid.Children.Add($pbStep)
 
-    [void]$panel.Children.Add($phaseGrid)
     [void]$panel.Children.Add($stepGrid)
 
-    $panel.Tag = @{ PhaseLabel=$lblPhase; PhaseBar=$pbPhase; StepLabel=$lblStep; StepBar=$pbStep }
-    return $panel
+    $wrap.Child = $panel
+    $wrap.Tag = @{ PhaseLabel=$lblPhase; PhaseBar=$pbPhase; StepLabel=$lblStep; StepBar=$pbStep }
+    return $wrap
 }
 
 function New-Standard2ProgressStyle {
@@ -294,48 +312,32 @@ function New-Standard2ProgressStyle {
 
     $templateXaml = @"
 <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" TargetType="ProgressBar">
-    <Grid>
-        <!-- Outer dark border, semi-transparent 80% -->
-        <Border CornerRadius="4" Background="#CC0F3050" Padding="1.5">
-            <!-- Track background -->
-            <Border CornerRadius="3" Background="#E2E8F0">
-                <Grid ClipToBounds="True">
-                    <!-- Indicator track – Grid fills width so indicator resizes properly -->
-                    <Grid x:Name="PART_Track">
-                        <Border x:Name="PART_Indicator" CornerRadius="3"
-                                BorderBrush="#CC1A3A60" BorderThickness="0,0,1,0"
-                                HorizontalAlignment="Left">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#CCB8D8F8" Offset="0"/>
-                                    <GradientStop Color="#CC3B7BBF" Offset="0.4"/>
-                                    <GradientStop Color="#CC1A4A7A" Offset="0.8"/>
-                                    <GradientStop Color="#CC0F3050" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                        </Border>
-                    </Grid>
-                    <!-- White gloss on top -->
-                    <Border CornerRadius="3" Margin="1,1,1,9" Height="5" VerticalAlignment="Top">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#C0FFFFFF" Offset="0"/>
-                                <GradientStop Color="#00FFFFFF" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    <!-- Bottom shadow for 3D depth -->
-                    <Border CornerRadius="3" Margin="1,12,1,1" Height="3" VerticalAlignment="Bottom" IsHitTestVisible="False">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#30000000" Offset="0"/>
-                                <GradientStop Color="#80000000" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                </Grid>
-            </Border>
+    <Grid MinHeight="14" MaxHeight="14">
+        <Border Name="PART_Track" CornerRadius="5" BorderThickness="1" BorderBrush="#1A3A60">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#E2E8F0" Offset="0"/>
+                    <GradientStop Color="#CBD5E0" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
         </Border>
+        <Border Name="PART_Indicator" CornerRadius="5" Margin="1" HorizontalAlignment="Left">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#2A5080" Offset="0"/>
+                    <GradientStop Color="#87CEEB" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+        <Rectangle Name="Gloss" Margin="0,1,0,8" RadiusX="3" RadiusY="3" IsHitTestVisible="False">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FFFFFF" Offset="0"/>
+                    <GradientStop Color="#FFFFFF" Offset="0.2"/>
+                    <GradientStop Color="Transparent" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
     </Grid>
 </ControlTemplate>
 "@

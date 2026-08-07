@@ -309,6 +309,51 @@ function Run-NextAutoTestCommand {
             if ($script:MainWindow) { $script:MainWindow.Close() }
             return
         }
+        # --- НОВЫЕ КОМАНДЫ: проверка результата (без участия пользователя) ---
+        elseif ($cmd -match '^check_file\s+(.+)') {
+            $path = $matches[1]
+            if (Test-Path $path) { Write-TechJournal "AUTOTEST" "check_file OK: $path" }
+            else { Write-TechJournal "ERROR" "check_file FAIL: $path" }
+        }
+        elseif ($cmd -match '^check_files\s+(.+)\s+(\d+)') {
+            $path = $matches[1]; $min = [int]$matches[2]
+            $cnt = (Get-ChildItem $path -Recurse -File -ErrorAction SilentlyContinue | Measure-Object).Count
+            if ($cnt -ge $min) { Write-TechJournal "AUTOTEST" "check_files OK: $path = $cnt (min=$min)" }
+            else { Write-TechJournal "ERROR" "check_files FAIL: $path = $cnt (expected >= $min)" }
+        }
+        elseif ($cmd -match '^expect_result\s+(.+)') {
+            $pat = $matches[1]
+            if ($script:LastOpResult -match $pat) { Write-TechJournal "AUTOTEST" "expect_result OK: $pat" }
+            else { Write-TechJournal "ERROR" "expect_result FAIL: '$script:LastOpResult' !~ $pat" }
+        }
+        elseif ($cmd -match '^expect_output\s+(.+)') {
+            $pat = $matches[1]
+            if ($script:LastOpOutput -match $pat) { Write-TechJournal "AUTOTEST" "expect_output OK: $pat" }
+            else { Write-TechJournal "ERROR" "expect_output FAIL: $pat" }
+        }
+        elseif ($cmd -match '^run_op\s+(\d+)\s+(\d+)') {
+            $opIdx = [int]$matches[1]; $timeout = [int]$matches[2]
+            Write-TechJournal "AUTOTEST" "run_op: select=$opIdx timeout=$timeout"
+            $script:SelectedOpIndex = $opIdx; Select-Operation
+            Start-Sleep -Milliseconds 300
+            Invoke-ButtonClick "btnRun"
+            Start-Sleep -Seconds $timeout
+        }
+        elseif ($cmd -match '^assert\s+(.+)') {
+            $pat = $matches[1]
+            if ($script:LastOpResult -match $pat) { Write-TechJournal "AUTOTEST" "assert OK: $pat" }
+            else { Write-TechJournal "ERROR" "assert FAIL: '$script:LastOpResult' !~ $pat"; throw "ASSERT FAILED: $pat" }
+        }
+        elseif ($cmd -eq 'exit_ok') {
+            Write-TechJournal "AUTOTEST" "EXIT OK"
+            if ($script:MainWindow) { $script:MainWindow.Close() }
+            [Environment]::Exit(0)
+        }
+        elseif ($cmd -eq 'exit_fail') {
+            Write-TechJournal "AUTOTEST" "EXIT FAIL"
+            if ($script:MainWindow) { $script:MainWindow.Close() }
+            [Environment]::Exit(1)
+        }
     } catch {
         Write-TechJournal "ERROR" "AutoTest command failed: $cmd - $_"
     }
@@ -473,14 +518,72 @@ function Invoke-OpSqlExport {
     $db = if ($params.Db) { $params.Db } else { "golden" }
     $taskName = $params.TaskName
     $cfg = Get-Content "C:\AIS\AI\Prod\config\config.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+    Write-TechJournal "INFO" "Invoke-OpSqlExport: source=$source server=$server db=$db taskName=$taskName pwd=***"
     if (-not $taskName) {
         $bat = "C:\AIS\AI\Prod\bin\SQL_exp_param.bat"
-        $srv = if ($source -eq "Main" -or $source -eq "main") { "galaxy" } else { "dev_golden" }
+        $srv = if ($server -match 'galaxy') { "galaxy" } else { "dev_golden" }
         $objectType = if ($params.ObjectType) { $params.ObjectType.Trim() } else { "" }
-        $quotedArgs = @($srv, $db, $password, "", "") | ForEach-Object { "`"$_`"" }
-        $quotedArgs += "`"$objectType`""
-        & cmd /c "`"$bat`" $($quotedArgs -join ' ') 2>&1"
-        return
+        $exportPath = if ($srv -eq "galaxy") { $cfg.paths.bd_main_export } else { $cfg.paths.bd_current_export }
+        Write-TechJournal "INFO" "Invoke-OpSqlExport: bat=$bat srv=$srv exportPath=$exportPath objectType=$objectType"
+        # Выгрузка через SqlExport.exe с реальным временем
+        $sqlExportExe = "C:\AIS\AI\Prod\bin\SqlExport.exe"
+        $tmpOut = "$env:TEMP\sql_export_$pid.txt"
+        $argsForExe = @($srv, $db, $password, $exportPath)
+        if ($objectType) { $argsForExe += $objectType }  # конкретный тип, иначе все
+        Write-TechJournal "INFO" "Invoke-OpSqlExport: $sqlExportExe $srv $db *** $exportPath $objectType"
+        
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $sqlExportExe
+        $psi.Arguments = "`"$srv`" `"$db`" `"$password`" `"$exportPath`" $objectType"
+        $psi.UseShellExecute = $false
+        $psi.RedirectStandardOutput = $true
+        $psi.CreateNoWindow = $true
+        
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        $phaseStats = @{}
+        $currentPhase = ""
+        $phaseCount = 0
+        $knownTypes = @('Procedures','Functions','Triggers','Tables','Views','Indexes','PrimaryKeys','ForeignKeys','Grants')
+        $typeNames = @{ Procedures='Процедуры'; Functions='Функции'; Triggers='Триггеры'; Tables='Таблицы'; Views='Представления'; Indexes='Индексы'; PrimaryKeys='Первичные ключи'; ForeignKeys='Внешние ключи'; Grants='Гранты' }
+        if ($objectType) { $knownTypes = @($objectType) }
+        while (-not $proc.StandardOutput.EndOfStream) {
+            $line = $proc.StandardOutput.ReadLine()
+            if ($line) {
+                if ($line -match '^###STEP###') {
+                    if ($line -match '###STEP###(\d+)\|(\d+)###') {
+                        $sn = [int]$matches[1]; $st = [int]$matches[2]
+                        $phaseCount = $sn
+                        $pct = if ($st -gt 0) { [Math]::Round($sn * 100 / $st) } else { 100 }
+                        $script:StepProgress.Value = $pct
+                        $script:StepProgress.Text = "$sn из $st"
+                    }
+                    continue
+                }
+                Write-Output $line
+                if ($line -match '###PHASE###(.+?)\|(\d+)###') {
+                    if ($currentPhase -and $phaseCount -gt 0) { $phaseStats[$currentPhase] = $phaseCount }
+                    $currentPhase = $matches[1]; $phaseCount = 0
+                    $ti = [Array]::IndexOf($knownTypes, $currentPhase)
+                    if ($ti -lt 0) { $ti = 0 }
+                    $script:PhaseProgress.Value = [Math]::Round(($ti + 1) * 100 / $knownTypes.Count)
+                    $ruName = if ($typeNames.ContainsKey($currentPhase)) { $typeNames[$currentPhase] } else { $currentPhase }
+                    $script:PhaseProgress.Text = "Тип: $ruName"
+                    $script:StepProgress.Value = 0
+                    $script:StepProgress.Text = "0 из $($matches[2])"
+                }
+                elseif ($line -match 'Exporting\s+\w+:\s*(.+)') {
+                    $script:StepProgress.Text += " — $($matches[1].Trim())"
+                }
+            }
+        }
+        if ($currentPhase -and $phaseCount -gt 0) { $phaseStats[$currentPhase] = $phaseCount }
+        $proc.WaitForExit()
+        Write-TechJournal "INFO" "Invoke-OpSqlExport: exit=$($proc.ExitCode)"
+        $files = Get-ChildItem $exportPath -Recurse -File -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count
+        $summary = "Выгружено:`n"
+        foreach ($k in $phaseStats.Keys | Sort-Object) { $summary += "  $($k): $($phaseStats[$k])`n" }
+        $summary += "`nВсего файлов: $files"
+        Write-Output $summary
     }
     $releaseRoot = $cfg.paths.release_root
     $taskPath = Join-Path $releaseRoot $taskName
@@ -488,7 +591,7 @@ function Invoke-OpSqlExport {
         Where-Object { $_.Name -like "$taskName*" } | Sort-Object Name -Descending | Select-Object -First 1
     if ($prefixMatch) { $taskPath = $prefixMatch.FullName }
     elseif (-not (Test-Path $taskPath)) { throw "Папка задачи не найдена" }
-    $srv = if ($source -eq "Main" -or $source -eq "main") { "galaxy" } else { "dev_golden" }
+    $srv = if ($server -match 'galaxy') { "galaxy" } else { "dev_golden" }
     $singleType = if ($params.ObjectType) { $params.ObjectType.Trim() } else { "" }
     $bat = "C:\AIS\AI\Prod\bin\SQL_exp_single.bat"
     $sqlTypePatterns = @(
@@ -528,18 +631,43 @@ function Invoke-OpSqlExport {
         Write-Host "###SQL_TASK_NONE###Нет SQL-объектов для задачи $taskName"
         return
     }
-    $basedir = if ($source -eq "Main" -or $source -eq "main") { $cfg.paths.bd_main_export } else { $cfg.paths.bd_current_export }
+    $basedir = if ($srv -eq "galaxy") { $cfg.paths.bd_main_export } else { $cfg.paths.bd_current_export }
     Write-Host "=== Выборочный экспорт SQL: $taskName ==="
-    $exported = 0; $failed = 0
-    foreach ($key in ($taskObjects.Keys | Sort-Object)) {
-        $obj = $taskObjects[$key]
-        $quotedArgs = @($obj.Type, $key, $srv, $db, $password) | ForEach-Object { "`"$_`"" }
-        $out = & cmd /c "`"$bat`" $($quotedArgs -join ' ') 2>&1"
-        $outFile = Join-Path $basedir ($obj.Type + "\" + $key + ".sql")
-        if (Test-Path $outFile) { $exported++; Write-Host "  OK: $key" }
-        else { $failed++; Write-Host "  ОШИБКА: $key" }
+    # Русские названия типов для ПБ
+    $typeNames = @{ Procedures='Процедуры'; Functions='Функции'; Triggers='Триггеры'; Tables='Таблицы'; Views='Представления'; Indexes='Индексы'; PrimaryKeys='Первичные ключи'; ForeignKeys='Внешние ключи'; Grants='Гранты' }
+    $allTypes = @('Procedures','Functions','Triggers','Tables','Views','Indexes','PrimaryKeys','ForeignKeys','Grants')
+    # Группируем объекты по типу для верхнего ПБ
+    $byType = @{}
+    foreach ($k in $taskObjects.Keys) {
+        $t = $taskObjects[$k].Type
+        if (-not $byType.ContainsKey($t)) { $byType[$t] = @() }
+        $byType[$t] += $k
     }
-    Write-Host "Успешно: $exported, Ошибок: $failed, Всего: $($taskObjects.Count)"
+    $totalTypes = $byType.Count
+    $typeIdx = 0
+    $exported = 0; $failed = 0; $total = $taskObjects.Count; $objIdx = 0
+    foreach ($tp in $allTypes) {
+        if (-not $byType.ContainsKey($tp)) { continue }
+        $typeIdx++
+        $objects = $byType[$tp]
+        $typeName = if ($typeNames.ContainsKey($tp)) { $typeNames[$tp] } else { $tp }
+        $script:PhaseProgress.Value = [Math]::Round($typeIdx * 100 / $totalTypes)
+        $script:PhaseProgress.Text = "Тип: $typeName"
+        foreach ($key in $objects | Sort-Object) {
+            $objIdx++
+            $obj = $taskObjects[$key]
+            $script:StepProgress.Value = [Math]::Round($objIdx * 100 / $total)
+            $script:StepProgress.Text = "$objIdx из $total — $key"
+            $quotedArgs = @($obj.Type, $key, $srv, $db, $password) | ForEach-Object { "`"$_`"" }
+            $tmpOut = "$env:TEMP\sql_single_$pid.txt"
+            $batArgs = "$($quotedArgs -join ' ')"
+            Start-Process cmd -ArgumentList "/c `"$bat`" $batArgs" -NoNewWindow -RedirectStandardOutput $tmpOut -RedirectStandardError "$tmpOut.err" -Wait | Out-Null
+            $outFile = Join-Path $basedir ($obj.Type + "\" + $key + ".sql")
+            if (Test-Path $outFile) { $exported++; Write-Host "  OK: $key" }
+            else { $failed++; Write-Host "  ОШИБКА: $key" }
+        }
+    }
+    Write-Host "Успешно: $exported, Ошибок: $failed, Всего: $total"
 }
 
 function Invoke-OpCompareSql {
@@ -955,6 +1083,20 @@ function Select-Operation {
         $pwd.MinHeight = 24
         $script:PwdField = $pwd
         [void]$pwdPanel.Children.Add($pwd)
+        # Авто-заполнение пароля из .local_secrets.json
+        try {
+            $secretsPath = Join-Path (Split-Path $script:ConfigPath -Parent) ".local_secrets.json"
+            if (Test-Path $secretsPath) {
+                $secrets = Get-Content $secretsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                if ($secrets.sybase.password_encrypted) {
+                    $mk = Get-MasterKey -ConfigPath $script:ConfigPath
+                    if ($mk) {
+                        $decPwd = Decrypt-Password -Encrypted $secrets.sybase.password_encrypted -Key $mk
+                        if ($decPwd) { $pwd.Password = $decPwd; Write-TechJournal "INFO" "Password auto-filled from .local_secrets.json" }
+                    }
+                }
+            }
+        } catch { Write-TechJournal "WARN" "Auto-fill password failed: $_" }
         [void]$paramsPanel.Children.Add($pwdPanel)
         $script:ParamsFields += @{ Name="PASSWORD"; Type="Pwd"; Control=$pwd; Required=$true }
     }
@@ -1016,10 +1158,11 @@ function Run-SelectedOperation {
     }
 
     # Выполнение
+    $opName = $op.RusName
     $script:PhaseBar.Value = 10
-    $script:PhaseLabel.Text = "Выполнение: $($op.RusName)..."
-    $script:StepBar.Value = 0
-    $script:StepLabel.Text = "Шаг: (0 - 0)"
+    $script:PhaseLabel.Text = $opName
+    $script:StepBar.IsIndeterminate = $true
+    $script:StepLabel.Text = "Запуск..."
 
     try {
         # Settings — сохранение настроек (не через Handler)
@@ -1027,9 +1170,12 @@ function Run-SelectedOperation {
             Write-TechJournal "INFO" "Settings: calling Save-Settings..."
             $script:PhaseBar.Value = 50
             $script:PhaseLabel.Text = "Сохранение..."
+            $script:StepBar.IsIndeterminate = $false
             Save-Settings -Panel $script:settingsPanel -ConfigPath $script:ConfigPath -ProjectRoot $script:ProjectRoot
             $script:PhaseBar.Value = 100
             $script:PhaseLabel.Text = "Настройки сохранены"
+            $script:StepBar.Value = 100
+            $script:StepLabel.Text = "Готово"
             Write-TechJournal "INFO" "Settings saved"
             return
         }
@@ -1038,9 +1184,9 @@ function Run-SelectedOperation {
         $handlerName = $op.Handler
 
         $script:PhaseBar.Value = 10
-        $script:PhaseLabel.Text = "Выполняется..."
-        $script:StepBar.Value = 0
-        $script:StepLabel.Text = "Шаг: 1"
+        $script:PhaseLabel.Text = "Выполнение: $opName..."
+        $script:StepBar.IsIndeterminate = $true
+        $script:StepLabel.Text = "Ожидание..."
 
         $script:AsyncOp = Start-OpAsync -HandlerName $handlerName -Params $params -Password $params["Password"] -Checks $params -RusName $op.RusName
         Write-TechJournal "INFO" "Async started: $handlerName"
@@ -1064,10 +1210,13 @@ function Run-SelectedOperation {
 
                 $script:PhaseBar.Value = 100
                 $script:PhaseLabel.Text = "Завершено"
+                $script:StepBar.IsIndeterminate = $false
                 $script:StepBar.Value = 100
                 $script:StepLabel.Text = "Готово"
 
                 $result = Get-OperationResult -OpName $state.Handler -Output $output
+                $script:LastOpResult = $result
+                $script:LastOpOutput = $output
                 Write-TechJournal "INFO" "Operation done: $($state.Handler) -> $result"
 
                 # Показываем результат (без модального окна для быстрых операций)
@@ -1081,33 +1230,44 @@ function Run-SelectedOperation {
                     Show-ResultWindow -OpName $state.RusName -Result $result -Output $output
                 }
             } else {
-                # Реальный прогресс операции из Runspace (PhaseProgress/StepProgress)
-                $progressUpdated = $false
+                # Прогресс из синхронизированных хешей (общие для UI и Runspace)
+                $phaseHadData = $false
                 try {
-                    $pp = $state.Runspace.SessionStateProxy.GetVariable('script:PhaseProgress')
-                    if ($pp -and $pp.Value) {
+                    $pp = $script:PhaseProgress
+                    if ($pp) {
                         $v = [double]$pp.Value
                         if ($v -gt 0) {
                             $script:PhaseBar.Value = $v
-                            $progressUpdated = $true
+                            $phaseHadData = $true
                         }
-                        if ($pp.Text) { $script:PhaseLabel.Text = [string]$pp.Text }
+                        if ($pp.Text -and $pp.Text -ne '') {
+                            $script:PhaseLabel.Text = [string]$pp.Text
+                            $phaseHadData = $true
+                        }
                     }
                 } catch { }
                 try {
-                    $sp = $state.Runspace.SessionStateProxy.GetVariable('script:StepProgress')
-                    if ($sp -and $sp.Value) {
+                    $sp = $script:StepProgress
+                    if ($sp) {
                         $sv = [double]$sp.Value
-                        if ($sv -gt 0) { $script:StepBar.Value = $sv }
-                        if ($sp.Text) { $script:StepLabel.Text = [string]$sp.Text }
+                        if ($sv -gt 0) {
+                            $script:StepBar.IsIndeterminate = $false
+                            $script:StepBar.Value = $sv
+                        }
+                        if ($sp.Text -and $sp.Text -ne '') {
+                            $script:StepBar.IsIndeterminate = $false
+                            $script:StepLabel.Text = [string]$sp.Text
+                        }
                     }
                 } catch { }
-                # Индикатор активности: если операция не обновляет прогресс — пульс до 90%
-                if (-not $progressUpdated) {
+                # Пульс верхнего ПБ, если нет реальных данных от хендлера
+                if (-not $phaseHadData) {
                     $newPulse = [Math]::Min(90, $script:PhaseBar.Value + 2)
                     if ($newPulse -ge 90) { $newPulse = 10 }
                     $script:PhaseBar.Value = $newPulse
-                    $script:PhaseLabel.Text = "Выполняется..."
+                    if ([string]::IsNullOrEmpty($script:PhaseLabel.Text) -or $script:PhaseLabel.Text -eq "Выполнение: $opName...") {
+                        $script:PhaseLabel.Text = "Выполнение: $opName..."
+                    }
                 }
                 $script:OpTimer.Start()
             }
@@ -1155,6 +1315,12 @@ function Get-OperationResult {
 function Start-OpAsync {
     param([string]$HandlerName, $Params, $Password, $Checks, [string]$RusName)
 
+    # Синхронизированные хеши: единый объект для UI-потока и Runspace
+    $syncPhase = [hashtable]::Synchronized(@{Value=0; Text=''})
+    $syncStep  = [hashtable]::Synchronized(@{Value=0; Text=''})
+    $script:PhaseProgress = $syncPhase
+    $script:StepProgress  = $syncStep
+
     # Собираем определения функций, нужных хендлеру (и его зависимостям)
     $defs = New-Object System.Collections.Generic.List[string]
     foreach ($cmd in Get-Command -CommandType Function) {
@@ -1176,12 +1342,13 @@ function Start-OpAsync {
 
     $esc = { param($v) ($v -replace "'", "''") }
     $fullScript = @"
+Write-Output '###ASYNC_START###'
 `$script:ConfigPath = '$(& $esc $script:ConfigPath)'
 `$script:ProjectRoot = '$(& $esc $script:ProjectRoot)'
 `$script:TechJournalPath = '$(& $esc $script:TechJournalPath)'
 `$script:TechJournal = @()
-`$script:PhaseProgress = @{ Value = 0; Text = '' }
-`$script:StepProgress = @{ Value = 0; Text = '' }
+`$script:PhaseProgress = `$args[3]
+`$script:StepProgress  = `$args[4]
 `$script:vssDefaults = @{ user = '$(& $esc $script:vssDefaults.user)'; db_path = '$(& $esc $script:vssDefaults.db_path)'; project = '$(& $esc $script:vssDefaults.project)'; ss_exe = '$(& $esc $script:vssDefaults.ss_exe)' }
 `$script:opParams = `$args[0]
 `$script:opPassword = `$args[1]
@@ -1198,6 +1365,8 @@ $call
     $null = $ps.AddArgument($Params)
     $null = $ps.AddArgument($Password)
     $null = $ps.AddArgument($Checks)
+    $null = $ps.AddArgument($syncPhase)
+    $null = $ps.AddArgument($syncStep)
     $async = $ps.BeginInvoke()
 
     return @{ PowerShell = $ps; Async = $async; Runspace = $runspace; Handler = $HandlerName; RusName = $RusName }
@@ -1427,8 +1596,14 @@ function Main {
     # Защита от запуска нескольких экземпляров: если окно МОРДА2 уже открыто — завершаемся
     $existing = Get-Process | Where-Object { $_.MainWindowTitle -eq "МОРДА — Подготовка релизов" -and $_.Id -ne $PID }
     if ($existing) {
-        Write-TechJournal "INFO" "MORDA2 already running (PID $($existing.Id -join ', ')), exiting duplicate"
-        exit 0
+        if ($script:IsAutoTest) {
+            Write-Host "AutoTest: closing existing MORDA2 processes..."
+            $existing | Stop-Process -Force -ErrorAction SilentlyContinue
+            Start-Sleep 1
+        } else {
+            Write-Host "MORDA2 already running (PID $($existing.Id -join ', '))"
+            exit 0
+        }
     }
 
     Parse-AutoTestArgs
@@ -1448,6 +1623,39 @@ function Main {
         })
         $timer.Start()
     }
+
+    # Скруглённые углы (СТАНДАРТ2)
+    Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public class RoundedWindow {
+    [DllImport("user32.dll")] public static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+    [DllImport("gdi32.dll")] public static extern IntPtr CreateRoundRectRgn(int nL, int nT, int nR, int nB, int nWE, int nHE);
+    [DllImport("gdi32.dll")] public static extern bool DeleteObject(IntPtr hObj);
+    public static void Apply(IntPtr hWnd, int w, int h) {
+        var rgn = CreateRoundRectRgn(0,0,w+1,h+1,36,36);
+        SetWindowRgn(hWnd, rgn, true); DeleteObject(rgn);
+    }
+}
+"@
+    $mainWindow.Add_Loaded({
+        $src = [System.Windows.Interop.HwndSource]::FromVisual($mainWindow)
+        $src.AddHook({
+            param($h,$m,$w,$l,[ref]$hd)
+            if ($m -eq 0x0084) {  # WM_NCHITTEST
+                $x = $l.ToInt64() -band 0xFFFF; $y = ($l.ToInt64() -shr 16) -band 0xFFFF
+                $pt = $mainWindow.PointFromScreen([System.Windows.Point]::new($x,$y))
+                if ($pt.Y -lt 42 -and $pt.X -ge 8 -and $pt.X -le $mainWindow.ActualWidth-8 -and $pt.Y -ge 8) { $hd.Value = 2; return 0 }
+            }
+            return 0
+        })
+        $hWnd = ([System.Windows.Interop.WindowInteropHelper]::new($mainWindow)).Handle
+        [RoundedWindow]::Apply($hWnd, $mainWindow.ActualWidth, $mainWindow.ActualHeight)
+    })
+    $mainWindow.Add_SizeChanged({
+        $hWnd = ([System.Windows.Interop.WindowInteropHelper]::new($mainWindow)).Handle
+        [RoundedWindow]::Apply($hWnd, $mainWindow.ActualWidth, $mainWindow.ActualHeight)
+    })
 
     $mainWindow.ShowDialog() | Out-Null
     Write-TechJournal "INFO" "Application closed"

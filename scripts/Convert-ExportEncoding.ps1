@@ -94,14 +94,15 @@ foreach ($f in $files) {
         if (-not $wasUtf8Bom) { $needWrite = $true }
         if ($norm -ne $text) { $needWrite = $true }
 
-        if (-not $needWrite) { $unchanged++; continue }
+        # Выбор кодировки: .sql -> ANSI (1251), .sr* -> UTF-8 BOM
+        $targetEncoding = if ($f.Extension -eq ".sql") { [System.Text.Encoding]::GetEncoding(1251) } else { $utf8Bom }
 
         if (-not $ReportOnly) {
             # Retry при временной блокировке файла (user-mapped section open)
             $written = $false
             for ($attempt = 1; $attempt -le 3; $attempt++) {
                 try {
-                    [System.IO.File]::WriteAllText($f.FullName, $norm, $utf8Bom)
+                    [System.IO.File]::WriteAllText($f.FullName, $norm, $targetEncoding)
                     $written = $true
                     break
                 } catch {

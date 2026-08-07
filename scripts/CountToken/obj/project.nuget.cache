@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "NzpZi8yRasxg88FQxoERb7+/napMCq8Xz2bH2L6B0PaQd/WFp0RMt5KRJyIa5HPP/pA+jEFG7mBDeKaMimtB2w==",
+  "success": true,
+  "projectFilePath": "C:\\AIS\\AI\\Prod\\scripts\\CountToken\\CountToken.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\vchaga\\.nuget\\packages\\sharptoken\\2.0.3\\sharptoken.2.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

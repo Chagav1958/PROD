@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>sql_export_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса SQL-экспорт</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>bin\SQL_exp_param.bat</code></td><td>Полный SQL-экспорт (все DDL-объекты) с сервера Sybase ASE</td></tr><tr><td><code>bin\SQL_exp_ready.bat</code></td><td>Экспорт выборочных объектов из папки Ready</td></tr><tr><td><code>bin\SQL_exp_single.bat</code></td><td>Экспорт одного объекта по типу и имени</td></tr></table>
+<br>
+<h2>Зависимости</h2>
+<br>
+<p>- <strong>isql</strong> (Sybase ASE) — должна быть в <code>PATH</code> (утилита проверяется через <code>where isql</code>)</p>
+<p>- Учётная запись <code>vchaga</code> (жестко закодирована)</p>
+<p>- Пароль Sybase — передаётся только через параметры, никогда не хранится в файлах</p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<h3>Общие для всех BAT-скриптов</h3>
+<br>
+<p>1. <strong>Путь <code>%~dp0</code> оканчивается на <code>\</code></strong></p>
+<p>   - <code>%SCRIPT_DIR%</code> получает значение <code>%~dp0</code> и затем обрезает последний символ (<code>%SCRIPT_DIR:~0,-1%</code>)</p>
+<p>   - Если скрипт в корне диска (редко), обрезание удалит не <code>\</code>, а букву диска</p>
+<p>   - <strong>Проверка:</strong> убедиться, что <code>%SCRIPT_DIR%</code> — валидный путь без <code>\</code> в конце</p>
+<br>
+<p>2. <strong>chcp 1251</strong></p>
+<p>   - Все BAT-файлы переключают консоль на Windows-1251 (<code>chcp 1251 &gt;nul</code>)</p>
+<p>   - Должно быть первой командой после <code>@echo off</code></p>
+<br>
+<p>3. <strong>Проверка isql</strong></p>
+<p>   - <code>where isql &gt;nul 2&gt;nul</code> — если isql не найден, скрипт завершается</p>
+<p>   - <strong>Важно:</strong> утилита не входит в состав проекта, должна быть установлена отдельно (Sybase ASE Client)</p>
+<br>
+<p>4. <strong>Экранирование <code>^</code> в bat-файлах</strong></p>
+<p>   - Символ <code>^</code> используется для экранирования <code>|</code>, <code>&gt;</code>, <code>&amp;</code> внутри <code>echo</code> в BAT</p>
+<p>   - Пример: <code>select name from sysobjects where type=&#39;P&#39; and user_name(uid)=&#39;dbo&#39; order by name</code> — в оригинале <code>echo select rtrim(name^) from sysobjects where type=&#39;P&#39; and user_name(uid^)=&#39;dbo&#39; order by name &gt;&gt; get_procs.sql</code></p>
+<p>   - <strong>Правило:</strong> любой SQL-запрос внутри <code>echo</code> должен экранировать <code>( ) &gt; |</code> через <code>^</code></p>
+<br>
+<h3>SQL_exp_param.bat</h3>
+<br>
+<p>5. *<em>Путь к gen_</em>.sql файлам**</p>
+<p>   - Скрипт использует <code>%SCRIPT_DIR%\gen_tables.sql</code>, <code>gen_indexes.sql</code>, <code>gen_pk.sql</code>, <code>gen_fk.sql</code>, <code>gen_grants.sql</code></p>
+<p>   - Эти файлы ожидаются рядом с BAT-файлом</p>
+<p>   - <strong>Ошибка:</strong> если файлы отсутствуют, <code>isql</code> упадёт с ошибкой &quot;Input file not found&quot;</p>
+<p>   - <strong>Проверка:</strong> убедиться, что файлы существуют в <code>bin/</code></p>
+<br>
+<p>6. <strong>Путь вывода BASEDIR</strong></p>
+<p>   - <code>%BASEDIR% = %SCRIPT_DIR%\BD\%SERVER%\%DATABASE%</code></p>
+<p>   - <code>%SCRIPT_DIR%</code> — это <code>bin/</code>, значит экспорт идёт в <code>bin/BD/...</code></p>
+<p>   - Это может быть неочевидно, если смотреть только на config.json</p>
+<br>
+<p>7. <strong>Поддиректории создаются принудительно</strong></p>
+<p>   - <code>mkdir &quot;%BASEDIR%\Procedure&quot; 2&gt;nul</code> — ошибки подавлены</p>
+<p>   - Если диск недоступен — ошибка не отобразится, скрипт продолжит работу</p>
+<br>
+<p>8. <strong>Очистка временных файлов</strong></p>
+<p>   - <code>del &quot;%BASEDIR%\LOGS\_tp.sql&quot; ... 2&gt;nul</code> — ошибки подавлены</p>
+<p>   - После удаления скрипт не проверяет, что все временные файлы удалены</p>
+<br>
+<p>9. <strong>Завершение с <code>pause</code></strong></p>
+<p>   - Скрипт всегда вызывает <code>pause</code> в конце, даже при успехе</p>
+<p>   - В GUI-режиме это нежелательно (ожидание нажатия клавиши)</p>
+<p>   - <strong>Выход:</strong> параметр <code>-NoPause</code> или перенаправление ввода в GUI</p>
+<br>
+<h3>SQL_exp_ready.bat</h3>
+<br>
+<p>10. <strong>Структура папок Ready</strong></p>
+<p>    - Ожидается структура: <code>ReadyMerged\Server\Database\Type\ObjectName.sql</code></p>
+<p>    - Если структура нарушена — <code>REL</code> разбирается неправильно (<code>delims=\</code> для <code>tokens=1,2,3</code>)</p>
+<p>    - <strong>Правило:</strong> при изменении структуры папок Ready нужно обновить парсинг <code>REL</code></p>
+<br>
+<p>11. <strong>Пароль с восклицательным знаком <code>!</code></strong></p>
+<p>    - <code>setlocal enabledelayedexpansion</code> — <code>!</code> в пароле будет интерпретироваться как начало выражения</p>
+<p>    - <strong>Правило:</strong> если пароль содержит <code>!</code>, нужно экранировать <code>^^!</code> или отключить delayed expansion на время ввода пароля</p>
+<br>
+<p>12. <strong>Перезапись исходных файлов</strong></p>
+<p>    - Скрипт сохраняет результат прямо в файлы Ready-папки (<code>-o &quot;%~1&quot;</code>)</p>
+<p>    - Это изменяет оригинальные файлы из Ready</p>
+<p>    - <strong>Важно:</strong> перед запуском убедиться, что есть резервная копия ReadyMerged</p>
+<br>
+<p>13. <strong><code>TOTAL_OK</code> / <code>TOTAL_FAIL</code> передаются через <code>endlocal</code></strong></p>
+<p>    - <code>endlocal &amp; set TOTAL_OK=%TOTAL_OK% &amp; set TOTAL_FAIL=%TOTAL_FAIL%</code></p>
+<p>    - Это хрупкая конструкция — если добавить больше переменных, нужно обновлять все <code>endlocal</code></p>
+<br>
+<h3>SQL_exp_single.bat</h3>
+<br>
+<p>14. <strong><code>OBJ_TYPE</code> нечувствителен к регистру</strong></p>
+<p>    - Используется <code>/i</code> в <code>if</code>: <code>if /i &quot;%OBJ_TYPE%&quot;==&quot;Procedure&quot;</code></p>
+<p>    - Допустимые типы: Procedure, Function, Trigger, Table, Index, PK, FK, Grant</p>
+<br>
+<p>15. <strong>Все типы используют одинаковый SQL-запрос</strong></p>
+<p>    - Для Procedure, Function, Trigger, Table используется один и тот же запрос <code>select text from syscomments where id=object_id(...)</code></p>
+<p>    - Для Tables, Indexes, PK, FK, Grants запрос не подходит — они экспортируются только через gen_*.sql в SQL_exp_param.bat</p>
+<p>    - <strong>Ограничение:</strong> SQL_exp_single.bat не может выгрузить структуру таблицы, индекса или гранта по одному объекту</p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- При запуске через GUI пароль экранируется: <code>$escapedPassword = $password -replace &quot;&#39;&quot;, &quot;&#39;&#39;&quot;</code></p>
+<p>- Таймаут вывода GUI настраивается через <code>gui.output_timeout_seconds</code> в config.json</p>
+<p>- Если скрипт выполняется дольше таймаута — процесс будет прерван</p>
+<br>
+</body></html>

@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>do-short-names</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Реестр уникальных имён ДО (диалоговых окон)</h1>
+<br>
+<h2>Правила именования</h2>
+<br>
+<table><tr><th>Правило</th><th>Описание</th></tr><tr><td><strong>Длина</strong></td><td>Не более 8 символов</td></tr><tr><td><strong>Регистр</strong></td><td>Только прописные (БОЛЬШИЕ) буквы</td></tr><tr><td><strong>Префикс</strong></td><td>Имя начинается с имени задачи</td></tr><tr><td><strong>Уникальность</strong></td><td>Каждое имя уникально в проекте</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>Таблица: короткие имена ДО, отсортированные по задачам</h2>
+<br>
+<h3>Задача: SYNTAX-19371-MORDA (МОРДА — STANDART1)</h3>
+<br>
+<table><tr><th>Короткое имя</th><th>Задача</th><th>Описание</th></tr><tr><td><code>MORDAS1</code></td><td>SYNTAX-19371-MORDA</td><td>МОРДА (STANDART1) — главное окно мониторинга. Sync-версия: ПБ, ОП, ДО &#171;Обработка&#187;, ДО &#171;Экспорт&#187;. Файлы: <code>bin/Prod-GUI.bat</code>, <code>bin/Prod-GUI.ps1</code></td></tr><tr><td><code>MORDAS1L</code></td><td>SYNTAX-19371-MORDA</td><td>Алиас STANDART1 (launcher): <code>bin/Prod-GUI_STANDART1.bat</code>, <code>bin/Prod-GUI_STANDART1.ps1</code>. Используется для быстрого переключения на STANDART1</td></tr><tr><td><code>PRODBTN</code></td><td>SYNTAX-19371-MORDA</td><td>ПРОД (ProdObr) — диалог &#171;Обработка&#187;: операции PB/SQL (текущая/история). Вызывается командой <code>ПРОДОБР</code> из МОРДА. Файлы: <code>bin/Show-ProdObr.bat</code>, <code>scripts/Show-ProdObr-GUI.ps1</code></td></tr></table>
+<br>
+<h3>Задача: SYNTAX-19371-MORDA2 (МОРДА2 — STANDART2, async)</h3>
+<br>
+<table><tr><th>Короткое имя</th><th>Задача</th><th>Описание</th></tr><tr><td><code>MORDAS2</code></td><td>SYNTAX-19371-MORDA2</td><td>МОРДА2 (STANDART2) — главное окно async: Runspace + DispatcherTimer, ПБ в реальном времени (10%→100%). Файлы: <code>bin/Prod-GUI_STANDART2.bat</code>, <code>bin/Prod-GUI_STANDART2.ps1</code>, <code>bin/Prod-GUI_STANDART2.vbs</code></td></tr></table>
+<br>
+<h3>Задача: SYNTAX-* (SQL/PB экспорт)</h3>
+<br>
+<table><tr><th>Короткое имя</th><th>Задача</th><th>Описание</th></tr><tr><td><code>SQLEXP</code></td><td>SYNTAX-*</td><td>SQL Export — выгрузка одного SQL-объекта из <code>dev_golden</code> через <code>isql</code>. Файл: <code>bin/SQL_exp_single.bat</code></td></tr><tr><td><code>PBEXP</code></td><td>SYNTAX-*</td><td>PB Export — выгрузка PB-библиотек из <code>PB_Current</code>/<code>PB_Main</code>. Файл: <code>bin/AIS_export.bat</code></td></tr></table>
+<br>
+<h3>Задача: TASKFIX (TimeFIX Calendar)</h3>
+<br>
+<table><tr><th>Короткое имя</th><th>Задача</th><th>Описание</th></tr><tr><td><code>TIMEFIX</code></td><td>TASKFIX</td><td>TimeFIX Calendar — WPF-календарь: рабочая неделя (Mon-Fri, 8:00–19:00), интеграция с Outlook OLE, автопроверка Дейли AIS в 9:30. Файлы: <code>bin/Show-TimeFIX.bat</code>, <code>bin/Show-TimeFIX.ps1</code>, <code>bin/Show-TimeFIX.vbs</code></td></tr></table>
+<br>
+<h3>Задача: TASKPLAN-001 (TaskPlan — планировщик задач)</h3>
+<br>
+<table><tr><th>Короткое имя</th><th>Задача</th><th>Описание</th></tr><tr><td><code>TASKPLN</code></td><td>TASKPLAN-001</td><td>TaskPlan GUI — ДО планировщика задач с 4 вкладками: &#171;Список задач&#187;, &#171;Управление&#187;, &#171;Тесты&#187;, &#171;Импорт из TASK&#187;. Файл: <code>scripts/Show-TaskPlanGUI.ps1</code></td></tr><tr><td><code>TASKPL</code></td><td>TASKPLAN-001</td><td>TaskPlan Launcher — скрытый лаунчер Show-TaskPlanGUI.ps1. Файл: <code>scripts/Show-TaskPlan.ps1</code></td></tr></table>
+<br>
+<h3>Сервисные ДО (без привязки к задаче)</h3>
+<br>
+<table><tr><th>Короткое имя</th><th>Задача</th><th>Описание</th></tr><tr><td><code>OBJINFO</code></td><td>(сервисное)</td><td>ObjectInfo GUI — справка по объектам PB/SQL: поиск по названию, содержит SQL, описание. Файлы: <code>bin/Show-ObjectInfo.bat</code>, <code>scripts/Show-ObjectInfo-GUI.ps1</code>, <code>bin/Show-ObjectInfo.exe</code></td></tr><tr><td><code>LLMMGR</code></td><td>(сервисное)</td><td>LLM Manager — выбор и управление LLM-моделями, просмотр баланса и лимитов. Файл: <code>scripts/Show-LLMs.ps1</code></td></tr><tr><td><code>ABBRVI</code></td><td>(сервисное)</td><td>СОКР (Abbreviations) — справочник сокращений проекта. Файл: <code>scripts/Show-Abbreviations.ps1</code></td></tr><tr><td><code>OPSTAT</code></td><td>(сервисное)</td><td>ОП Status — график статуса операций ПБ в реальном времени. Файл: <code>scripts/Show-OpStatus.ps1</code></td></tr><tr><td><code>PBSTATE</code></td><td>(сервисное)</td><td>ПБ State — индикатор состояния всех фоновых задач и ПБ. Файл: <code>scripts/Show-ProgressState.ps1</code></td></tr><tr><td><code>PROMTP</code></td><td>(сервисное)</td><td>Промпты — управление промптами OpenCode: создание, редактирование, история. Файл: <code>scripts/Show-Prompts.ps1</code></td></tr><tr><td><code>REPORTS</code></td><td>(сервисное)</td><td>Отчёты — просмотр и формирование отчётов по задаче. Файлы: <code>scripts/Show-Report.ps1</code>, <code>scripts/Show-Report-Launcher.ps1</code></td></tr><tr><td><code>RULES</code></td><td>(сервисное)</td><td>Правила — просмотр бизнес- и технических правил проекта. Файл: <code>scripts/Show-Rules.ps1</code></td></tr><tr><td><code>RESTORE</code></td><td>(сервисное)</td><td>Восстановление — диалог восстановления после аварии или удаления антивирусом. Файл: <code>scripts/Show-RestoreDialog.ps1</code></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>Использование в промптах</h2>
+<br>
+<p>В промптах для LLM используйте короткое имя в квадратных скобках <code>[NAME]</code>:</p>
+<br>
+<table><tr><th>Пример</th><th>Что обозначает</th></tr><tr><td><code>[MORDAS2]</code></td><td>МОРДА2 (STANDART2)</td></tr><tr><td><code>[MORDAS1]</code></td><td>МОРДА (STANDART1)</td></tr><tr><td><code>[TASKPLN]</code></td><td>TaskPlan GUI</td></tr><tr><td><code>[TIMEFIX]</code></td><td>TimeFIX Calendar</td></tr><tr><td><code>[PRODBTN]</code></td><td>ПРОД (ProdObr)</td></tr><tr><td><code>[OBJINFO]</code></td><td>ObjectInfo GUI</td></tr><tr><td><code>[SQLEXP]</code></td><td>SQL Export</td></tr><tr><td><code>[PBEXP]</code></td><td>PB Export</td></tr><tr><td><code>[LLMMGR]</code></td><td>LLM Manager</td></tr><tr><td><code>[ABBRVI]</code></td><td>Справочник сокращений</td></tr><tr><td><code>[OPSTAT]</code></td><td>ОП Status</td></tr><tr><td><code>[PBSTATE]</code></td><td>ПБ State</td></tr><tr><td><code>[PROMTP]</code></td><td>Управление промптами</td></tr><tr><td><code>[REPORTS]</code></td><td>Отчёты</td></tr><tr><td><code>[RULES]</code></td><td>Правила проекта</td></tr><tr><td><code>[RESTORE]</code></td><td>Диалог восстановления</td></tr></table>
+<br>
+</body></html>

@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>SUMMARY</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Сводка сервисов проекта AIS Release Preparation</h1>
+<br>
+<h2>Архитектура</h2>
+<br>
+<p>Проект состоит из 8 групп сервисов, оркестрируемых через WPF-приложение <code>Prod-GUI.ps1</code>:</p>
+<br>
+<pre>
+┌─────────────────────────────────────────────────────┐
+
+│                    Prod-GUI.ps1                    │
+
+│                  (WPF-приложение)                    │
+
+├──────────┬──────────┬──────────┬────────────────────┤
+
+│ SQL-    │ VSS     │ Compare  │ Jira RFC &amp; Tests    │
+
+│ экспорт │ сервис  │ сервисы  │ сервисы             │
+
+├──────────┴──────────┴──────────┴────────────────────┤
+
+│              Settings-Module.ps1                     │
+
+│         (шифрование, валидация, экспорт/импорт)      │
+
+└─────────────────────────────────────────────────────┘
+
+</pre>
+<br>
+<h2>Группы сервисов</h2>
+<br>
+<table><tr><th>Группа</th><th>Файлы</th><th>Документация</th></tr><tr><td><strong>SQL-экспорт</strong></td><td><code>bin\SQL_exp_param.bat</code></td><td><code>sql_export_rules.md</code></td></tr><tr><td><strong>VSS</strong></td><td><code>scripts\VSS-Utils.ps1</code></td><td><code>vss_rules.md</code></td></tr><tr><td><strong>Сравнение</strong></td><td><code>scripts\Compare-Export.ps1</code></td><td><code>compare_rules.md</code></td></tr><tr><td><strong>Jira RFC</strong></td><td><code>scripts\Create-RFC.ps1</code></td><td><code>jira_rfc_rules.md</code></td></tr><tr><td><strong>Тестирование</strong></td><td><code>scripts\test_sql_export.ps1</code></td><td><code>test_rules.md</code></td></tr><tr><td><strong>GUI</strong></td><td><code>bin\Prod-GUI.ps1</code></td><td><code>gui_rules.md</code></td></tr><tr><td><strong>PB-экспорт</strong></td><td><code>scripts\AIS_export.ps1</code></td><td><code>pb_export_rules.md</code></td></tr><tr><td><strong>Инициализация</strong></td><td><code>scripts\Initialize-Project.ps1</code></td><td><code>init_rules.md</code></td></tr><tr><td><strong>Оркестратор</strong></td><td><code>bin\prepare_release.bat</code></td><td>— (использует SQL-экспорт и Compare)</td></tr></table>
+<br>
+<h2>Операции в GUI</h2>
+<br>
+<table><tr><th>№</th><th>Операция</th><th>Сервис</th><th>Тип</th></tr><tr><td>0</td><td>Settings</td><td>GUI (Settings-Module.ps1)</td><td>Встроенная панель</td></tr><tr><td>1</td><td>SQL Export — Current</td><td>SQL-экспорт (SQL_exp_param.bat)</td><td>BAT</td></tr><tr><td>2</td><td>SQL Export — Main</td><td>SQL-экспорт (SQL_exp_param.bat)</td><td>BAT</td></tr><tr><td>3</td><td>SQL Export from Ready</td><td>SQL-экспорт (SQL_exp_ready.bat)</td><td>BAT</td></tr><tr><td>4</td><td>Compare &amp; Verify</td><td>Сравнение (Compare-Export.ps1)</td><td>PS1</td></tr><tr><td>5</td><td>Create RFC in Jira</td><td>Jira RFC (Create-RFC.ps1)</td><td>PS1</td></tr><tr><td>6</td><td>Compare PB</td><td>Сравнение (Compare-PB.ps1)</td><td>PS1</td></tr><tr><td>7</td><td>Compare SQL</td><td>Сравнение (Compare-SQL.ps1)</td><td>PS1</td></tr><tr><td>8</td><td>Run Tests</td><td>Тестирование (test_sql_export.ps1)</td><td>PS1</td></tr><tr><td>9-14</td><td>VSS * (6 операций)</td><td>VSS (VSS-Utils.ps1 + ss.exe)</td><td>PS1 + EXE</td></tr></table>
+<br>
+<h2>Ключевые правила (из AGENTS.md)</h2>
+<br>
+<h3>Кодировка</h3>
+<p>- SQL-файлы: Windows-1251</p>
+<p>- Документация (HTML, MD): UTF-8</p>
+<p>- PowerShell скрипты: ASCII (для совместимости с Windows PowerShell 5.1)</p>
+<br>
+<h3>Безопасность</h3>
+<p>- Пароли не хранятся в файлах (кроме VSS — зашифрован AES-256)</p>
+<p>- Пароли передаются только как параметры командной строки</p>
+<br>
+<h3>Именование</h3>
+<p>- Скрипты: CamelCase для PowerShell (.ps1), snake_case для BAT (.bat)</p>
+<p>- Документация: snake_case с префиксом типа</p>
+<br>
+<h3>MCP-серверы</h3>
+<p>- Документация PowerBuilder и Sybase ASE (ASA) подключается только при необходимости</p>
+<p>- MCP-серверы для внутренних сервисов проекта НЕ создаются (вся информация в файлах правил)</p>
+<br>
+<p>&gt; <strong>Полный свод всех правил проекта — в <code>C:\AIS\AI\Prod\AGENTS.md</code></strong></p>
+<br>
+<h2>Быстрый старт</h2>
+<br>
+<pre>
+# 1. На новом компьютере
+
+.\scripts\Initialize-Project.ps1
+
+
+
+# 2. Запуск GUI
+
+.\bin\Prod-GUI.bat
+
+
+
+# 3. Настройка путей и VSS пароля
+
+# Открыть Settings → Paths / VSS
+
+
+
+# 4. Выполнить операцию
+
+# Выбрать операцию → ввести параметры → Run
+
+</pre>
+<br>
+</body></html>

@@ -1,0 +1,15 @@
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\PreCommitHook.csproj.AssemblyReference.cache
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\PreCommitHook.GeneratedMSBuildEditorConfig.editorconfig
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\PreCommitHook.AssemblyInfoInputs.cache
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\PreCommitHook.AssemblyInfo.cs
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\PreCommitHook.csproj.CoreCompileInputs.cache
+C:\AIS\AI\Prod\scripts\PreCommitHook\bin\Release\net6.0\pre-commit.exe
+C:\AIS\AI\Prod\scripts\PreCommitHook\bin\Release\net6.0\pre-commit.deps.json
+C:\AIS\AI\Prod\scripts\PreCommitHook\bin\Release\net6.0\pre-commit.runtimeconfig.json
+C:\AIS\AI\Prod\scripts\PreCommitHook\bin\Release\net6.0\pre-commit.dll
+C:\AIS\AI\Prod\scripts\PreCommitHook\bin\Release\net6.0\pre-commit.pdb
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\pre-commit.dll
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\refint\pre-commit.dll
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\pre-commit.pdb
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\PreCommitHook.genruntimeconfig.cache
+C:\AIS\AI\Prod\scripts\PreCommitHook\obj\Release\net6.0\ref\pre-commit.dll

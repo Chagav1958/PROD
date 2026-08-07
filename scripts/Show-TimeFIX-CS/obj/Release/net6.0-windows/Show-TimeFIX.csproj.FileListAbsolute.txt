@@ -18,3 +18,5 @@ C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\obj\Release\net6.0-windows\refint\Show-Ti
 C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\obj\Release\net6.0-windows\Show-TimeFIX.pdb
 C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\obj\Release\net6.0-windows\Show-TimeFIX.genruntimeconfig.cache
 C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\obj\Release\net6.0-windows\ref\Show-TimeFIX.dll
+C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\bin\Release\net6.0-windows\Microsoft.Exchange.WebServices.NETStandard.dll
+C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\obj\Release\net6.0-windows\Show-TimeFIX.csproj.CopyComplete

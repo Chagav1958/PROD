@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>init_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса Инициализация (Initialize-Project)</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>scripts\Initialize-Project.ps1</code></td><td>Однократная настройка путей проекта на новом компьютере</td></tr></table>
+<br>
+<h2>Зависимости</h2>
+<br>
+<p>- <strong>PowerShell 5.1</strong></p>
+<p>- <strong>config.json</strong> — должен существовать в корне проекта</p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<p>1. <strong>Пути в config.json перезаписываются</strong></p>
+<p>   - Скрипт модифицирует config.json: заменяет относительные пути на абсолютные</p>
+<p>   - <strong>Важно:</strong> если в config.json были пути с <code>.\</code> (относительные), они будут преобразованы</p>
+<p>   - <strong>Правило:</strong> после инициализации проверить config.json в Git diff</p>
+<br>
+<p>2. <strong>Кодировка config.json</strong></p>
+<p>   - Скрипт сохраняет через <code>Set-Content -Encoding UTF8</code></p>
+<p>   - Это UTF-8 with BOM</p>
+<p>   - <strong>Правило:</strong> <code>ConvertFrom-Json</code> читает с <code>-Encoding UTF8</code>, но другие скрипты используют <code>-Raw</code></p>
+<br>
+<p>3. <strong>Проверка зависимостей</strong></p>
+<p>   - <code>Get-Command isql</code> — может не найти isql, если Sybase не установлен</p>
+<p>   - <code>Test-Path &quot;C:\Program Files\Google\Chrome\Application\chrome.exe&quot;</code> — проверка Chrome для PDF</p>
+<p>   - <strong>Правило:</strong> пропускать через <code>-SkipChecks</code> если зависимости не критичны</p>
+<br>
+<p>4. <strong>Создание директорий</strong></p>
+<p>   - Создаются: <code>BD</code>, <code>PB_Current</code>, <code>PB_Main</code>, <code>reports\logs</code>, <code>tools</code></p>
+<p>   - <strong>Правило:</strong> при добавлении новых директорий в проект обновить массив <code>$dirs</code></p>
+<br>
+<p>5. <strong>Resolve-RelativePath</strong></p>
+<p>   - Проверяет только <code>$Path.StartsWith(&quot;.\&quot;)</code></p>
+<p>   - Пути с <code>..\</code> не обрабатываются</p>
+<p>   - <strong>Правило:</strong> при использовании относительных путей в config.json начинать их с <code>.\</code></p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- Запускать только один раз при переносе проекта на новый компьютер</p>
+<p>- После инициализации запустить: <code>.\bin\Prod-GUI.bat</code></p>
+<p>- Проверить, что все пути в Settings → Paths корректны</p>
+<p>- Если пароль VSS был зашифрован на другой машине — ввести его заново в Settings → VSS</p>
+<br>
+</body></html>

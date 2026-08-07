@@ -1,1 +1,0 @@
-CreateObject("Shell.Application").ShellExecute "powershell.exe", "-NoLogo -ExecutionPolicy RemoteSigned -File ""C:\AIS\AI\Prod\bin\Show-TimeFIX.ps1""", "C:\AIS\AI\Prod\bin", "open", 1

@@ -345,10 +345,9 @@ powershell -NoLogo -File C:\AIS\AI\Prod\scripts\Preflight-Antivirus.ps1 -AutoFix
 powershell -NoLogo -File C:\AIS\AI\Prod\scripts\ConvertTo-BatLauncher.ps1 "<путь-к-ps1>"
 ```
 
-**СТАНДАРТ: .bat-лаунчер с base64** (если AV удаляет .ps1 — единственный надёжный способ)
-- Конвертер `ConvertTo-BatLauncher.ps1` создаёт .bat с base64-кодированным .ps1
-- В .bat НЕТ .ps1 на диске → AV не может детектить как PowerShell-скрипт
-- Созданные .bat: Add-Bom, Fix-HexEncoding, Preflight-Antivirus, Init-Task, TaskPlan-*, Show-TaskPlanGUI, Out-TaskPlan, Export-PB, Compare-*, Add-ReleaseComment, Save-*, AIS_export, ConvertTo-BatLauncher, Show-TimeFIX, Prod-GUI
+**СТАНДАРТ: .bat-лаунчер с base64 (ОПАСНО — AV детектит как обфускацию, см. инцидент 05.08.2026)**
+- НЕ ИСПОЛЬЗОВАТЬ! Base64 в .bat определяется как HEUR:Trojan.PowerShell.Obfus
+- Вместо base64: простой .bat с прямым вызовом exe/ps1, либо C# приложение
 
 | Запрещённый паттерн | Замена |
 |---------------------|--------|
@@ -364,7 +363,9 @@ powershell -NoLogo -File C:\AIS\AI\Prod\scripts\ConvertTo-BatLauncher.ps1 "<пу
 2. **Сразу ПОСЛЕ записи .ps1** — запустить `scripts\Add-Bom.ps1 <файл>`
 3. **При массовых правках** — `Preflight-Antivirus.ps1 -AutoFix` (все файлы)
 4. VBS-обёртки — только `Shell.Application.ShellExecute ..., "open", 1`
-5. Рекомендовать добавить `C:\AIS\AI\Prod\` в исключения антивируса
+5. Рекомендовать добавить в исключения антивируса:
+   - `C:\AIS\AI\Prod\` — проект
+   - `%APPDATA%\ai.opencode.desktop\Cache\` — кэш OpenCode (AV детектит PowerShell-код в кэше)
 
 **Утилиты:**
 - `scripts\Add-Bom.ps1 <файл>` — добавление BOM к одному файлу

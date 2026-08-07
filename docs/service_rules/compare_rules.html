@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>compare_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса Сравнение и проверка (Compare)</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>scripts\Compare-Export.ps1</code></td><td>Сравнение готовности объектов к выпуску (Ready → Current → Main)</td></tr><tr><td><code>scripts\Compare-PB.ps1</code></td><td>Сравнение PB-объектов (PB_Current и PB_Main по MD5)</td></tr><tr><td><code>scripts\Compare-SQL.ps1</code></td><td>Сравнение SQL-экспорта (dev_golden и galaxy по MD5)</td></tr></table>
+<br>
+<h2>Зависимости</h2>
+<br>
+<p>- <strong>PowerShell 5.1</strong> — все скрипты используют PS 5.1-совместимый синтаксис</p>
+<p>- <strong>TortoiseMerge</strong> (опционально) — для визуального сравнения файлов (Compare-Export с флагом <code>-ShowDiff</code>)</p>
+<p>- <strong>Create-RFC.ps1</strong> — вызывается из Compare-Export при <code>-CreateRFC</code></p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<h3>Compare-Export.ps1</h3>
+<br>
+<p>1. <strong>Синтаксические ошибки парсера PS 5.1 с <code>|</code></strong> (Bug-026)</p>
+<p>   - PowerShell 5.1 некорректно парсит строки с символами <code>|</code> и <code>/</code> внутри кавычек в &#171;сложных&#187; контекстах</p>
+<p>   - <strong>Симптом:</strong> неожиданные синтаксические ошибки &quot;Unexpected token &#39;|&#39;&quot;</p>
+<p>   - <strong>Исправление:</strong> строки для JIRA-таблицы собираются в переменные перед <code>AppendLine()</code>:</p>
+<p>     ```powershell</p>
+<p>     $jiraHdr = &quot;Project/Server|Library/DB|Object Name|Info|&quot;</p>
+<p>     [void]$sb.AppendLine($jiraHdr)</p>
+<p>     ```</p>
+<p>   - <strong>Правило:</strong> избегать прямого вызова <code>.AppendLine(&quot;...|...|...&quot;)</code> — сначала присвоить в переменную</p>
+<br>
+<p>2. <strong>Array literal с <code>/base</code></strong> (Bug-026)</p>
+<p>   - <code>$diffArgs = @(&quot;/base&quot;, ...)</code> — замените одинарные кавычки на двойные в настройках, так как PS 5.1 может падать на <code>@(&#39;/base&#39;, ...)</code></p>
+<p>   - <strong>Правило:</strong> использовать <code>@(&#39;/base&#39;, ...)</code> с одинарными кавычками</p>
+<br>
+<p>3. <strong>Путь к config.json</strong> (Bug-026)</p>
+<p>   - По умолчанию <code>$ConfigPath = &quot;C:\AIS\AI\Prod\config\config.json&quot;</code> (исправлено с C:\AIS\AI\Prod\config.json)</p>
+<p>   - <strong>Правило:</strong> путь к config.json указывать через <code>config\config.json</code> (относительно корня)</p>
+<br>
+<p>4. <strong>Поиск TaskFolder при запуске без параметров</strong></p>
+<p>   - Если не передан <code>$TaskFolder</code> или <code>-TaskName</code>, скрипт ищет последнюю изменённую папку <code>SYBASE-*</code> в <code>release_root</code></p>
+<p>   - <strong>Правило:</strong> если папка не найдена — скрипт завершается с <code>throw</code></p>
+<br>
+<p>5. *<em>ReadyMerged — слияние нескольких Ready_</em> папок**</p>
+<p>   - Все папки <code>Ready_*</code> (кроме <code>Ready_</code>) сортируются по <code>LastWriteTime</code></p>
+<p>   - Файлы копируются с перезаписью: более свежий файл заменяет старый</p>
+<p>   - <strong>Правило:</strong> <code>Ready_</code> (с пустой датой) исключается из обработки</p>
+<br>
+<p>6. <strong>Статусы проверки</strong></p>
+<p>   - <code>NOT_IN_CURRENT</code>: объект отсутствует в Current → ошибка</p>
+<p>   - <code>DIFF_CURRENT</code>: отличается от Current → ошибка</p>
+<p>   - <code>NEW_OBJECT</code>: новый объект (нет в Main) → предупреждение</p>
+<p>   - <code>SAME_AS_MAIN</code>: совпадает с Main (не изменился) → ошибка</p>
+<p>   - <code>OK</code>: Ready = изменён относительно Main и совпадает с Current → готов</p>
+<br>
+<p>7. <strong>RFC создаётся ТОЛЬКО если все объекты READY</strong></p>
+<p>   - Если есть <code>NOT_READY</code> — RFC не создаётся (даже при <code>-CreateRFC</code>)</p>
+<p>   - <strong>Правило:</strong> не обходить это ограничение без явного запроса</p>
+<br>
+<h3>Compare-PB.ps1</h3>
+<br>
+<p>8. <strong>Default config path</strong></p>
+<p>   - По умолчанию <code>C:\AIS\AI\Prod\config.json</code> (БЕЗ <code>config\</code>) — это legacy</p>
+<p>   - При переносе на другую машину путь может не совпадать</p>
+<p>   - <strong>Правило:</strong> использовать <code>Join-Path $PSScriptRoot &quot;..\config\config.json&quot;</code> или параметр</p>
+<br>
+<p>9. <strong>Хеши MD5</strong></p>
+<p>   - Сравнение идёт по полному содержимому файла (Get-FileHash -Algorithm MD5)</p>
+<p>   - <strong>Важно:</strong> файлы должны быть в кодировке Windows-1251 (как при экспорте isql)</p>
+<br>
+<h3>Compare-SQL.ps1</h3>
+<br>
+<p>10. <strong>Структура папок BD</strong></p>
+<p>    - Ожидается: <code>BD\dev_golden\&lt;database&gt;\Procedure\</code>, <code>BD\dev_golden\&lt;database&gt;\Functions\</code>, <code>BD\dev_golden\&lt;database&gt;\Triggers\</code></p>
+<p>    - Аналогично для <code>BD\galaxy\</code></p>
+<p>    - <strong>Ошибка:</strong> если папка <code>Functions</code> (с большой буквы) не совпадает с реальной — файлы не найдутся</p>
+<br>
+<p>11. <strong>Общие базы данных</strong></p>
+<p>    - Сравниваются только базы, присутствующие на обоих серверах</p>
+<p>    - База <code>golden</code> — основная, но могут быть и другие (mis, etc.)</p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- Все три скрипта сохраняют отчёт в текстовый файл (кодировка Default = Windows-1251)</p>
+<p>- Compare-Export дополнительно создаёт JIRA-таблицу в отчёте</p>
+<p>- Compare-PB и Compare-SQL показывают результаты по библиотекам/базам</p>
+<p>- Для быстрой проверки без GUI: запустить PowerShell и выполнить скрипт с параметрами</p>
+<br>
+</body></html>

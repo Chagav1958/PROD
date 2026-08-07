@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>sql-export</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Сервис SQL Export — детальное описание</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>Сервис выгрузки SQL-объектов из Sybase ASE 15.5 в формат, полностью совместимый с аналитическим инструментом <strong>dbArtesan</strong>. Поддерживает выгрузку процедур, функций, триггеров, таблиц, представлений, индексов, ключей и грантов.</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Компоненты сервиса</h2>
+<br>
+<table><tr><th>Компонент</th><th>Тип</th><th>Назначение</th></tr><tr><td><code>bin\SqlExport.exe</code></td><td>C# (.NET)</td><td>Координатор выгрузки: запускает bat, форматирует ###PHASE###/###STEP###</td></tr><tr><td><code>bin\SQL_exp_param.bat</code></td><td>BAT</td><td>Массовая выгрузка всех объектов заданного типа</td></tr><tr><td><code>bin\SQL_exp_single.bat</code></td><td>BAT</td><td>Выгрузка одного конкретного объекта</td></tr><tr><td><code>scripts\Rebuild-Object.ps1</code></td><td>PowerShell</td><td>Сборка тела объекта из HEX-фрагментов isql</td></tr><tr><td><code>scripts\Convert-ExportEncoding.ps1</code></td><td>PowerShell</td><td>Нормализация кодировки (ANSI для .sql, UTF-8 BOM для .sr*)</td></tr><tr><td><code>bin\gen_single_grant.sql</code></td><td>SQL</td><td>Генерация GRANT для одного объекта</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. Стандарт формата выгрузки (dbArtesan)</h2>
+<br>
+<p>Формат выгружаемых <code>.sql</code> файлов должен в точности соответствовать выводу Sybase dbArtesan:</p>
+<br>
+<h3>3.1. Кодировка</h3>
+<p><strong>Windows-1251 (ANSI) без BOM.</strong> Файлы с BOM (UTF-8/UTF-16) не соответствуют стандарту и не должны использоваться.</p>
+<br>
+<h3>3.2. Структура файла</h3>
+<br>
+<pre>
+USE golden
+
+go
+
+IF OBJECT_ID(&#39;dbo.usp_example&#39;) IS NOT NULL
+
+BEGIN
+
+    DROP PROCEDURE dbo.usp_example
+
+    IF OBJECT_ID(&#39;dbo.usp_example&#39;) IS NOT NULL
+
+        PRINT &#39;&lt;&lt;&lt; FAILED DROPPING PROCEDURE dbo.usp_example &gt;&gt;&gt;&#39;
+
+    ELSE
+
+        PRINT &#39;&lt;&lt;&lt; DROPPED PROCEDURE dbo.usp_example &gt;&gt;&gt;&#39;
+
+END
+
+go
+
+CREATE PROCEDURE dbo.usp_example
+
+    @param1 int
+
+AS
+
+BEGIN
+
+    -- тело процедуры
+
+END
+
+go
+
+EXEC sp_procxmode &#39;dbo.usp_example&#39;, &#39;unchained&#39;
+
+go
+
+IF OBJECT_ID(&#39;dbo.usp_example&#39;) IS NOT NULL
+
+    PRINT &#39;&lt;&lt;&lt; CREATED PROCEDURE dbo.usp_example &gt;&gt;&gt;&#39;
+
+ELSE
+
+    PRINT &#39;&lt;&lt;&lt; FAILED CREATING PROCEDURE dbo.usp_example &gt;&gt;&gt;&#39;
+
+go
+
+GRANT EXECUTE ON dbo.usp_example TO r_web_ais
+
+go
+
+</pre>
+<br>
+<h3>3.3. Типы объектов и различия в обёртке</h3>
+<br>
+<table><tr><th>Тип</th><th>DROP</th><th>sp_procxmode</th><th>GRANT</th></tr><tr><td>Procedure</td><td><code>DROP PROCEDURE</code></td><td>да</td><td><code>GRANT EXECUTE</code></td></tr><tr><td>Function</td><td><code>DROP FUNCTION</code></td><td>нет</td><td><code>GRANT EXECUTE</code></td></tr><tr><td>Trigger</td><td><code>DROP TRIGGER</code></td><td>нет</td><td>нет</td></tr><tr><td>View</td><td><code>DROP VIEW</code></td><td>нет</td><td><code>GRANT SELECT</code></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. HEX-метод выгрузки тела</h2>
+<br>
+<h3>4.1. Проблема прямого SELECT text</h3>
+<br>
+<p>Прямой запрос <code>SELECT text FROM syscomments</code> через <code>isql</code> приводит к:</p>
+<p>- <strong>Word-wrap:</strong> isql обрезает строки на 80-м символе (даже с <code>-w 65535</code>)</p>
+<p>- <strong>Потеря форматирования:</strong> длинные строки разбиваются произвольными переносами</p>
+<p>- <strong>Искажение кириллицы:</strong> при конвертации кодировок</p>
+<br>
+<h3>4.2. Решение: HEX-фрагменты</h3>
+<br>
+<pre>
+-- Запрос HEX-фрагментов (SQL_exp_single.bat, стр. 57-59)
+
+SELECT CONVERT(VARBINARY(255), text) AS hx, number, colid
+
+FROM syscomments
+
+WHERE id = OBJECT_ID(&#39;usp_example&#39;)
+
+ORDER BY number, colid
+
+</pre>
+<br>
+<p>Результат — набор строк вида <code>0xHEX_STRING  number  colid</code>. Эти фрагменты собираются скриптом <code>Rebuild-Object.ps1</code>:</p>
+<br>
+<p>1. Чтение <code>isql</code> вывода в кодировке Latin-1 (28591)</p>
+<p>2. Парсинг регулярным выражением <code>0x([0-9a-fA-F]+)\s+(\d+)\s+(\d+)</code></p>
+<p>3. Сортировка по (number, colid)</p>
+<p>4. Конкатенация HEX-строк</p>
+<p>5. Запись байтов в выходной файл (CP1251)</p>
+<br>
+<h3>4.3. Проверка корректности</h3>
+<br>
+<p>Сверка с эталоном dbArtesan для процедуры <code>usp_policy_lk_list_1tst</code> (3672 строки, 229125 байт тела) подтвердила полную идентичность:</p>
+<br>
+<pre>
+MATCH! SQL export follows the Standard Format (dbArtesan).
+
+</pre>
+<br>
+<p>Скрипт сравнения: <code>temp\compare_exact.ps1</code> (нормализация BOM, whitespace, сравнение текста).</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. Архитектура выгрузки</h2>
+<br>
+<h3>5.1. Путь без TaskName (массовая выгрузка)</h3>
+<br>
+<pre>
+МОРДА2 (ОП7) → Start-OpAsync → Invoke-OpSqlExport
+
+    → SqlExport.exe
+
+        → SQL_exp_param.bat
+
+            → isql: список объектов (sysobjects)
+
+            → Параллельный HEX-экспорт каждого объекта
+
+            → Rebuild-Object.ps1 (сборка тела)
+
+            → Convert-ExportEncoding.ps1 (нормализация)
+
+</pre>
+<br>
+<h3>5.2. Путь с TaskName (выборочная выгрузка)</h3>
+<br>
+<pre>
+МОРДА2 (ОП7) → Start-OpAsync → Invoke-OpSqlExport
+
+    → Сканирование Ready_*/Git_* папок задачи
+
+    → Определение типа объекта по CREATE header
+
+    → SQL_exp_single.bat (для каждого объекта)
+
+        → isql: HEX-фрагменты
+
+        → Rebuild-Object.ps1
+
+        → Convert-ExportEncoding.ps1
+
+    → Обновление PhaseProgress/StepProgress
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>6. Мониторинг прогресса (ПБ)</h2>
+<br>
+<h3>6.1. Верхний ПБ (PhaseProgress)</h3>
+<br>
+<p>Показывает текущий тип объекта и прогресс по типам:</p>
+<br>
+<table><tr><th>Тип</th><th>% заполнения</th><th>Текст</th></tr><tr><td>Процедуры</td><td>11%</td><td><code>Тип: Процедуры</code></td></tr><tr><td>Функции</td><td>22%</td><td><code>Тип: Функции</code></td></tr><tr><td>Триггеры</td><td>33%</td><td><code>Тип: Триггеры</code></td></tr><tr><td>...</td><td>...</td><td>...</td></tr><tr><td>Гранты</td><td>100%</td><td><code>Тип: Гранты</code></td></tr></table>
+<br>
+<h3>6.2. Нижний ПБ (StepProgress)</h3>
+<br>
+<p>Показывает текущий объект и общий прогресс:</p>
+<br>
+<table><tr><th>Этап</th><th>Текст</th></tr><tr><td>Начало</td><td><code>0 из 1046</code></td></tr><tr><td>Объект X</td><td><code>523 из 1046 — usp_example_proc</code></td></tr><tr><td>Завершение</td><td><code>1046 из 1046</code></td></tr></table>
+<br>
+<h3>6.3. Реализация в коде</h3>
+<br>
+<p>Данные передаются через синхронизированные хеши (<code>[hashtable]::Synchronized()</code>), доступные UI-потоку и Runspace одновременно:</p>
+<br>
+<pre>
+# В Start-OpAsync
+
+$syncPhase = [hashtable]::Synchronized(@{Value=0; Text=&#39;&#39;})
+
+$syncStep  = [hashtable]::Synchronized(@{Value=0; Text=&#39;&#39;})
+
+
+
+# В хендлере (Invoke-OpSqlExport)
+
+$script:PhaseProgress.Value = [Math]::Round(($ti + 1) * 100 / $totalTypes)
+
+$script:PhaseProgress.Text = &quot;Тип: Процедуры&quot;
+
+$script:StepProgress.Value = [Math]::Round($objIdx * 100 / $total)
+
+$script:StepProgress.Text = &quot;$objIdx из $total — usp_...&quot;
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>7. Экономическая выгода</h2>
+<br>
+<h3>7.1. Сокращение времени</h3>
+<br>
+<table><tr><th>Показатель</th><th>Ручной способ</th><th>Автоматизированный</th></tr><tr><td>Выгрузка 1046 процедур</td><td>~4 часа (isql + форматирование)</td><td>~3 минуты</td></tr><tr><td>Поиск объекта в БД</td><td>~5 минут</td><td>~1 секунда (через ОП7)</td></tr><tr><td>Сравнение с эталоном</td><td>~30 минут (визуально)</td><td>~5 секунд (MD5)</td></tr></table>
+<br>
+<h3>7.2. Предотвращение ошибок</h3>
+<br>
+<p>- <strong>HEX-метод</strong> исключает word-wrap и искажение текста (ранее: 100% выгруженных процедур имели ошибки форматирования)</p>
+<p>- <strong>Стандарт dbArtesan</strong> гарантирует идентичность с аналитическими инструментами</p>
+<p>- <strong>Нормализация кодировки</strong> предотвращает кракозябры при передаче файлов</p>
+<br>
+<h3>7.3. Масштабируемость</h3>
+<br>
+<p>- <strong>Массовая выгрузка:</strong> параллельный HEX-экспорт 1000+ объектов</p>
+<p>- <strong>Выборочная выгрузка:</strong> только объекты конкретной задачи (Ready_<em>/Git_</em>)</p>
+<p>- <strong>Повторное использование:</strong> все выгруженные объекты кешируются в <code>BD\</code></p>
+<br>
+</body></html>

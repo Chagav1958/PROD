@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>antivirus-request</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<p>Тема: Ложные срабатывания антивируса на OpenCode и инструменты подготовки релизов AIS (False Positive)</p>
+<br>
+<p>От: vchaga (Ренессанс, подготовка релизов AIS)</p>
+<p>Дата: 17.07.2026</p>
+<br>
+<p>Коллеги, прошу добавить исключения в антивирус/DLP (агент SearchInform, sifiltersvc1).</p>
+<p>Все перечисленные объекты — легитимные внутренние инструменты, детектятся ошибочно.</p>
+<br>
+<p>=====================================================================</p>
+<p>1. OpenCode (AI-ассистент разработчика) — КРИТИЧНО</p>
+<p>=====================================================================</p>
+<p>Причина срабатываний (подтверждено 17.07.2026):</p>
+<p>- PDM:Trojan.Win32.Generic на OpenCode.exe — поведенческий анализ (HIPS).</p>
+<p>  Приложение легитимно запускает powershell, пишет файлы проекта, обращается</p>
+<p>  к LLM API. SHA256 OpenCode.exe = 673025C27F2FDDD129D22DFAC9F5755BA3455C7F2C3830D12F11F91BD49E3BCA</p>
+<p>  (совпадает с хэшем из отчёта АВ — файл не изменён, это false positive).</p>
+<p>- HEUR:Trojan.PowerShell.Obfus.b на файл кэша f_0001ac в Cache_Data —</p>
+<p>  бинарный кэш Electron, содержит фрагменты веб-контента. Удалён АВ,</p>
+<p>  восстановления не требует (пересоздаётся автоматически).</p>
+<br>
+<p>ПРОШУ ДОБАВИТЬ В ИСКЛЮЧЕНИЯ:</p>
+<p>[ ] Директория (без сканирования): C:\Users\vchaga\AppData\Local\Programs\@opencode-aidesktop\</p>
+<p>[ ] Директория (без сканирования): C:\Users\vchaga\AppData\Roaming\ai.opencode.desktop\</p>
+<p>[ ] Процесс OpenCode.exe — исключить из поведенческого (HIPS/PDM) мониторинга</p>
+<br>
+<p>=====================================================================</p>
+<p>2. Директории проекта (без сканирования)</p>
+<p>=====================================================================</p>
+<p>[ ] C:\AIS\AI\Prod\                                   (корень: PS/BAT/Python-скрипты)</p>
+<p>[ ] C:\AIS\1 Release\                                 (релизы: SQL, .sr* PowerBuilder)</p>
+<p>[ ] C:\SRC125\gold                                    (исходники PowerBuilder, только чтение)</p>
+<p>[ ] C:\Work\gold                                      (рабочая копия PowerBuilder)</p>
+<br>
+<p>=====================================================================</p>
+<p>3. Исполняемые файлы (не удалять/не блокировать)</p>
+<p>=====================================================================</p>
+<p>[ ] C:\AIS\AI\Prod\tools\pbldump-1.3.1stable\PblDump.exe   (экспорт PB-объектов, PUA-эвристика)</p>
+<p>[ ] C:\Program Files (x86)\Microsoft Visual SourceSafe\ss.exe  (VSS 2005, эвристика старого ПО)</p>
+<p>[ ] C:\Program Files\TortoiseSVN\bin\TortoiseMerge.exe      (сравнение файлов)</p>
+<br>
+<p>=====================================================================</p>
+<p>4. Python MCP-серверы (без сканирования .exe в пакетах)</p>
+<p>=====================================================================</p>
+<p>[ ] C:\AIS\AI\Prod\scripts\ais_catalog_mcp\         (сервер каталога проекта AIS)</p>
+<p>[ ] C:\AIS\AI\Prod\scripts\ais_catalog_mcp\lib\</p>
+<p>[ ] C:\AIS\AI\Prod\scripts\opencode_mcp\            (сервер знаний об OpenCode)</p>
+<p>[ ] C:\AIS\AI\Prod\scripts\opencode_mcp\lib\</p>
+<p>Примечание: пакеты содержат uvicorn.exe/mcp.exe/pythonservice.exe — ложные срабатывания.</p>
+<br>
+<p>=====================================================================</p>
+<p>5. BAT-файлы (не блокировать запуск)</p>
+<p>=====================================================================</p>
+<p>[ ] bin\Prod-GUI.bat, bin\SQL_exp_single.bat, bin\SQL_exp_param.bat, bin\SQL_exp_ready.bat</p>
+<p>[ ] bin\prepare_release.bat, bin\AIS_export.bat, bin\AIS_export_flexible.bat</p>
+<p>[ ] bin\Export-Service.bat, bin\Export.bat, bin\Claude-PB-SQL.bat</p>
+<br>
+<p>=====================================================================</p>
+<p>6. PowerShell-скрипты (не блокировать выполнение)</p>
+<p>=====================================================================</p>
+<p>[ ] bin\Prod-GUI.ps1                       (основной GUI, WPF)</p>
+<p>[ ] scripts\*.ps1                          (все рабочие скрипты)</p>
+<p>[ ] scripts\ais_catalog_mcp\server.py      (Python MCP-сервер)</p>
+<p>[ ] scripts\opencode_mcp\server.py         (Python MCP-сервер)</p>
+<br>
+<p>=====================================================================</p>
+<p>7. Сетевые ресурсы (не блокировать доступ)</p>
+<p>=====================================================================</p>
+<p>[ ] \\ren-msksf01\VSS2005\               (база VSS)</p>
+<p>[ ] localhost:4096                        (локальный OpenCode API)</p>
+<p>[ ] https://mytask.renins.com            (Jira Cloud)</p>
+<br>
+<p>=====================================================================</p>
+<p>Дополнительно</p>
+<p>=====================================================================</p>
+<p>- Не включать &quot;облачное сканирование&quot; для .ps1 (шифрование паролей AES детектится как обфускация).</p>
+<p>- Не сканировать .sql в C:\AIS\AI\Prod\BD\ (экспорты Sybase ASE).</p>
+<p>- Не блокировать Start-Process -WindowStyle Hidden (легитимное скрытие консолей).</p>
+<br>
+<p>Полный документ с обоснованием: C:\AIS\AI\Prod\docs\antivirus-proposal.md</p>
+<br>
+</body></html>

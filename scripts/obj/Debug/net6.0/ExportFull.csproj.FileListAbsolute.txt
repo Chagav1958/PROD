@@ -1,0 +1,5 @@
+C:\AIS\AI\Prod\scripts\obj\Debug\net6.0\ExportFull.csproj.AssemblyReference.cache
+C:\AIS\AI\Prod\scripts\obj\Debug\net6.0\ExportFull.GeneratedMSBuildEditorConfig.editorconfig
+C:\AIS\AI\Prod\scripts\obj\Debug\net6.0\ExportFull.AssemblyInfoInputs.cache
+C:\AIS\AI\Prod\scripts\obj\Debug\net6.0\ExportFull.AssemblyInfo.cs
+C:\AIS\AI\Prod\scripts\obj\Debug\net6.0\ExportFull.csproj.CoreCompileInputs.cache

@@ -1,0 +1,22 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 6091,
+    "logLevel": "verbose",
+    "environment": "production"
+  },
+  "database": {
+    "provider": "EnvDbProvider"
+  },
+  "paths": {
+    "scripts": "C:\\AIS\\AI\\Prod\\scripts_pb_lsp",
+    "logs": "C:\\AIS\\AI\\Prod\\logs\\pb_lsp",
+    "backups": "C:\\AIS\\AI\\Prod\\backups\\pb_lsp"
+  },
+  "features": {
+    "sqlValidation": true,
+    "incrementalIndex": true,
+    "documentSymbols": true,
+    "workspaceSymbols": true
+  }
+}

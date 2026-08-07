@@ -7,6 +7,8 @@ alwaysApply: true
 
 > Эталонная реализация: `C:\AIS\AI\Prod\scripts\Show-Appl2Standard.exe` (C# WPF, 149 KB)
 > Исходники: `C:\AIS\AI\Prod\scripts\Show-Appl2Standard-CS\MainWindow.xaml` + `.cs`
+>
+> **ЕДИНЫЙ ДОКУМЕНТ ТРЕБОВАНИЙ (МОРДА/МОРДА2):** `docs\morda-requirements.md` — источник истины по всем вкладкам и операциям МОРДЫ, требованиям к результату, кодировкам, отчётам и логированию. Этот файл — только общий стандарт дизайна ДО.
 
 ## Общие принципы
 

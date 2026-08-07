@@ -128,5 +128,11 @@
     ".opencode/plugins/claude-code.js",
     ".opencode/plugin/loop-guard.js",
     ".opencode/plugin/task-progress.js"
-  ]
+  ],
+  "lsp": {
+    "pb_lsp": {
+      "command": ["C:\\AIS\\AI\\PB_LSP\\bin\\LspProxy.exe", "--pipe"],
+      "extensions": [".srw", ".sru", ".srd", ".srf", ".srm", ".srs", ".sql"]
+    }
+  }
 }

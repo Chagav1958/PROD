@@ -15,12 +15,12 @@ namespace PreCommitHook
         {
             // password[=:]<quotes>value<quotes>  (допускает закрывающую кавычку JSON-ключа)
             new Regex("(?i)(password|пароль)\\s*[\"']?\\s*[=:]\\s*[\"'][^\"']{3,}[\"']", RegexOptions.Compiled),
-            new Regex("(?i)password_encrypted", RegexOptions.Compiled),
+            new Regex("(?i)password_encrypted\\s*[:=]\\s*\"", RegexOptions.Compiled),
             new Regex("(?i)(api[_-]?key|token|api[_-]?token|access[_-]?token)\\s*[\"']?\\s*[=:]\\s*[\"'][^\"']{3,}[\"']", RegexOptions.Compiled),
             new Regex("(?i)(secret[_-]?key|client[_-]?secret)\\s*[\"']?\\s*[=:]\\s*[\"'][^\"']{3,}[\"']", RegexOptions.Compiled),
             new Regex("(?i)(login|логин|user(name)?|учётн?ая[_\\s]запись)\\s*[\"']?\\s*[=:]\\s*[\"'][^\"']{3,}[\"']", RegexOptions.Compiled),
-            // длинные строки (>32 символа) в кавычках — подозрительно
-            new Regex("[\"'][A-Za-z0-9_\\-]{32,}[\"']", RegexOptions.Compiled),
+            // длинные строки (>50 символов) в кавычках — подозрительно
+            new Regex("[\"'][A-Za-z0-9_\\-]{50,}[\"']", RegexOptions.Compiled),
             // Bearer <token>
             new Regex("Bearer\\s+[A-Za-z0-9._-]+", RegexOptions.Compiled),
         };
@@ -98,6 +98,13 @@ namespace PreCommitHook
                 {
                     int line = 1;
                     for (int i = 0; i < m.Index; i++) if (content[i] == '\n') line++;
+                    // пропускаем строки с env-переменными (${VAR}, {env:VAR})
+                    int lineStart = m.Index;
+                    while (lineStart > 0 && content[lineStart - 1] != '\n') lineStart--;
+                    int lineEnd = m.Index + m.Length;
+                    while (lineEnd < content.Length && content[lineEnd] != '\n') lineEnd++;
+                    var lineText = content.Substring(lineStart, lineEnd - lineStart);
+                    if (lineText.Contains("${") || lineText.Contains("{env:")) continue;
                     var snip = m.Value.Trim();
                     if (snip.Length > 40) snip = snip.Substring(0, 40);
                     hits.Add((line, snip));

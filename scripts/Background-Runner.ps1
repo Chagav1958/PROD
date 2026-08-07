@@ -111,28 +111,7 @@ function Start-BackgroundOperation {
                         })
                         Write-TechJournal "DEBUG" "PHASE: $($data.PhaseName) = $percent%"
                     }
-                    # Парсим ###STEP###текст|значение###
-                    elseif ($line -match '###STEP###(.+?)\|(\d+)###') {
-                        $data.StepName = $matches[1]
-                        $percent = [int]$matches[2]
-                        $data.LastStepPercent = $percent
-
-                        # Обновляем UI через Dispatcher
-                        $data.StepBar.Dispatcher.Invoke({
-                            $data.StepBar.Value = $percent
-                            $data.StepLabel.Text = "$($data.StepName) [$percent%]"
-                        })
-                        Write-TechJournal "DEBUG" "STEP: $($data.StepName) = $percent%"
-                    }
                 }
-            }
-
-            # Если прогресс ещё не начался, показываем что выполняется
-            if ($data.LastPhasePercent -eq 0) {
-                $data.PhaseLabel.Dispatcher.Invoke({
-                    $data.PhaseLabel.Text = "Выполнение: $($data.OpName)..."
-                    $data.StepLabel.Text = "Обработка..."
-                })
             }
         }
     })

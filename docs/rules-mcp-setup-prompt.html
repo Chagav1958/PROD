@@ -1,0 +1,314 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>rules-mcp-setup-prompt</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<p>Настроить MCP-сервер rules-mcp на другом ПК. Пошаговая инструкция.</p>
+<br>
+<h2>Шаг 1: Исправить opencode.jsonc (если ошибка mcpServers)</h2>
+<br>
+<p>Если при запуске OpenCode ошибка &quot;Unrecognized key: mcpServers&quot; —</p>
+<p>в файле opencode.jsonc заменить ключ &quot;mcpServers&quot; на &quot;mcp&quot;.</p>
+<br>
+<h2>Шаг 2: Записать файл server.py</h2>
+<br>
+<p>Путь: C:\AIS\AI\rules-mcp\rules_mcp\server.py</p>
+<br>
+<p>Скопировать весь текст ниже и записать в этот файл (UTF-8 без BOM):</p>
+<br>
+<p>--- НАЧАЛО ФАЙЛА server.py ---</p>
+<br>
+<p>&quot;&quot;&quot;</p>
+<p>rules-mcp -- MCP-сервер правил проекта AIS.</p>
+<p>Предоставляет инструменты для поиска багов, кодировок, сокращений и preflight-проверок.</p>
+<p>Запуск: python -m rules_mcp.server</p>
+<p>&quot;&quot;&quot;</p>
+<p>from __future__ import annotations</p>
+<br>
+<p>import os</p>
+<p>import re</p>
+<p>from pathlib import Path</p>
+<br>
+<p>from fastmcp import FastMCP</p>
+<br>
+<p>mcp = FastMCP(&quot;rules-mcp&quot;)</p>
+<br>
+<p>PROD_ROOT = Path(os.environ.get(&quot;AIS_PROD_ROOT&quot;, r&quot;C:\AIS\AI\Prod&quot;))</p>
+<br>
+<p>_changelog_cache: list[str] | None = None</p>
+<p>_abbrev_cache: dict[str, str] | None = None</p>
+<br>
+<br>
+<p>def _get_changelog() -&gt; list[str]:</p>
+<p>    global _changelog_cache</p>
+<p>    if _changelog_cache is None:</p>
+<p>        path = PROD_ROOT / &quot;rules&quot; / &quot;changelog.md&quot;</p>
+<p>        if path.exists():</p>
+<p>            text = path.read_text(encoding=&quot;utf-8&quot;)</p>
+<p>            _changelog_cache = text.splitlines()</p>
+<p>        else:</p>
+<p>            _changelog_cache = []</p>
+<p>    return _changelog_cache</p>
+<br>
+<br>
+<p>def _get_abbreviations() -&gt; dict[str, str]:</p>
+<p>    global _abbrev_cache</p>
+<p>    if _abbrev_cache is None:</p>
+<p>        path = PROD_ROOT / &quot;rules&quot; / &quot;abbreviations.md&quot;</p>
+<p>        if path.exists():</p>
+<p>            text = path.read_text(encoding=&quot;utf-8&quot;)</p>
+<p>            _abbrev_cache = _parse_abbreviations(text)</p>
+<p>        else:</p>
+<p>            _abbrev_cache = {}</p>
+<p>    return _abbrev_cache</p>
+<br>
+<br>
+<p>_ABBR_HEADER_KEYS = {</p>
+<p>    &quot;сокращение&quot;, &quot;имя&quot;, &quot;тип&quot;, &quot;статус&quot;, &quot;утилита&quot;, &quot;команда&quot;,</p>
+<p>    &quot;файл&quot;, &quot;термин&quot;, &quot;полное имя / путь&quot;, &quot;значение&quot;, &quot;как завершить&quot;,</p>
+<p>    &quot;копирование&quot;, &quot;сохранение в файл&quot;, &quot;команда для модели&quot;,</p>
+<p>}</p>
+<br>
+<br>
+<p>def _parse_abbreviations(text: str) -&gt; dict[str, str]:</p>
+<p>    result: dict[str, str] = {}</p>
+<p>    for line in text.splitlines():</p>
+<p>        stripped = line.strip()</p>
+<p>        if not stripped.startswith(&quot;|&quot;):</p>
+<p>            continue</p>
+<p>        cells = [c.strip() for c in stripped.strip(&quot;|&quot;).split(&quot;|&quot;)]</p>
+<p>        if len(cells) &lt; 2:</p>
+<p>            continue</p>
+<p>        key_raw, value = cells[0], cells[1]</p>
+<p>        if key_raw and set(key_raw) &lt;= set(&quot;-: &quot;):</p>
+<p>            continue</p>
+<p>        key_clean = key_raw.replace(&quot;**&quot;, &quot;&quot;).replace(&quot;`&quot;, &quot;&quot;).replace(&quot;\\&quot;, &quot;&quot;).strip()</p>
+<p>        if not key_clean:</p>
+<p>            continue</p>
+<p>        if key_clean.lower() in _ABBR_HEADER_KEYS:</p>
+<p>            continue</p>
+<p>        for alias in key_clean.split(&quot;/&quot;):</p>
+<p>            alias = alias.strip()</p>
+<p>            if alias:</p>
+<p>                result[alias] = value</p>
+<p>    return result</p>
+<br>
+<br>
+<p>def _extract_bug_entries(lines: list[str], keyword: str) -&gt; list[dict[str, str]]:</p>
+<p>    kw = keyword.lower()</p>
+<p>    entries: list[dict[str, str]] = []</p>
+<p>    current: dict[str, str] = {}</p>
+<p>    for line in lines:</p>
+<p>        stripped = line.strip()</p>
+<p>        if stripped.startswith(&quot;## &quot;) or stripped.startswith(&quot;### &quot;):</p>
+<p>            if current:</p>
+<p>                if kw in current.get(&quot;text&quot;, &quot;&quot;).lower() or kw in current.get(&quot;title&quot;, &quot;&quot;).lower():</p>
+<p>                    entries.append(current)</p>
+<p>            current = {&quot;title&quot;: stripped.lstrip(&quot;# &quot;).strip(), &quot;text&quot;: &quot;&quot;}</p>
+<p>        elif current:</p>
+<p>            current[&quot;text&quot;] += line + &quot;\n&quot;</p>
+<p>    if current and (kw in current.get(&quot;text&quot;, &quot;&quot;).lower() or kw in current.get(&quot;title&quot;, &quot;&quot;).lower()):</p>
+<p>        entries.append(current)</p>
+<p>    return entries[-8:] if len(entries) &gt; 8 else entries</p>
+<br>
+<br>
+<p>ENCODING_TABLE = {</p>
+<p>    &quot;.ps1&quot;:   {&quot;encoding&quot;: &quot;UTF-8&quot;, &quot;bom&quot;: &quot;с BOM (обязательно)&quot;, &quot;note&quot;: &quot;Без BOM - PS 5.1 читает как CP1251 - кракозябры&quot;},</p>
+<p>    &quot;.json&quot;:  {&quot;encoding&quot;: &quot;UTF-8&quot;, &quot;bom&quot;: &quot;без BOM (обязательно)&quot;, &quot;note&quot;: &quot;С BOM - Bug-044: OpenCode не грузит плагины&quot;},</p>
+<p>    &quot;.jsonc&quot;: {&quot;encoding&quot;: &quot;UTF-8&quot;, &quot;bom&quot;: &quot;без BOM (обязательно)&quot;, &quot;note&quot;: &quot;С BOM - Bug-044: OpenCode не грузит плагины&quot;},</p>
+<p>    &quot;.sql&quot;:   {&quot;encoding&quot;: &quot;Windows-1251 (ANSI)&quot;, &quot;bom&quot;: &quot;нет&quot;, &quot;note&quot;: &quot;Стандартная кодировка SQL-файлов проекта&quot;},</p>
+<p>    &quot;.bat&quot;:   {&quot;encoding&quot;: &quot;Windows-1251 (ANSI)&quot;, &quot;bom&quot;: &quot;нет&quot;, &quot;note&quot;: &quot;Стандартная кодировка bat-файлов&quot;},</p>
+<p>    &quot;.md&quot;:    {&quot;encoding&quot;: &quot;UTF-8&quot;, &quot;bom&quot;: &quot;без BOM&quot;, &quot;note&quot;: &quot;Документация&quot;},</p>
+<p>}</p>
+<br>
+<p>RULE_MAP = {</p>
+<p>    &quot;кодировка&quot;: &quot;&quot;&quot;</p>
+<h2>Кодировка файлов (из AGENTS.md)</h2>
+<p>.ps1  - UTF-8 с BOM (PS 5.1 иначе кракозябры)</p>
+<p>.json - UTF-8 без BOM (Bug-044: OpenCode не грузит плагины)</p>
+<p>.sql  - Windows-1251 (ANSI)</p>
+<p>.bat  - Windows-1251 (ANSI)</p>
+<p>.md   - UTF-8 без BOM</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;bash&quot;: &quot;&quot;&quot;</p>
+<h2>Запуск PowerShell из bash tool</h2>
+<p>ВСЕГДА:   powershell -NoLogo [-File script.ps1]</p>
+<p>НИКОГДА:  -NoProfile (Bug-046: ломает UTF-8 вывод)</p>
+<p>Команды с $, {}, вложенными кавычками -&gt; только через -File script.ps1</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;ps5.1&quot;: &quot;&quot;&quot;</p>
+<h2>Ограничения PS 5.1</h2>
+<p>- НЕ использовать: ??, ??=, ?. - только if/else</p>
+<p>- Функции ДО вызова (PS 5.1 не hoist-ит) - Bug-041</p>
+<p>- | в строках парсится как pipe - Bug-026</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;preflight&quot;: &quot;&quot;&quot;</p>
+<h2>Preflight перед записью</h2>
+<p>1. .ps1 -&gt; ДОБАВИТЬ BOM</p>
+<p>2. .json/.jsonc -&gt; УБРАТЬ BOM</p>
+<p>3. .sql/.bat -&gt; Windows-1251</p>
+<p>4. bash с $ или {} -&gt; ЧЕРЕЗ -File script.ps1</p>
+<p>5. oldString != newString перед edit (Bug-039)</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;task&quot;: &quot;&quot;&quot;</p>
+<h2>Правило TASK</h2>
+<p>TASK &lt;имя&gt; [&lt;папка&gt;], по умолчанию: C:\\AIS\\1 Release</p>
+<p>Git_ = оригиналы, Test_ = изменённые, Ready_ = готовые</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;сохр&quot;: &quot;&quot;&quot;</p>
+<h2>Правило СОХР</h2>
+<p>Save-Snapshot.ps1 -- только по команде &#171;СОХР&#187;.</p>
+<p>Перед правкой opencode.jsonc -- запросить СОХР.</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;pb&quot;: &quot;&quot;&quot;</p>
+<h2>Правила PowerBuilder</h2>
+<p>Редактировать только .sr* в PB_Current.</p>
+<p>Event-ы заканчивать &#39;end event&#39;. Не путать event/function.</p>
+<p>call super:: только при выключенном Extend Ancestor Script.</p>
+<p>Именование: uf_ (функции), ue_ (события), i_/li_/ls_/ld_ (переменные).</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;sql&quot;: &quot;&quot;&quot;</p>
+<h2>Правила SQL (Sybase ASE 15.5)</h2>
+<p>STR_REPLACE (не REPLACE), CHARINDEX (2 аргумента), CHAR_LENGTH (не LEN).</p>
+<p>SELECT TOP N (не LIMIT), SET ROWCOUNT N (сбрасывать!).</p>
+<p>ISNULL (не COALESCE как основной), IDENTITY + @@IDENTITY.</p>
+<p>Временные таблицы: #prefix. Ошибки: @@ERROR + GOTO.</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;vss&quot;: &quot;&quot;&quot;</p>
+<h2>Правила VSS</h2>
+<p>Сервер: ren-msksf01, проект $/SRC125, ss.exe.</p>
+<p>Команды: Status, History, Get, Checkout, Checkin, UndoCheckout.</p>
+<p>Авторизация: -I-Y -Y&quot;user,pass&quot;. Пароль: AES-256 в config.json.</p>
+<p>&quot;&quot;&quot;,</p>
+<p>    &quot;jira&quot;: &quot;&quot;&quot;</p>
+<h2>Правила Jira</h2>
+<p>URL: https://mytask.renins.com</p>
+<p>Таблица: ||Проект||Библиотека||Наименование||Информация|| (4 пайпа).</p>
+<p>NEWPB/OLDPB: Ready_<em> vs Git_</em>. Формат: &quot;изменены: f1, f2&quot;.</p>
+<p>&quot;&quot;&quot;,</p>
+<p>}</p>
+<br>
+<p>SOURCE_MAP = {</p>
+<p>    &quot;pb&quot;:       &quot;.opencode/pb-object-rules.mdc&quot;,</p>
+<p>    &quot;sql&quot;:      &quot;.opencode/sql-rules.mdc&quot;,</p>
+<p>    &quot;vss&quot;:      &quot;.opencode/vss-rules.mdc&quot;,</p>
+<p>    &quot;jira&quot;:     &quot;.opencode/jira-table-rules.mdc&quot;,</p>
+<p>    &quot;project&quot;:  &quot;.opencode/project-context.mdc&quot;,</p>
+<p>    &quot;layout&quot;:   &quot;.opencode/repository-layout.mdc&quot;,</p>
+<p>    &quot;entity&quot;:   &quot;.opencode/entity-reference.mdc&quot;,</p>
+<p>    &quot;glossary&quot;: &quot;.opencode/glossary.mdc&quot;,</p>
+<p>    &quot;preflight&quot;:&quot;.opencode/preflight.mdc&quot;,</p>
+<p>    &quot;russian&quot;:  &quot;.opencode/russian-language.mdc&quot;,</p>
+<p>    &quot;pending&quot;:  &quot;rules/pending-tasks.md&quot;,</p>
+<p>    &quot;agents&quot;:   &quot;AGENTS.md&quot;,</p>
+<p>}</p>
+<br>
+<p>@mcp.tool()</p>
+<p>def search_bug(keyword: str) -&gt; str:</p>
+<p>    &quot;&quot;&quot;Поиск по истории багов (rules/changelog.md). Возвращает до 8 релевантных записей.&quot;&quot;&quot;</p>
+<p>    lines = _get_changelog()</p>
+<p>    entries = _extract_bug_entries(lines, keyword)</p>
+<p>    if not entries:</p>
+<p>        return f&quot;Баги по ключу &#39;{keyword}&#39; не найдены в changelog.md&quot;</p>
+<p>    out = [f&quot;Найдено записей: {len(entries)}\n&quot;]</p>
+<p>    for e in entries:</p>
+<p>        title = e[&quot;title&quot;]</p>
+<p>        text = e[&quot;text&quot;].strip()[:300]</p>
+<p>        out.append(f&quot;## {title}\n{text}\n---&quot;)</p>
+<p>    return &quot;\n&quot;.join(out)</p>
+<br>
+<br>
+<p>@mcp.tool()</p>
+<p>def get_encoding_rule(file_path: str) -&gt; str:</p>
+<p>    &quot;&quot;&quot;Возвращает требования к кодировке для указанного файла.&quot;&quot;&quot;</p>
+<p>    ext = Path(file_path).suffix.lower()</p>
+<p>    if ext in ENCODING_TABLE:</p>
+<p>        info = ENCODING_TABLE[ext]</p>
+<p>        return f&quot;{ext}: {info[&#39;encoding&#39;]}, BOM: {info[&#39;bom&#39;]}\n{info[&#39;note&#39;]}&quot;</p>
+<p>    return f&quot;Неизвестное расширение &#39;{ext}&#39;. Известны: {&#39;, &#39;.join(ENCODING_TABLE.keys())}&quot;</p>
+<br>
+<br>
+<p>@mcp.tool()</p>
+<p>def get_rule(topic: str) -&gt; str:</p>
+<p>    &quot;&quot;&quot;Возвращает краткую сводку правила по теме.</p>
+<p>    Темы: кодировка, bash, ps5.1, preflight, task, сохр, pb, sql, vss, jira, pending, project.&quot;&quot;&quot;</p>
+<p>    tl = topic.lower().strip()</p>
+<p>    if tl in RULE_MAP:</p>
+<p>        return RULE_MAP[tl]</p>
+<p>    available = &quot;, &quot;.join(sorted(RULE_MAP.keys()))</p>
+<p>    return f&quot;Тема &#39;{topic}&#39; не найдена. Доступны: {available}&quot;</p>
+<br>
+<br>
+<p>@mcp.tool()</p>
+<p>def get_full_rule(source: str) -&gt; str:</p>
+<p>    &quot;&quot;&quot;Читает полный текст правила из .mdc или .md файла проекта.</p>
+<p>    Источники: pb, sql, vss, jira, project, layout, entity, glossary, preflight, russian, pending, agents.&quot;&quot;&quot;</p>
+<p>    sl = source.lower().strip()</p>
+<p>    if sl not in SOURCE_MAP:</p>
+<p>        available = &quot;, &quot;.join(sorted(SOURCE_MAP.keys()))</p>
+<p>        return f&quot;Источник &#39;{source}&#39; не найден. Доступны: {available}&quot;</p>
+<p>    rel_path = SOURCE_MAP[sl]</p>
+<p>    full_path = PROD_ROOT / rel_path</p>
+<p>    if not full_path.exists():</p>
+<p>        return f&quot;Файл не найден: {full_path}&quot;</p>
+<p>    try:</p>
+<p>        text = full_path.read_text(encoding=&quot;utf-8&quot;)</p>
+<p>    except UnicodeDecodeError:</p>
+<p>        text = full_path.read_text(encoding=&quot;cp1251&quot;)</p>
+<p>    lines = text.splitlines()</p>
+<p>    if len(lines) &gt; 300:</p>
+<p>        text = &quot;\n&quot;.join(lines[:300]) + f&quot;\n\n... [ещё {len(lines)-300} строк, файл обрезан]&quot;</p>
+<p>    return f&quot;=== {rel_path} ({len(lines)} строк) ===\n\n{text}&quot;</p>
+<br>
+<br>
+<p>@mcp.tool()</p>
+<p>def get_abbreviation(abbr: str) -&gt; str:</p>
+<p>    &quot;&quot;&quot;Возвращает расшифровку сокращения проекта.&quot;&quot;&quot;</p>
+<p>    abbrs = _get_abbreviations()</p>
+<p>    clean = abbr.strip()</p>
+<p>    if clean in abbrs:</p>
+<p>        return f&quot;{clean} -- {abbrs[clean]}&quot;</p>
+<p>    for k, v in abbrs.items():</p>
+<p>        if clean.lower() in k.lower() or k.lower() in clean.lower():</p>
+<p>            return f&quot;{k} -- {v}&quot;</p>
+<p>    total = len(abbrs)</p>
+<p>    return f&quot;Сокращение &#39;{clean}&#39; не найдено. Всего: {total}.&quot;</p>
+<br>
+<br>
+<p>@mcp.tool()</p>
+<p>def preflight_check(file_path: str, operation: str = &quot;write&quot;) -&gt; str:</p>
+<p>    &quot;&quot;&quot;Preflight-проверка перед записью файла.&quot;&quot;&quot;</p>
+<p>    ext = Path(file_path).suffix.lower()</p>
+<p>    lines: list[str] = []</p>
+<p>    if ext in ENCODING_TABLE:</p>
+<p>        info = ENCODING_TABLE[ext]</p>
+<p>        lines.append(f&quot;[КОДИРОВКА] {info[&#39;encoding&#39;]}, BOM: {info[&#39;bom&#39;]}&quot;)</p>
+<p>        lines.append(f&quot;  !! {info[&#39;note&#39;]}&quot;)</p>
+<p>    if ext == &quot;.ps1&quot;:</p>
+<p>        lines.append(&quot;[PS 5.1] Проверить:&quot;)</p>
+<p>        lines.append(&quot;  - Нет ??, ??=, ?.&quot;)</p>
+<p>        lines.append(&quot;  - Функции ДО вызова (Bug-041)&quot;)</p>
+<p>    if ext in (&quot;.ps1&quot;, &quot;.json&quot;, &quot;.jsonc&quot;):</p>
+<p>        if &quot;bash&quot; in operation.lower() or &quot;cmd&quot; in operation.lower():</p>
+<p>            lines.append(&quot;[BASH] powershell -NoLogo (без -NoProfile!)&quot;)</p>
+<p>    if operation.lower() == &quot;edit&quot;:</p>
+<p>        lines.append(&quot;[EDIT] oldString != newString ? (Bug-039)&quot;)</p>
+<p>    if not lines:</p>
+<p>        lines.append(f&quot;Нет специальных правил для &#39;{ext}&#39;.&quot;)</p>
+<p>    return f&quot;=== Preflight: {Path(file_path).name} ({operation}) ===\n&quot; + &quot;\n&quot;.join(lines)</p>
+<br>
+<br>
+<p>if __name__ == &quot;__main__&quot;:</p>
+<p>    mcp.run()</p>
+<br>
+<p>--- КОНЕЦ ФАЙЛА server.py ---</p>
+<br>
+<h2>Шаг 3: Проверить</h2>
+<br>
+<p>1. Проверить синтаксис: python -c &quot;import py_compile; py_compile.compile(r&#39;C:\AIS\AI\rules-mcp\rules_mcp\server.py&#39;, doraise=True)&quot;</p>
+<p>2. Перезапустить OpenCode</p>
+<p>3. Вызвать get_full_rule(&quot;sql&quot;) — должен вернуть полный текст sql-rules.mdc</p>
+<br>
+</body></html>
