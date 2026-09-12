@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>abbreviations-universal</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Универсальный шаблон сокращений проекта</h1>
+<br>
+<p>&gt; <strong>Назначение:</strong> шаблон файла сокращений для переноса на другой ПК или в другой проект. Адаптируйте таблицы под свой проект, сохраняя структуру разделов.</p>
+<p>&gt;</p>
+<p>&gt; <strong>Кодировка:</strong> UTF-8 без BOM.</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Каталоги и наборы исходников</h2>
+<br>
+<table><tr><th>Сокращение</th><th>Полное имя / Путь</th><th>Назначение</th></tr><tr><td><strong>Current</strong></td><td><code>&lt;путь_к_рабочей_версии&gt;</code></td><td>Разрабатываемая версия исходников</td></tr><tr><td><strong>Main</strong></td><td><code>&lt;путь_к_продакшн_версии&gt;</code></td><td>Эталонная (промышленная) версия</td></tr><tr><td><strong>Export_Current</strong></td><td><code>&lt;папка_экспорта_Current&gt;</code></td><td>Экспортированные объекты из Current</td></tr><tr><td><strong>Export_Main</strong></td><td><code>&lt;папка_экспорта_Main&gt;</code></td><td>Экспортированные объекты из Main</td></tr><tr><td><strong>BD_dev</strong></td><td><code>&lt;путь_SQL_экспорта_dev&gt;</code></td><td>SQL-экспорт с сервера разработки</td></tr><tr><td><strong>BD_prod</strong></td><td><code>&lt;путь_SQL_экспорта_prod&gt;</code></td><td>SQL-экспорт с промышленного сервера</td></tr></table>
+<br>
+<p>&gt; <strong>Пример из проекта AIS:</strong> Current = <code>C:\Work\gold</code>, Main = <code>C:\SRC125\gold</code>, PB_Current = <code>PB_Current\</code>, BD/dev_golden = <code>BD\dev_golden\</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Серверы и базы данных</h2>
+<br>
+<table><tr><th>Имя</th><th>Тип</th><th>Назначение</th></tr><tr><td><strong>dev_server</strong></td><td>Сервер СУБД</td><td>Разрабатываемая БД</td></tr><tr><td><strong>prod_server</strong></td><td>Сервер СУБД</td><td>Промышленная БД</td></tr><tr><td><strong>db_name</strong></td><td>База данных</td><td>Имя БД на обоих серверах</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. Типы объектов</h2>
+<br>
+<table><tr><th>Тип</th><th>Расширение</th><th>Описание</th></tr><tr><td><strong>Library</strong></td><td><code>.pbl</code> / <code>.dll</code></td><td>Библиотека компонентов</td></tr><tr><td><strong>Target</strong></td><td><code>.pbt</code> / <code>.exe</code></td><td>Целевой файл сборки</td></tr><tr><td><strong>Export</strong></td><td><code>.sr*</code></td><td>Экспортированные объекты</td></tr><tr><td><strong>Procedure</strong></td><td><code>.sql</code></td><td>Хранимая процедура</td></tr><tr><td><strong>Function</strong></td><td><code>.sql</code></td><td>Функция</td></tr><tr><td><strong>Trigger</strong></td><td><code>.sql</code></td><td>Триггер</td></tr><tr><td><strong>View</strong></td><td><code>.sql</code></td><td>Представление</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. Статусы проверки объектов</h2>
+<br>
+<table><tr><th>Статус</th><th>Значение</th></tr><tr><td><strong>READY</strong></td><td>Объект готов к выводу в продакшн</td></tr><tr><td><strong>NOT_READY</strong></td><td>Объект не готов</td></tr><tr><td><strong>NEW_OBJECT</strong></td><td>Новый объект (отсутствует в продакшн)</td></tr><tr><td><strong>SAME_AS_PROD</strong></td><td>Совпадает с продакшн</td></tr><tr><td><strong>DIFF</strong></td><td>Объекты различаются</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Утилиты и инструменты</h2>
+<br>
+<table><tr><th>Утилита</th><th>Назначение</th></tr><tr><td><strong>isql</strong></td><td>Командная утилита СУБД</td></tr><tr><td><strong>VCS_tool</strong></td><td>Система контроля версий</td></tr><tr><td><strong>DiffTool</strong></td><td>Визуальное сравнение файлов</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>6. Команды и промпты</h2>
+<br>
+<table><tr><th>Сокращение</th><th>Значение</th><th>Подробнее</th></tr><tr><td><strong>TASK</strong></td><td>Начать задачу</td><td>Создание структуры папок, плана, выгрузка оригиналов</td></tr><tr><td><strong>OUT / ОБР</strong></td><td>Анализ вывода</td><td>Чтение лога ошибок и автоисправление</td></tr><tr><td><strong>СОКР</strong></td><td>Показать сокращения</td><td>Скрипт вывода списка сокращений</td></tr><tr><td><strong>ОО</strong></td><td>Продолжить / проверить задачи</td><td>Завершить список задач</td></tr><tr><td><strong>РР / RR</strong></td><td>Принудительно русский</td><td>Переключение языка модели</td></tr><tr><td><strong>ДО</strong></td><td>Диалоговое окно</td><td>GUI-окно сервиса</td></tr><tr><td><strong>ОП</strong></td><td>Операция</td><td>Вкладка главного окна, нумерация 1-based</td></tr><tr><td><strong>ПБ</strong></td><td>Прогресс-бар</td><td>Индикатор выполнения</td></tr><tr><td><strong>СТАРТ</strong></td><td>Preflight-проверка</td><td>Проверка перед записью файлов</td></tr><tr><td><strong>СОХР</strong></td><td>Архив проекта</td><td>Создание снапшота</td></tr><tr><td><strong>ЗАПОМНИ</strong></td><td>Запомнить правило</td><td>Анализ и сохранение правила</td></tr><tr><td><strong>FIXSHOW</strong></td><td>Статусы EDIT/FIXED</td><td>Показать/изменить статусы операций</td></tr><tr><td><strong>GITHUB</strong></td><td>Обновить Git</td><td>Add + commit + push</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. Структура папок задачи</h2>
+<br>
+<table><tr><th>Папка</th><th>Назначение</th></tr><tr><td><code>Git_YYYY_MM_DD</code></td><td>Оригиналы объектов (для сравнения)</td></tr><tr><td><code>Test_YYYY_MM_DD</code></td><td>Готовые объекты для тестирования</td></tr><tr><td><code>DIAG_YYYY_MM_DD_hh_mm</code></td><td>Объекты для диагностики</td></tr><tr><td><code>Ready_YYYY_MM_DD</code></td><td>Готовые объекты (после тестирования)</td></tr><tr><td><code>Read_YYYY_MM_DD</code></td><td>Объекты, готовые к выводу в продакшн</td></tr><tr><td><code>Describe\</code></td><td>Описания изменений и анализы</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>8. Термины</h2>
+<br>
+<table><tr><th>Термин</th><th>Описание</th></tr><tr><td><strong>ОП</strong></td><td>Операция — вкладка главного окна, открывается при выборе. Нумерация 1-based</td></tr><tr><td><strong>ДО</strong></td><td>Диалоговое окно сервиса</td></tr><tr><td><strong>TaskName</strong></td><td>Имя задачи из трекера</td></tr><tr><td><strong>Golden</strong></td><td>Основная БД проекта</td></tr><tr><td><strong>МОРДА</strong></td><td>Главное окно приложения</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>9. Правила работы с задачами</h2>
+<br>
+<table><tr><th>Сокращение</th><th>Описание</th></tr><tr><td><strong>TODOWRITE</strong></td><td>Инструмент отслеживания прогресса задач</td></tr><tr><td><strong>ПРОДОБР</strong></td><td>Продолжение обработки по утверждённому плану</td></tr><tr><td><strong>ЦИКЛ N</strong></td><td>Автоисправление операции N</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>Адаптация под проект</h2>
+<br>
+<p>При переносе в другой проект:</p>
+<br>
+<p>1. Замените пути в разделе 1 на актуальные для нового ПК.</p>
+<p>2. Обновите имена серверов и БД в разделе 2.</p>
+<p>3. Добавьте специфичные для проекта типы объектов.</p>
+<p>4. Дополните список команд своими сокращениями.</p>
+<p>5. Убедитесь, что все сокращения используются единообразно в правилах и документации.</p>
+<br>
+</body></html>

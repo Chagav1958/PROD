@@ -1,0 +1,346 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>gui-standards</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Стандарты разработки визуальных форм и диалоговых окон (ДО)</h1>
+<br>
+<p>&gt; <strong>Назначение:</strong> единый стандарт дизайна и разработки ДО для переноса в другие проекты. Определяет внешний вид, поведение, логирование и тестирование.</p>
+<p>&gt;</p>
+<p>&gt; <strong>Технология:</strong> любая (C# WPF, Python, PowerShell), но внешний вид — строго по стандарту.</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Общие принципы</h2>
+<br>
+<p>1. <strong>Окно непрозрачное</strong>, полупрозрачность — только Title bar и элементы управления (альфа-канал <code>#CC</code> = 80% или <code>#80</code> = 50%).</p>
+<p>2. <strong>Title bar темнее окна</strong> по цвету и полупрозрачный.</p>
+<p>3. Все элементы (кнопки, прогресс-бары) — полупрозрачные с градиентами и бликами (3D-эффект).</p>
+<p>4. <strong>Технический журнал</strong> обязателен для каждого ДО.</p>
+<p>5. <strong>Автотестирование</strong> через <code>--autotest &lt;file&gt;</code> — обязательное требование.</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Окно (Window)</h2>
+<br>
+<table><tr><th>Свойство</th><th>Значение</th></tr><tr><td>AllowsTransparency</td><td><code>True</code></td></tr><tr><td>WindowStyle</td><td><code>None</code> (без системной рамки)</td></tr><tr><td>Background</td><td><code>#E8ECF0</code> (серо-голубой, непрозрачный)</td></tr><tr><td>ResizeMode</td><td><code>CanResizeWithGrip</code></td></tr><tr><td>Topmost</td><td><code>True</code></td></tr><tr><td>Размер по умолчанию</td><td>520&#215;580</td></tr><tr><td>Скругление углов</td><td>Win32 <code>CreateRoundRectRgn</code>, радиус 18px (эллипс 36&#215;36)</td></tr><tr><td>Тень</td><td><code>DropShadowEffect Color=#404040 Direction=270 ShadowDepth=4 BlurRadius=10 Opacity=0.5</code></td></tr><tr><td>Внешняя рамка</td><td><code>BorderBrush=#1A3A60 BorderThickness=1</code></td></tr></table>
+<br>
+<h3>Скругление углов (Win32 API)</h3>
+<br>
+<pre>
+IntPtr hRgn = CreateRoundRectRgn(0, 0, w + 1, h + 1, 36, 36);
+
+SetWindowRgn(hWnd, hRgn, true);
+
+DeleteObject(hRgn);
+
+</pre>
+<br>
+<p>Пересчитывать при <code>SizeChanged</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Title bar (заголовок окна)</h2>
+<br>
+<table><tr><th>Свойство</th><th>Значение</th></tr><tr><td>Высота</td><td>40px</td></tr><tr><td>Background</td><td><code>#807080B0</code> (50% deep blue-gray, полупрозрачный)</td></tr><tr><td>CornerRadius</td><td><code>17,17,0,0</code></td></tr><tr><td>Нижняя рамка</td><td><code>BorderBrush=#1A3A60 BorderThickness=0,0,0,1</code></td></tr><tr><td>Перетаскивание</td><td><code>MouseLeftButtonDown</code> → <code>DragMove()</code>; DoubleClick → <code>ToggleMaximize()</code></td></tr></table>
+<br>
+<h3>Текст заголовка (3D-эффект)</h3>
+<br>
+<p>Два слоя:</p>
+<p>1. <strong>Нижний слой:</strong> белый (White) + смещение (Margin=&quot;3,2,0,0&quot;), Opacity=&quot;0.9&quot; — тень</p>
+<p>2. <strong>Верхний слой:</strong> <code>#1A3A60</code> (тёмно-синий) — основной текст</p>
+<br>
+<p>Шрифт: Segoe UI, 14px, Bold.</p>
+<br>
+<h3>Кнопки управления окном</h3>
+<br>
+<table><tr><th>Кнопка</th><th>Символ</th><th>Действие</th></tr><tr><td>Свернуть</td><td><code>━</code></td><td><code>WindowState.Minimized</code></td></tr><tr><td>Развернуть</td><td><code>☐</code></td><td><code>ToggleMaximize()</code></td></tr><tr><td>Закрыть</td><td><code>✕</code></td><td><code>Close()</code></td></tr></table>
+<br>
+<p>Стиль: <code>Background=&quot;Transparent&quot; Foreground=&quot;#1A3A60&quot; BorderThickness=&quot;0&quot; Cursor=&quot;Hand&quot;</code>, размер 40&#215;36px.</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Кнопки (Glossy 3D)</h2>
+<br>
+<h3>Primary (OK, Сохранить и т.п.)</h3>
+<br>
+<pre>
+CornerRadius = 10
+
+Внешняя рамка: #CC0F3050 (80%)
+
+Градиент (3-stop): #CC9DC8F0 → #CC3B7BBF → #CC1A4A7A
+
+Блик сверху: белый градиент #E0FFFFFF → #00FFFFFF, высота 7px
+
+Текст: White, Bold, 11px
+
+Размер: 120&#215;38px
+
+</pre>
+<br>
+<h3>Secondary (Отмена, Назад и т.п.)</h3>
+<br>
+<pre>
+CornerRadius = 10
+
+Внешняя рамка: #CC404040 (80%)
+
+Градиент: #CCD0D0D0 → #CC909090 → #CC606060
+
+Блик сверху: белый градиент #E0FFFFFF → #00FFFFFF, высота 7px
+
+Текст: White, Bold, 11px
+
+Размер: 120&#215;38px
+
+</pre>
+<br>
+<h3>Small (▼/▲ поиск)</h3>
+<br>
+<p>Те же стили, размер 30&#215;26px, FontSize=11.</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. Прогресс-бар (ПБ)</h2>
+<br>
+<table><tr><th>Свойство</th><th>Значение</th></tr><tr><td>Height</td><td>18px</td></tr><tr><td>CornerRadius (рамка)</td><td>4</td></tr><tr><td>CornerRadius (трек)</td><td>3</td></tr><tr><td>Рамка</td><td><code>#CC0F3050</code> (80%), Padding=1.5</td></tr><tr><td>Трек (фон)</td><td><code>#E2E8F0</code></td></tr></table>
+<br>
+<h3>Индикатор (заполненная часть)</h3>
+<br>
+<p>- Градиент (4-stop): <code>#CCB8D8F8</code> → <code>#CC3B7BBF</code> → <code>#CC1A4A7A</code> → <code>#CC0F3050</code></p>
+<p>- Правая рамка: <code>BorderBrush=#CC1A3A60 BorderThickness=0,0,1,0</code></p>
+<p>- Блик сверху: белый градиент <code>#C0FFFFFF</code> → <code>#00FFFFFF</code></p>
+<p>- Тень снизу: <code>#30000000</code> → <code>#80000000</code>, высота 3px</p>
+<br>
+<h3>КРИТИЧЕСКОЕ: горизонтальный объём</h3>
+<br>
+<p>Блик и тень идут <strong>по горизонтали</strong> (слева направо), создавая эффект трубы/стержня. Вертикальный объём (блик сверху) — <strong>запрещён</strong>.</p>
+<br>
+<h3>Текст поверх ПБ</h3>
+<br>
+<p>Обязателен: подписи фаз и шагов отображаются ПОВЕРХ самого ПБ (белый текст с тенью). Обновление через <code>DispatcherTimer</code>; текст обновляется всегда, включая <code>Value=0</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. DataGrid / Таблица</h2>
+<br>
+<table><tr><th>Свойство</th><th>Значение</th></tr><tr><td>VerticalScrollBarVisibility</td><td><code>Visible</code></td></tr><tr><td>HorizontalScrollBarVisibility</td><td><code>Visible</code></td></tr><tr><td>CanContentScroll</td><td><code>True</code></td></tr><tr><td>AlternatingRowBackground</td><td><code>#F5F7FA</code></td></tr><tr><td>RowBackground</td><td><code>White</code></td></tr><tr><td>BorderBrush</td><td><code>#CBD5E0</code></td></tr><tr><td>SelectionMode</td><td><code>Single</code>, <code>FullRow</code></td></tr></table>
+<br>
+<h3>Layout — вертикальный скролл + фиксация низа</h3>
+<br>
+<pre>
+&lt;Grid.RowDefinitions&gt;
+
+    &lt;RowDefinition Height=&quot;Auto&quot;/&gt;   &lt;!-- 0: верхняя панель --&gt;
+
+    &lt;RowDefinition Height=&quot;*&quot;/&gt;      &lt;!-- 1: DataGrid (заполняет остаток) --&gt;
+
+    &lt;RowDefinition Height=&quot;Auto&quot;/&gt;   &lt;!-- 2: ProgressBar (всегда внизу) --&gt;
+
+    &lt;RowDefinition Height=&quot;Auto&quot;/&gt;   &lt;!-- 3: Кнопки (всегда внизу) --&gt;
+
+&lt;/Grid.RowDefinitions&gt;
+
+</pre>
+<br>
+<p>DataGrid в <code>Height=&quot;*&quot;</code>, ПБ и кнопки в <code>Height=&quot;Auto&quot;</code> после него. Это гарантирует:</p>
+<p>- DataGrid скроллится вертикально при переполнении</p>
+<p>- ПБ и кнопки всегда видны при любом размере окна</p>
+<br>
+<p>---</p>
+<br>
+<h2>7. Поля ввода (Text/Password/Combo)</h2>
+<br>
+<pre>
+Рамка: BorderBrush=&quot;#CBD5E0&quot;, BorderThickness=1, CornerRadius=10
+
+Внутри: Padding=6,4
+
+Шрифт: 11px
+
+Подпись: 10px, #4A5568
+
+</pre>
+<br>
+<p>Пароль <strong>никогда не выводится</strong> в журнал/отчёты (в техжурнале <code>pwd=***</code>).</p>
+<br>
+<p>---</p>
+<br>
+<h2>8. Панель поиска</h2>
+<br>
+<pre>
+Счётчик: &quot;N - M&quot; (#4A5568, 11px)
+
+Поле ввода: Height=26, FontSize=11
+
+Кнопки: ▼ (search_down) / ▲ (search_up) — Small Glossy 3D
+
+Enter → search_down
+
+</pre>
+<br>
+<p>Логика:</p>
+<p>- При вводе текста — фильтрация строк DataGrid</p>
+<p>- При нажатии ▼/▲ — навигация по совпадениям с подсветкой и скроллом</p>
+<p>- Поиск case-insensitive по всем колонкам</p>
+<br>
+<p>---</p>
+<br>
+<h2>9. Resize (изменение размера)</h2>
+<br>
+<p>Через <code>WM_NCHITTEST</code> в <code>WndProc</code>:</p>
+<p>- RESIZE_MARGIN = 8px</p>
+<p>- Все 8 направлений: HTLEFT, HTRIGHT, HTTOP, HTBOTTOM + 4 угла</p>
+<p>- Title bar drag: <code>HTCAPTION</code> при Y &lt; 42 (исключая края)</p>
+<br>
+<p>---</p>
+<br>
+<h2>10. Цветовая схема</h2>
+<br>
+<table><tr><th>Элемент</th><th>Цвет</th></tr><tr><td>Окно (фон)</td><td><code>#E8ECF0</code></td></tr><tr><td>Title bar</td><td><code>#807080B0</code> (50% deep blue-gray)</td></tr><tr><td>Внешняя рамка</td><td><code>#1A3A60</code></td></tr><tr><td>Текст заголовка</td><td><code>#1A3A60</code> + белая тень</td></tr><tr><td>Рамки полей/таблицы</td><td><code>#CBD5E0</code></td></tr><tr><td>Текст</td><td><code>#4A5568</code></td></tr><tr><td>Кнопка Primary</td><td><code>#CC0F3050</code> + градиент</td></tr><tr><td>Кнопка Secondary</td><td><code>#CC404040</code> + градиент</td></tr><tr><td>ПБ трек</td><td><code>#E2E8F0</code></td></tr><tr><td>ПБ индикатор</td><td><code>#CC0F3050</code> + градиент</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>11. Технический журнал (tech_journal)</h2>
+<br>
+<p><strong>ОБЯЗАТЕЛЬНО</strong> для каждого ДО:</p>
+<br>
+<p>- При запуске создаёт <code>tech_journal_yyyyMMdd_HHmmss.log</code> рядом с exe/скриптом</p>
+<p>- Формат строки: <code>[HH:mm:ss.fff] [LEVEL] сообщение</code></p>
+<p>- Уровни: <code>INFO</code>, <code>ERROR</code>, <code>CLICK</code>, <code>AUTOTEST</code></p>
+<p>- Логирование потокобезопасно (lock)</p>
+<br>
+<h3>Обязательные записи при запуске</h3>
+<br>
+<pre>
+[INFO] Window constructed
+
+[INFO] EXE path: &lt;путь&gt;
+
+[INFO] Args: &lt;аргументы&gt;
+
+[INFO] Loaded &lt;N&gt; rows (если есть данные)
+
+</pre>
+<br>
+<h3>Обязательные записи при работе</h3>
+<br>
+<p>- Взаимодействие: <code>[CLICK] &lt;ok|cancel|search_down|search_up|min|max|close&gt;</code></p>
+<p>- Ошибки: <code>[ERROR] &lt;описание&gt;</code> с try-catch во всех обработчиках</p>
+<p>- Изменение размера: <code>[INFO] SizeChanged: &lt;W&gt;x&lt;H&gt;</code></p>
+<br>
+<p>---</p>
+<br>
+<h2>12. Автотестирование — обязательное требование</h2>
+<br>
+<h3>12.1. Каждое ДО должно поддерживать `--autotest <file>`</h3>
+<br>
+<p>При запуске с аргументом <code>--autotest &lt;путь_к_файлу&gt;</code> ДО:</p>
+<p>1. Загружает команды из файла (построчно)</p>
+<p>2. Выполняет их последовательно с паузой 300ms между командами</p>
+<p>3. Все действия логируются в tech_journal</p>
+<p>4. После выполнения всех команд — автозакрытие окна (через 500ms)</p>
+<br>
+<h3>12.2. Команды автотеста</h3>
+<br>
+<table><tr><th>Команда</th><th>Описание</th></tr><tr><td><code>log &lt;text&gt;</code></td><td>Запись в tech_journal</td></tr><tr><td><code>wait &lt;ms&gt;</code></td><td>Пауза (Thread.Sleep)</td></tr><tr><td><code>click &lt;name&gt;</code></td><td>Клик по кнопке</td></tr><tr><td><code>set_text &lt;val&gt;</code></td><td>Заполнить текстовое поле</td></tr><tr><td><code>set_pwd &lt;val&gt;</code></td><td>Заполнить пароль</td></tr><tr><td><code>set_search &lt;val&gt;</code></td><td>Заполнить поиск</td></tr><tr><td><code>search_down</code></td><td>Поиск вниз</td></tr><tr><td><code>search_up</code></td><td>Поиск вверх</td></tr><tr><td><code>move &lt;x,y&gt;</code></td><td>Переместить окно</td></tr><tr><td><code>resize &lt;w,h&gt;</code></td><td>Изменить размер</td></tr><tr><td><code>scroll &lt;row,col&gt;</code></td><td>Скролл таблицы</td></tr><tr><td><code>close</code></td><td>Закрыть окно</td></tr></table>
+<br>
+<h3>12.3. Три обязательных этапа тестирования</h3>
+<br>
+<p><strong>КРИТИЧЕСКОЕ ТРЕБОВАНИЕ:</strong> запрещено докладывать об успешном выполнении без прохождения всех этапов.</p>
+<br>
+<h4>Этап 1 — Тест открытия</h4>
+<p>- Запустить ДО с <code>--autotest</code></p>
+<p>- Убедиться, что tech_journal создался</p>
+<p>- Проверить, что нет ERROR в логе</p>
+<br>
+<h4>Этап 2 — Тест новой функциональности</h4>
+<p>- Для каждого пункта из промпта — команда в автотесте</p>
+<p>- Проверить, что функция работает без ошибок</p>
+<br>
+<h4>Этап 3 — Регрессия</h4>
+<p>- Базовые функции (открытие, кнопки, закрытие) не сломаны</p>
+<p>- Нет исключений</p>
+<br>
+<h3>12.4. Формат отчёта о тестировании</h3>
+<br>
+<pre>
+### Результаты тестирования:
+
+1. ✅ ДО открывается, tech_journal создан
+
+2. ✅ [Функция 1] работает
+
+3. ✅ [Функция 2] работает
+
+4. ✅ Старый функционал не затронут
+
+</pre>
+<br>
+<h3>12.5. Шаблон реализации автотеста</h3>
+<br>
+<pre>
+// Парсинг аргументов в конструкторе
+
+private void ParseAutoTestArgs()
+
+{
+
+    string[] args = Environment.GetCommandLineArgs();
+
+    for (int i = 1; i &lt; args.Length; i++)
+
+        if (args[i] == &quot;--autotest&quot; &amp;&amp; i + 1 &lt; args.Length)
+
+        {
+
+            string file = args[i + 1];
+
+            if (File.Exists(file))
+
+            {
+
+                _autoTestCommands = File.ReadAllLines(file).ToList();
+
+                _exitAfterAutoTest = true;
+
+            }
+
+        }
+
+}
+
+
+
+// Запуск в Window_Loaded через DispatcherTimer (500ms)
+
+if (_autoTestCommands.Count &gt; 0)
+
+{
+
+    DispatcherTimer t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+
+    t.Tick += (s, ev) =&gt; { t.Stop(); RunAutoTestCommand(); };
+
+    t.Start();
+
+}
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>13. Адаптация под проект</h2>
+<br>
+<p>При переносе в другой проект:</p>
+<br>
+<p>1. Сохраните цветовую схему и размеры — это эталон СТАНДАРТ2.</p>
+<p>2. Адаптируйте команды автотеста под свои элементы управления.</p>
+<p>3. Настройте формат tech_journal под свою систему логирования.</p>
+<p>4. Добавьте специфичные для проекта команды автотеста.</p>
+<p>5. Все ДО должны поддерживать <code>--autotest</code> — это обязательное требование.</p>
+<br>
+</body></html>
