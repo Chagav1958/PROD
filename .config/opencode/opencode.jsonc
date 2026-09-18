@@ -1,3 +1,100 @@
 {
-  "$schema": "https://opencode.ai/config.json"
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "google": {
+      "options": {
+        "apiKey": "{file:secrets/google_api_key.txt}"
+      },
+      "blacklist": [
+        "gemini-3.1-pro-preview-customtools",
+        "gemini-3.1-flash-lite-image",
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-image",
+        "gemini-3.1-pro-preview",
+        "gemini-2.5-computer-use-preview-10-2025",
+        "gemini-3.1-flash-live-preview",
+        "gemini-2.5-pro-preview-tts",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-2.5-flash-preview-tts",
+        "gemini-embedding-001",
+        "gemini-3.1-flash-image",
+        "gemini-3-pro-image-preview",
+        "gemini-3.1-flash-tts-preview",
+        "gemma-4-31b-it",
+        "gemma-4-26b-a4b-it",
+        "gemini-embedding-2",
+        "gemini-3.5-live-translate-preview",
+        "gemini-2.5-pro",
+        "gemini-3.1-flash-image-preview",
+        "gemini-omni-flash-preview"
+      ]
+    }
+  },
+  "model": "google/gemini-3.5-flash",
+  "small_model": "google/gemini-3.1-flash-lite",
+  "mcp": {
+    "atlassian": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\atlassian-mcp\\.venv\\Scripts\\mcp-atlassian.exe"],
+      "enabled": true,
+      "environment": {
+        "JIRA_URL": "https://mytask.renins.com",
+        "JIRA_PERSONAL_TOKEN": "{file:secrets/jira_token.txt}",
+        "CONFLUENCE_URL": "https://wiki.renins.com",
+        "CONFLUENCE_PERSONAL_TOKEN": "",
+        "CONFLUENCE_USERNAME": "vchaga",
+        "CONFLUENCE_API_TOKEN": "{file:secrets/confluence_password.txt}",
+        "READ_ONLY_MODE": "true",
+        "ENABLED_TOOLS": "confluence_search,confluence_get_page,jira_search,jira_get_issue"
+      }
+    },
+    "sybase-docs": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\sybase-docs-mcp\\venv\\Scripts\\python.exe", "-m", "sybase_mcp.server"],
+      "enabled": true,
+      "environment": {
+        "DOCS_ROOT": "C:\\AIS\\AI\\sybase-docs-mcp",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    "rules-mcp": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\sybase-docs-mcp\\venv\\Scripts\\python.exe", "C:\\AIS\\AI\\rules-mcp\\run.py"],
+      "enabled": true
+    },
+    "ais-objects": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\scripts\\ais_objects_mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\scripts\\ais_objects_mcp\\server.py"],
+      "enabled": true
+    },
+    "ais-catalog": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\scripts\\ais_catalog_mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\scripts\\ais_catalog_mcp\\server.py"],
+      "enabled": true
+    },
+    "opencode-mcp": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\scripts\\opencode_mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\scripts\\opencode_mcp\\server.py"],
+      "enabled": true
+    },
+    "ews": {
+      "type": "local",
+      "command": ["C:\\AIS\\AI\\Prod\\ews-mcp\\.venv\\Scripts\\python.exe", "C:\\AIS\\AI\\Prod\\ews-mcp\\run_server.py"],
+      "cwd": "C:\\AIS\\AI\\Prod\\ews-mcp",
+      "environment": {
+        "EWS_AUTH_TYPE": "ntlm",
+        "EWS_INSECURE_SKIP_VERIFY": "true",
+        "TIMEZONE": "Europe/Moscow",
+        "MCP_TRANSPORT": "stdio"
+      },
+      "enabled": true,
+      "timeout": 120000
+    }
+  },
+  "lsp": {
+    "pb_lsp": {
+      "command": ["C:\\AIS\\AI\\PB_LSP\\bin\\LspProxy.exe", "--pipe"],
+      "extensions": [".srw", ".sru", ".srd", ".srf", ".srm", ".srs", ".sql"]
+    }
+  }
 }

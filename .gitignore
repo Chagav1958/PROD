@@ -69,3 +69,15 @@ config/oc-config-manager.json
 *.local_secrets*
 # Шаблон хранилища секретов — ИСКЛЮЧЕНИЕ: разрешить в git (только пустые значения)
 !config/.local_secrets.example.json
+
+# Токен atlassian (для MCP) — ИСКЛЮЧЕН из git; берётся через подстановку {file:config/atlassian_token.txt}
+config/atlassian_token.txt
+
+# Пароль Confluence (Basic auth для MCP atlassian) — ИСКЛЮЧЕН из git; подстановка {file:config/confluence_password.txt}
+config/confluence_password.txt
+
+# --- .config — это junction внутрь репозитория; всё, что содержит секреты, обязано быть исключено ---
+# Секреты глобального конфига OpenCode (подстановки {file:secrets/...})
+.config/opencode/secrets/
+# Учётные данные EWS MCP (значения паролей/логинов) — никогда в git
+.config/ews-mcp/credentials.env
