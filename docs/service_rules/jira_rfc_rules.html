@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>jira_rfc_rules</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Правила сервиса Jira RFC</h1>
+<br>
+<h2>Состав сервиса</h2>
+<br>
+<table><tr><th>Файл</th><th>Назначение</th></tr><tr><td><code>scripts\Create-RFC.ps1</code></td><td>Создание задачи RFC в Jira для указанной задачи</td></tr><tr><td><code>scripts\Find-JiraFields.ps1</code></td><td>Обнаружение ID пользовательских полей Jira для настройки</td></tr><tr><td><code>config\config.json</code> (секция <code>jira</code>)</td><td>Настройки Jira: URL, проект, custom fields</td></tr></table>
+<br>
+<h2>Зависимости</h2>
+<br>
+<p>- <strong>Jira REST API</strong> — версия 2 (<code>/rest/api/2/</code>)</p>
+<p>- <strong>HTTP-авторизация (схема Bearer)</strong> — API-токен</p>
+<p>- Invoke-RestMethod (встроенный в PowerShell)</p>
+<br>
+<h2>Поля RFC (из RFC-12336 / RFC-12359)</h2>
+<br>
+<h3>Обязательные поля при создании</h3>
+<table><tr><th>Поле</th><th>Значение</th></tr><tr><td>summary</td><td><code>Разработка - &lt;название задачи&gt;</code></td></tr><tr><td>description</td><td><code>RFC сформирована автоматически - AIS Release Preparation</code></td></tr><tr><td>assignee</td><td><code>{name: &quot;&lt;текущий пользователь&gt;&quot;}</code></td></tr><tr><td>customfield_25953</td><td>План проведения работ (8 шагов, см. шаблон)</td></tr><tr><td>customfield_25954</td><td><code>Исправляем появившиеся ошибки и собираем новую версию</code></td></tr><tr><td>customfield_13852</td><td><code>Нет</code></td></tr><tr><td>customfield_15254</td><td><code>Нет</code></td></tr><tr><td>customfield_15255</td><td><code>{name: &quot;&lt;текущий пользователь&gt;&quot;}</code> (Ответственный за релиз)</td></tr><tr><td>customfield_15256</td><td><code>{name: &quot;&lt;текущий пользователь&gt;&quot;}</code> (Эксперт по продукту)</td></tr><tr><td>customfield_15350</td><td><code>[{name: &quot;&lt;reporter задачи&gt;&quot;}]</code> (Проверяющие на бою = автор задачи)</td></tr><tr><td>customfield_25955</td><td><code>@(&quot;SYSTEM-67&quot;)</code></td></tr><tr><td>customfield_26053</td><td><code>@(&quot;SYSTEM-67&quot;)</code></td></tr><tr><td>customfield_15258</td><td>Дата начала (now + 1h, округление до часа)</td></tr><tr><td>customfield_15259</td><td>Дата завершения (старт + 24h)</td></tr></table>
+<br>
+<h3>Связь с задачей</h3>
+<p>- Тип: <code>Mention</code></p>
+<p>- inwardIssue: RFC (создаваемая)</p>
+<p>- outwardIssue: исходная задача (TaskName)</p>
+<br>
+<h2>Известные ошибки и их предотвращение</h2>
+<br>
+<h3>Create-RFC.ps1</h3>
+<br>
+<p>1. <strong>Кодировка комментариев в теле скрипта</strong></p>
+<p>   - Текст в <code># comment</code> и строковых литералах местами имеет искажённую кириллицу</p>
+<p>   - <strong>Правило:</strong> при редактировании не полагаться на видимый текст комментариев</p>
+<br>
+<p>2. <strong>Пароль Jira через SecureString</strong></p>
+<p>   - <code>Read-Host -AsSecureString</code> → <code>SecureStringToBSTR</code> → <code>PtrToStringAuto</code></p>
+<p>   - <strong>Правило:</strong> удалять <code>$JiraPassword</code> после использования</p>
+<br>
+<p>3. <strong>Placeholder поля в config.json</strong></p>
+<p>   - Поля <code>release_start</code>, <code>release_end</code>, <code>task_link_field</code> имеют значения <code>customfield_XXXXX</code></p>
+<p>   - <strong>Правило:</strong> проверка <code>if ($cfStart -and $cfStart -notmatch &#39;^customfield_XXXXX$&#39;)</code> защищает от пустых значений</p>
+<br>
+<p>4. <strong>Линковка RFC к задаче</strong></p>
+<p>   - Тип связи: <code>Mention</code> (не <code>Relates</code>)</p>
+<p>   - Если задача не существует — ошибка перехватывается try/catch</p>
+<br>
+<p>5. <strong>Формат таймстампов</strong></p>
+<p>   - <code>yyyy-MM-ddTHH:mm:ss.000+0300</code> (без двоеточия в timezone)</p>
+<br>
+<p>6. <strong>Кодировка UTF-8</strong></p>
+<p>   - Все .ps1 файлы с кириллицей должны быть в UTF-8 with BOM</p>
+<p>   - PowerShell 5.1 на русской Windows читает без BOM как Windows-1251</p>
+<br>
+<h2>Рекомендации</h2>
+<br>
+<p>- Перед первым использованием запустить <code>Find-JiraFields.ps1</code> и обновить config.json</p>
+<p>- Пароль Jira не сохраняется — вводится при каждом запуске</p>
+<p>- RFC создаётся с окном релиза: <code>start = now + 1h</code>, <code>end = start + 24h</code></p>
+<p>- Если RFC уже существует для задачи — создание пропускается</p>
+<br>
+</body></html>

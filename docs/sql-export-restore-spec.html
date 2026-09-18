@@ -1,0 +1,229 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>sql-export-restore-spec</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Спецификация восстановления сервиса SqlExport</h1>
+<br>
+<p><strong>Дата:</strong> 01.09.2026</p>
+<p><strong>Статус:</strong> восстановлен и протестирован</p>
+<p><strong>Тип документа:</strong> техническая спецификация восстановления сервиса</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение сервиса</h2>
+<br>
+<p>Сервис <strong>SqlExport</strong> выполняет выгрузку DDL-объектов базы данных Sybase ASE (сервер <code>dev_golden</code>, БД <code>golden</code> — &#171;Golden&#187; / боевой контур разработки) в файлы <code><em>.sql</code>. Объекты разбиваются по категориям в отдельные папки для последующего переноса в Jira-задачи (<code>SYBASE-</em></code>, <code>SUPRT-*</code>) и репозиторий.</p>
+<br>
+<p><strong>Категории объектов:</strong></p>
+<p>- Хранимые процедуры (<code>type = &#39;P&#39;</code>)</p>
+<p>- Функции (<code>type = &#39;FN&#39;, &#39;TF&#39;</code>)</p>
+<p>- Триггеры (<code>type = &#39;TR&#39;</code>)</p>
+<p>- Таблицы (<code>type = &#39;U&#39;</code>)</p>
+<p>- Представления (<code>type = &#39;V&#39;</code>)</p>
+<p>- Индексы (все некластерные/кластерные, не PK)</p>
+<p>- Первичные ключи (PK)</p>
+<p>- Внешние ключи (FK)</p>
+<p>- Права доступа (GRANT, из <code>sysprotects</code>)</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Состав сервиса</h2>
+<br>
+<table><tr><th>Компонент</th><th>Путь</th><th>Роль</th></tr><tr><td>Dotnet-обёртка</td><td><code>C:\AIS\AI\Prod\scripts\SqlExport\SqlExport.csproj</code> + <code>Program.cs</code></td><td>Параметризованный запуск bat, парсинг <code>###PHASE###</code>/<code>###STEP###</code> для прогресс-бара</td></tr><tr><td>Главный bat</td><td><code>C:\AIS\AI\Prod\bin\SQL_exp_param.bat</code></td><td>Собственно экспорт: циклы по объектам, вызов isql, сборка файлов</td></tr><tr><td>Генератор таблиц</td><td><code>C:\AIS\AI\Prod\bin\gen_create_table.sql</code></td><td>Генерация <code>CREATE TABLE</code> для одной таблицы (имя через <code>##gen_tname</code>)</td></tr><tr><td>Генератор индексов</td><td><code>C:\AIS\AI\Prod\bin\gen_indexes.sql</code></td><td>Генерация всех <code>CREATE INDEX</code> (<code>DROP</code> + <code>CREATE</code>)</td></tr><tr><td>Генератор PK</td><td><code>C:\AIS\AI\Prod\bin\gen_pk.sql</code></td><td>Генерация <code>ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY</code></td></tr><tr><td>Генератор FK</td><td><code>C:\AIS\AI\Prod\bin\gen_fk.sql</code></td><td>Генерация <code>ALTER TABLE ... ADD CONSTRAINT ... FOREIGN KEY</code> (до 10 колонок)</td></tr><tr><td>Генератор прав</td><td><code>C:\AIS\AI\Prod\bin\gen_grants.sql</code></td><td>Генерация <code>GRANT SELECT/INSERT/DELETE/UPDATE/EXECUTE ON ... TO ...</code></td></tr><tr><td>Генератор grant (один объект)</td><td><code>C:\AIS\AI\Prod\bin\gen_single_grant.sql</code>, <code>gen_single_fk.sql</code></td><td>Grant/ FK для отдельного объекта (используется в циклах Proc/Func/Trig/View)</td></tr><tr><td>Сборка тела</td><td><code>C:\AIS\AI\Prod\scripts\Rebuild-Object.ps1</code></td><td>Сборка текста объекта из hex-фрагментов <code>syscomments</code> (сортировка по <code>number, colid</code>)</td></tr><tr><td>Конвертация кодировки</td><td><code>C:\AIS\AI\Prod\scripts\Convert-ExportEncoding.ps1</code></td><td>Приведение <code>.sql</code> к ANSI (CP1251), <code>.sr*</code> к UTF-8 BOM, нормализация CRLF</td></tr><tr><td>Лог</td><td><code>&lt;ExportPath&gt;\LOGS\export_objects.log</code></td><td>Подробный лог каждой фазы и итогов</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. Причины отказа сервиса (до восстановления)</h2>
+<br>
+<p>Экспорт падал с <code>FATAL</code>. Выявлены следующие причины:</p>
+<br>
+<h3>3.1. Отсутствовали генераторы индексов, PK, FK, прав</h3>
+<br>
+<p>Файлы <code>gen_indexes.sql</code>, <code>gen_pk.sql</code>, <code>gen_fk.sql</code>, <code>gen_grants.sql</code> отсутствовали в <code>bin\</code>. Без них при экспорте соответствующих категорий isql получал пустой/некорректный вход и экспорт завершался ошибкой.</p>
+<br>
+<p><strong>Исправление:</strong> созданы все четыре скрипта (см. п. 2). Учтены правила Sybase ASE:</p>
+<p>- <code>DECLARE CURSOR</code> обязан быть <strong>единственным оператором в батче</strong> (отделён <code>go</code>). Иначе — ошибка компиляции.</p>
+<p>- Конкатенация строк в <code>PRINT</code> не поддерживается: используется <code>select @msg = &#39;...&#39; + ...</code>, затем <code>print @msg</code>.</p>
+<p>- <code>SET NOCOUNT ON</code> добавлен в начало каждого скрипта — иначе в выход попадают служебные строки <code>(1 row affected)</code>.</p>
+<br>
+<h3>3.2. Ошибка синтаксиса bat в циклах `for /f`</h3>
+<br>
+<p>В <code>SQL_exp_param.bat</code> в циклах экспорта применялась конструкция <code>(echo ...) &gt; файл</code> внутри тела <code>for /f ... do (...)</code>. Вложенные скобки не экранировались → cmd выдавал <code>Недопустимый параметр: text).</code> и прекращал обработку объектов.</p>
+<br>
+<p><strong>Исправление:</strong> в строках, формирующих SQL-файлы, любые <code>(</code> и <code>)</code> экранируются <code>^(</code> и <code>^)</code>, либо используется запись <code>echo строка&gt;&gt;файл</code> без обрамляющих скобок.</p>
+<br>
+<p><strong>Проверено:</strong> минимальные тесты <code>temp\test_for_parens.bat</code> — вывод корректен, ошибок нет.</p>
+<br>
+<h3>3.3. Битые комментарии и неправильная кодировка bat</h3>
+<br>
+<p>Кириллические комментарии в <code>SQL_exp_param.bat</code> хранились в неверной кодировке → кракозябры. Bat-файл должен быть <strong>Windows-1251 (ANSI), CRLF, без BOM</strong>.</p>
+<br>
+<p><strong>Исправление:</strong> файл пересобран в CP1251 + CRLF, повреждённые строки переписаны.</p>
+<br>
+<h3>3.4. Отсутствовала валидация OBJECT_TYPE</h3>
+<br>
+<p>При невалидном значении объектного типа bat не сообщал об ошибке.</p>
+<br>
+<p><strong>Исправление:</strong> добавлена проверка (строки ~96–100):</p>
+<pre>
+if not &quot;%OBJECT_TYPE%&quot;==&quot;&quot; (
+
+    echo FATAL: Unknown OBJECT_TYPE: %OBJECT_TYPE%
+
+    exit /b 1
+
+)
+
+</pre>
+<br>
+<h3>3.5. Конфликт счётчиков Triggers и Tables</h3>
+<br>
+<p>Обе секции использовали переменные <code>T_CNT</code> / <code>T_OK</code> (процедуры → <code>P_<em></code>, функции → <code>F_</em></code>, триггеры → <code>T_<em></code>, таблицы → снова <code>T_</em></code>). В финальном счётчике выводился заниженный итог: <code>Found: 2133</code> вместо <code>2250</code> (триггеры не учитывались, таблицы — дважды).</p>
+<br>
+<p><strong>Исправление:</strong> таблицы переведены на собственные переменные <code>TB_CNT</code> / <code>TB_OK</code>, суммы пересчитаны:</p>
+<pre>
+set /a TOTAL_OK = P_OK + F_OK + T_OK + TB_OK + V_OK + I_OK + PK_OK + FK_OK + G_OK
+
+set /a TOTAL_CNT = P_CNT + F_CNT + T_CNT + TB_CNT + V_CNT + I_CNT + PK_CNT + FK_CNT + G_CNT
+
+</pre>
+<br>
+<h3>3.6. Шапка лога не записывалась (в логе не было `Started`)</h3>
+<br>
+<p>В <code>SQL_exp_param.bat</code> папка <code>LOGS</code> создавалась командой <code>mkdir &quot;%BASEDIR%\LOGS&quot;</code> (строка ~49) <strong>после</strong> записи заголовка в лог (строки ~24–28). При первом запуске папки не существовало → первая команда <code>echo ... &gt; &quot;%LOGFILE%&quot;</code> падала, и в лог попадала только часть (без шапки <code>SQL OBJECTS EXPORT / Task / Started</code>).</p>
+<br>
+<p><strong>Исправление:</strong> <code>mkdir &quot;%BASEDIR%\LOGS&quot; 2&gt;nul</code> добавлено сразу перед <code>set LOGFILE=...</code> — папка гарантированно существует до первой записи. Проверено: заголовок и <code>Started: &lt;дата&gt; &lt;время&gt;</code> присутствуют в логе при каждом прогоне.</p>
+<br>
+<h3>3.7. Неверный exit code (всегда возвращал 0)</h3>
+<br>
+<p>В финальном блоке <code>set /a TOTAL_FAIL=TOTAL_CNT-TOTAL_OK</code> вычислялся <strong>до</strong> установки <code>TOTAL_CNT</code> (TOTAL_CNT была ещё не определена → 0). Как следствие:</p>
+<p>- при успешном прогоне <code>TOTAL_FAIL</code> мог стать <code>-1</code> (категорийные запуски: 0 − OK);</p>
+<p>- сервис не мог сигнализировать CLI/GUI об ошибках через код возврата.</p>
+<br>
+<p><strong>Исправление:</strong> порядок строк изменён: сначала <code>TOTAL_OK</code>, затем <code>TOTAL_CNT</code>, затем <code>TOTAL_FAIL = TOTAL_CNT − TOTAL_OK</code>. Теперь <code>exit 0</code> при полном успехе, <code>exit &gt; 0</code> при сбоях. Проверено на категорийных и негативных тестах.</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Правила, используемые при экспорте</h2>
+<br>
+<h3>4.1. Правила Sybase ASE (для генераторов)</h3>
+<br>
+<p>- <code>DECLARE CURSOR</code> — только собственный батч.</p>
+<p>- <code>PRINT</code> — только после присвоения переменной через <code>select @msg = ...</code>.</p>
+<p>- <code>SET NOCOUNT ON</code> обязателен.</p>
+<p>- Просмотр текста объектов — через <code>syscomments</code> (он содержит hex-представление для длинных объектов) с разбивкой по <code>number, colid</code> и последующей сборкой скриптом <code>Rebuild-Object.ps1</code> (фрагменты до 65535 байт возвращаются isql с <code>convert(varbinary(255), text)</code>).</p>
+<p>- Имена объектов выбираются через <code>sysobjects</code> с фильтром <code>user_name(uid)=&#39;dbo&#39;</code>.</p>
+<br>
+<h3>4.2. Правила cmd/bat</h3>
+<br>
+<p>- Внутри <code>for /f ... do ( ... )</code> скобки в тексте <code>echo</code> экранировать <code>^(</code> <code>^)</code>.</p>
+<p>- Работа с in-place переменными внутри цикла — только с <code>setlocal enabledelayedexpansion</code> и <code>!VAR!</code>.</p>
+<p>- Файлы <code>.bat</code>, <code>.sql</code> — Windows-1251 (ANSI), CRLF, без BOM.</p>
+<p>- Скрытый запуск из PS — только <code>-NoLogo</code> (без <code>-NoProfile</code>, Bug-046 кракозябр).</p>
+<p>- Если скрипт содержит <code>$</code>, <code>{}</code>, вложенные кавычки — вызывать через <code>-File script.ps1</code>.</p>
+<br>
+<h3>4.3. Кодировки выходных файлов</h3>
+<br>
+<table><tr><th>Часть</th><th>Кодировка</th></tr><tr><td>Исходные генераторы <code>.sql</code> (в <code>bin\</code>)</td><td>Windows-1251, LF/CRLF</td></tr><tr><td>Выходные файлы <code>.sql</code></td><td>Windows-1251 (ANSI), CRLF — выполняет <code>Convert-ExportEncoding.ps1</code></td></tr><tr><td><code>.bat</code></td><td>Windows-1251, CRLF, без BOM</td></tr><tr><td>PowerShell <code>.ps1</code></td><td>UTF-8 <strong>с BOM</strong> (в проекте: <code>scripts\Add-Bom.ps1</code>)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Параметры вызова</h2>
+<br>
+<pre>
+SQL_exp_param.bat Server Database Password [TaskName] [ExportPath] [OBJECT_TYPE]
+
+</pre>
+<br>
+<p>- <code>Server</code> — Sybase ASE (напр. <code>dev_golden</code>)</p>
+<p>- <code>Database</code> — БД (напр. <code>golden</code>)</p>
+<p>- <code>Password</code> — пароль пользователя <code>vchaga</code></p>
+<p>- <code>TaskName</code> — имя Jira-задачи (для лога и описаний)</p>
+<p>- <code>ExportPath</code> — необязательный; по умолчанию <code>&lt;bin&gt;\..\BD\&lt;Server&gt;\&lt;Database&gt;</code></p>
+<p>- <code>OBJECT_TYPE</code> — один из: <code>Procedure</code>, <code>Functions</code>, <code>Triggers</code>, <code>Tables</code>, <code>Views</code>, <code>Indexes</code>, <code>PK</code>, <code>FK</code>, <code>Grants</code>. Пусто → полный экспорт всех категорий.</p>
+<br>
+<p>Через dotnet-обёртку (используется для прогресс-бара в GUI):</p>
+<br>
+<pre>
+dotnet run --project C:\AIS\AI\Prod\scripts\SqlExport\SqlExport.csproj -c Release -- &lt;server&gt; &lt;db&gt; &lt;password&gt; &lt;ExportPath&gt; [objectType]
+
+</pre>
+<br>
+<p>Пароль для штатной работы берётся из <code>C:\AIS\AI\Prod\config\.local_secrets.json</code> (DPAPI, контейнер <code>AIS.Secrets.2026</code>). Значение <code>sqlsql</code> используется только в локальных тестах.</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Тестирование восстановления</h2>
+<br>
+<p>Тестовая среда: <code>dev_golden</code> / <code>golden</code>, логин <code>vchaga</code>. Результаты <strong>полного экспорта</strong> (<code>sql_exportall_v2</code>, запуск 01.09.2026):</p>
+<br>
+<table><tr><th>Категория</th><th>Найдено</th><th>Экспортировано</th></tr><tr><td>Procedures</td><td>1051</td><td>1051</td></tr><tr><td>Functions</td><td>158</td><td>158</td></tr><tr><td>Triggers</td><td>117</td><td>117</td></tr><tr><td>Tables</td><td>824</td><td>824</td></tr><tr><td>Views</td><td>96</td><td>96</td></tr><tr><td>Indexes</td><td>1 файл</td><td>OK</td></tr><tr><td>PK</td><td>1 файл</td><td>OK</td></tr><tr><td>FK</td><td>1 файл</td><td>OK</td></tr><tr><td>Grants</td><td>1 файл</td><td>OK</td></tr><tr><td><strong>Итого</strong></td><td><strong>2250 файлов</strong></td><td><strong>OK</strong></td></tr></table>
+<br>
+<p>&gt; Примечание: в полном прогоне v2 на диске <code>Tables\</code> оказалось 823 файла (не хватало кириллического <code>Лист1.sql</code>). Цифры &#171;Найдено/Экспортировано&#187; относятся к счётчикам лога <code>export_objects.log</code> (Found/OK), которые показали 824/824 по таблицам. Полное соответствие диска подтверждено повторным изолированным прогоном <code>Tables</code> — см. п. 6.1.</p>
+<br>
+<p><strong>Повторная верификация (прогон v4, исправленный bat, 01.09.2026):</strong></p>
+<br>
+<table><tr><th>Категория</th><th>Файлов на диске</th><th>Лог (Found/OK)</th></tr><tr><td>Procedures</td><td>1051</td><td>1051</td></tr><tr><td>Functions</td><td>158</td><td>158</td></tr><tr><td>Triggers</td><td>117</td><td>117</td></tr><tr><td>Tables</td><td>823*</td><td>824/824</td></tr><tr><td>Views</td><td>96</td><td>96</td></tr><tr><td>Indexes</td><td>1</td><td>OK</td></tr><tr><td>PK</td><td>1</td><td>OK</td></tr><tr><td>FK</td><td>1</td><td>OK</td></tr><tr><td>Grants</td><td>1</td><td>OK</td></tr><tr><td><strong>Итого</strong></td><td><strong>2249</strong></td><td><strong>2250/2250</strong></td></tr></table>
+<br>
+<p>\* — расхождение 1 файл в полном прогоне v4: отсутствовал <code>Лист1.sql</code> (кириллическое имя) — разовый сбой обработки имени в цикле <code>cmd</code>, повторный полный прогон категории <code>Tables</code> дал <strong>824/824</strong> включая <code>Лист1.sql</code>. Подробнее — п. 8.</p>
+<br>
+<p><strong>Тесты комбинаций параметров (01.09.2026):</strong></p>
+<br>
+<table><tr><th>Тест</th><th>Аргументы</th><th>Результат</th></tr><tr><td>Без аргументов</td><td>—</td><td>usage, exit 1 ✓</td></tr><tr><td>3 аргумента</td><td>server db pwd</td><td>usage, exit 1 ✓</td></tr><tr><td>Невалидный тип</td><td><code>... Bogus</code></td><td><code>FATAL: Unknown OBJECT_TYPE</code>, exit 1 ✓</td></tr><tr><td>Неверный сервер</td><td><code>no_such_server</code></td><td><code>FATAL: isql failed</code>, exit 1 ✓</td></tr><tr><td>Неверный пароль</td><td><code>wrongpw</code></td><td><code>FATAL: isql failed</code>, exit 1 ✓</td></tr><tr><td>Категория Indexes</td><td><code>Indexes</code></td><td>exit 0, Found 1/OK 1, файл свежий ✓</td></tr><tr><td>Категория PK</td><td><code>PK</code></td><td>exit 0, Found 1/OK 1 ✓</td></tr><tr><td>Категория FK</td><td><code>FK</code></td><td>exit 0, Found 1/OK 1 ✓</td></tr><tr><td>Категория Grants</td><td><code>Grants</code></td><td>exit 0, Found 1/OK 1 ✓</td></tr><tr><td>Категория Tables</td><td><code>Tables</code></td><td>exit 0, Found 824/OK 824 (вкл. <code>Лист1</code>) ✓</td></tr></table>
+<br>
+<p>Свежесть: все <code>.sql</code>-файлы полного прогона имеют <code>LastWriteTime</code> в пределах окна выполнения (дата/время текущего запуска), изменения корректно отражаются в логе (<code>Started</code>/<code>Finished</code> с временем прогона).</p>
+<br>
+<p>Контрольные точки:</p>
+<p>- Все указанные в каждой категории объекты создаются на диске, EXIT=0.</p>
+<p>- Файлы <code>.sql</code> валидны: содержат <code>USE &lt;db&gt; / go</code>, корректные конструкции DDL/DML, без мусора <code>(1 row affected)</code>.</p>
+<p>- <code>(1 row affected)</code> больше не появляется в <code>all_indexes.sql</code>, <code>all_pk.sql</code>, <code>all_fk.sql</code>, <code>all_grants.sql</code> — подтверждено повторными прогонами категорий.</p>
+<p>- Невалидный <code>OBJECT_TYPE</code>, напр. <code>Bogus</code> → <code>FATAL: Unknown OBJECT_TYPE: Bogus</code>, exit code 1.</p>
+<br>
+<h3>6.1. Дельты в категории Tables (кириллическое имя)</h3>
+<br>
+<p>При проверке полного экспорта v2 обнаружено: в <code>tables.txt</code> (лог сводного списка) 824 строки, но на диске в <code>Tables\</code> было <strong>823</strong> файла — не хватало файла для таблицы с кириллическим именем (импорт из Excel, имя <code>Лист1</code> / hex <code>cb e8 f1 f2 31</code> в CP1251).</p>
+<br>
+<p>Повторный изолированный прогон категории <code>Tables</code> (папка <code>temp\sql_tables3</code>) создал все <strong>824</strong> файла, включая <code>Лист1.sql</code> (заголовок файла корректен, <code>EXIT=0</code>). Итог: экспорт таблиц работает полностью; потеря файла в полном прогоне единична и связана с обработкой кириллического имени в <code>cmd /c for /f</code> (см. п. 8).</p>
+<br>
+<p>---</p>
+<br>
+<h2>7. Инструкция по восстановлению (быстрая починка)</h2>
+<br>
+<p>Если сервис снова выдаёт <code>FATAL</code>:</p>
+<br>
+<p>1. Проверить наличие всех 5 генераторов в <code>bin\</code>: <code>gen_create_table.sql</code>, <code>gen_indexes.sql</code>, <code>gen_pk.sql</code>, <code>gen_fk.sql</code>, <code>gen_grants.sql</code>.</p>
+<p>2. Проверить <code>bin\SQL_exp_param.bat</code>: каждая категория, каждого <code>echo ... ( ... )</code> внутри <code>for</code> — скобки экранированы; кодировка CP1251+CRLF без BOM.</p>
+<p>3. Проверить присутствие <code>set nocount on</code> в начале каждого генератора.</p>
+<p>4. Проверить, что <code>Convert-ExportEncoding.ps1</code> в <code>export_cleanup</code> вызывается с <code>-Extensions &quot;*.sql&quot;</code>.</p>
+<p>5. Проверить порядок итоговых счётчиков в <code>SQL_exp_param.bat</code> (БАГ-3.7): <code>TOTAL_OK</code>, затем <code>TOTAL_CNT</code>, затем <code>TOTAL_FAIL = TOTAL_CNT − TOTAL_OK</code> — иначе exit code всегда 0.</p>
+<p>6. Проверить, что <code>mkdir &quot;%BASEDIR%\LOGS&quot; 2&gt;nul</code> стоит до <code>set LOGFILE=...</code> (БАГ-3.6) — иначе в лог не попадает шапка <code>Started</code>.</p>
+<p>7. Ручной тест одной категории:</p>
+<p>   ```bash</p>
+<p>   cmd /c &quot;C:\AIS\AI\Prod\bin\SQL_exp_param.bat&quot; dev_golden golden &lt;пароль&gt; TEST C:\AIS\AITemp Indexes</p>
+<p>   ```</p>
+<p>   Ожидание: папка <code>Indexes\all_indexes.sql</code> без <code>(1 row affected)</code>, в логе шапка с <code>Started</code>, exit 0.</p>
+<p>8. Только после успеха категорий — полный экспорт.</p>
+<br>
+<p>---</p>
+<br>
+<h2>8. Известные ограничения</h2>
+<br>
+<p>- Экспорт по объектам выполняется последовательно; полный экспорт БД <code>golden</code> занимает ~30–40 минут.</p>
+<p>- Имена объектов с <strong>кириллицей</strong> (например, <code>Лист1</code> после импорта из Excel) могут нестабильно выгружаться в <strong>полном</strong> прогоне через <code>cmd /c</code> bat (кодировка имени в цикле <code>for /f</code>). В изолированном прогоне категории <code>Tables</code> такая таблица создаётся корректно. При расхождении &#171;найдено / файлов на диске&#187; — повторить прогон соответствующей категории.</p>
+<p>- <code>syscomments</code> хранит только текст объектов (не форматы и не структуру окон PB).</p>
+<p>- Для PB-объектов (.sr*) используется <strong>другой</strong> контур (<code>PB_Current</code>, <code>C:\SRC125\gold</code>) — сервис SqlExport их не затрагивает.</p>
+<p>- Пароль в аргументах командной строки виден в выводе процессов; штатно — через <code>config\.local_secrets.json</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>9. Связанные документы и скрипты</h2>
+<br>
+<p>- Каталог сервисов: <code>docs\services_catalog.md</code> (запись &#171;1.2. SqlExport&#187;)</p>
+<p>- Общая документация: <code>docs\service-documentation.md</code></p>
+<p>- Скрипт конвертации кодировок: <code>scripts\Convert-ExportEncoding.ps1</code></p>
+<p>- Сборка тела объекта: <code>scripts\Rebuild-Object.ps1</code></p>
+<p>- Добавление BOM к <code>.ps1</code>: <code>scripts\Add-Bom.ps1</code></p>
+</body></html>

@@ -1,0 +1,623 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>skills-guide</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Skills — Механизм скиллов OpenCode в проекте AIS</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 15.09.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="C:\AIS\AI\Prod\docs\master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Что такое скилл (skill) в OpenCode</h2>
+<br>
+<p><strong>Скилл</strong> — это набор инструкций для LLM-агента, который загружается <strong>по требованию</strong>, а не всегда. Каждый скилл — это папка с файлом <code>SKILL.md</code>, содержащим фронтmatter (метаданные) и тело инструкций в формате Markdown.</p>
+<br>
+<h3>1.1. Физическая структура</h3>
+<br>
+<pre>
+.opencode/
+
+└── skills/
+
+    ├── my-skill/
+
+    │   └── SKILL.md          ← единственный обязательный файл
+
+    └── another-skill/
+
+        └── SKILL.md
+
+</pre>
+<br>
+<h3>1.2. Формат SKILL.md</h3>
+<br>
+<pre>
+---
+
+name: my-skill
+
+description: Описание что делает скилл и когда его загружать.
+
+---
+
+
+
+# Название скилла
+
+
+
+Тело инструкций в Markdown: примеры, правила, ссылки.
+
+</pre>
+<br>
+<p><strong>Обязательные поля фронтmatterа:</strong></p>
+<br>
+<table><tr><th>Поле</th><th>Описание</th><th>Пример</th></tr><tr><td><code>name</code></td><td>Имя скилла (строчные, через дефис, ≤64 символа)</td><td><code>pb-object-skill</code></td></tr><tr><td><code>description</code></td><td>Описание: что делает И КОГДА загружать. Ключевые слова в начале</td><td><code>Используй ТОЛЬКО при работе с объектами PowerBuilder...</code></td></tr></table>
+<br>
+<h3>1.3. Как OpenCode находит скиллы</h3>
+<br>
+<p>Конфигурация в <code>opencode.jsonc</code>:</p>
+<br>
+<pre>
+{
+
+  &quot;skills&quot;: {
+
+    &quot;paths&quot;: [&quot;.opencode/skills&quot;],
+
+    &quot;urls&quot;: []
+
+  }
+
+}
+
+</pre>
+<br>
+<p>OpenCode рекурсивно сканирует указанные директории на наличие <code>**/SKILL.md</code>. Скиллы из <code>urls</code> загружаются при старте.</p>
+<br>
+<h3>1.4. Как LLM выбирает скилл</h3>
+<br>
+<p>1. В промпте пользователя присутствует ключевое слово, совпадающее с описанием скилла</p>
+<p>2. LLM видит список доступных скиллов и их описание (список в системном промпте)</p>
+<p>3. LLM вызывает инструмент <code>skill(name=&quot;имя-скилла&quot;)</code></p>
+<p>4. OpenCode загружает тело SKILL.md в контекст сессии</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Сравнение: скиллы vs другие механизмы правил</h2>
+<br>
+<h3>2.1. Механизмы правил в проекте AIS</h3>
+<br>
+<table><tr><th>Механизм</th><th>Где лежит</th><th>Когда загружается</th><th>Пример</th></tr><tr><td>**<code>.opencode/*.mdc</code>**</td><td><code>.opencode/</code></td><td><strong>Всегда</strong> (alwaysApply: true)</td><td><code>preflight.mdc</code>, <code>sql-rules.mdc</code></td></tr><tr><td><strong><code>AGENTS.md</code></strong></td><td>корень проекта</td><td><strong>Всегда</strong> (instructions в opencode.jsonc)</td><td>Ядро правил проекта</td></tr><tr><td><strong>Команды</strong></td><td><code>.opencode/command/*.md</code></td><td>По имени команды <code>/rules</code></td><td><code>cycle.md</code>, <code>rules.md</code></td></tr><tr><td><strong>Плагины</strong></td><td><code>.opencode/plugins/*.js</code></td><td>Всегда (JS-хуки)</td><td><code>save-prompts.js</code>, <code>loop-guard.js</code></td></tr><tr><td><strong>MCP-серверы</strong></td><td>отдельные процессы</td><td>По вызову инструмента</td><td><code>ais-catalog</code>, <code>sybase-docs</code></td></tr><tr><td><strong>Скиллы</strong></td><td><code>.opencode/skills/*/SKILL.md</code></td><td><strong>По требованию</strong> (description)</td><td>Новые</td></tr></table>
+<br>
+<h3>2.2. Ключевое отличие: загрузка по требованию</h3>
+<br>
+<pre>
+┌─────────────────────────────────────────────────────────┐
+
+│  ВСЕГДА в контексте (alwaysApply)                     │
+
+│  • AGENTS.md                                            │
+
+│  • preflight.mdc        ← ≈80 строк                   │
+
+│  • russian-language.mdc ← ≈25 строк                   │
+
+│  • knowledge-first.mdc  ← ≈35 строк                   │
+
+│  • save-analysis.mdc    ← ≈25 строк                   │
+
+│  • token-economy.mdc    ← ≈60 строк                   │
+
+│  • sql-rules.mdc        ← ≈120 строк                 │
+
+│  • pb-object-rules.mdc  ← ≈150 строк                 │
+
+│  • vss-rules.mdc        ← ≈80 строк                  │
+
+│  • jira-table-rules.mdc ← ≈50 строк                  │
+
+│  • ... ещё ~10 mdc-файлов                             │
+
+│  ──────────────────────────────────────                │
+
+│  ИТОГО: ≈1000+ строк правил ВСЕГДА в контексте       │
+
+│  ≈ 3000-5000 токенов на каждую сессию                 │
+
+└─────────────────────────────────────────────────────────┘
+
+
+
+┌─────────────────────────────────────────────────────────┐
+
+│  ПО ТРЕБОВАНИЮ (skills)                                │
+
+│  • pb-object-skill      ← только при PB-задачах        │
+
+│  • sql-skill            ← только при SQL-задачах       │
+
+│  • jira-task-skill      ← только при задачах Jira      │
+
+│  • vss-skill            ← только при работе с VSS      │
+
+│  • sborka-skill         ← только при СБОРКЕ            │
+
+│  • gui-wpf-skill        ← только при GUI/WPF          │
+
+│  • taskplan-skill       ← только при TaskPlan         │
+
+│  • security-skill       ← только при секретах         │
+
+│  ──────────────────────────────────────                │
+
+│  ИТОГО: ≈2000 строк загружаются ТОЛЬКО при нужде      │
+
+│  ≈ 0 токенов, когда не нужны                          │
+
+└─────────────────────────────────────────────────────────┘
+
+</pre>
+<br>
+<h3>2.3. Экономия токенов</h3>
+<br>
+<table><tr><th>Сценарий</th><th>Без скиллов (всегда в контексте)</th><th>Со скиллами (по требованию)</th></tr><tr><td>Простой вопрос</td><td>3000-5000 токенов правил</td><td>1000-1500 токенов (только alwaysApply)</td></tr><tr><td>Задача PB</td><td>3000-5000 токенов</td><td>1000 + 500 (скилл) = 1500</td></tr><tr><td>Задача SQL</td><td>3000-5000 токенов</td><td>1000 + 400 (скилл) = 1400</td></tr><tr><td>СБОРКА</td><td>3000-5000 токенов</td><td>1000 + 600 (скилл) = 1600</td></tr><tr><td>Задача VSS + SQL</td><td>3000-5000 токенов</td><td>1000 + 500 + 400 = 1900</td></tr></table>
+<br>
+<p><strong>Экономия: 40-70% контекста на правила</strong> — это критично при работе с большими задачами.</p>
+<br>
+<h3>2.4. Точность: скиллы vs alwaysApply</h3>
+<br>
+<table><tr><th>Критерий</th><th>alwaysApply</th><th>skills</th></tr><tr><td>Доступ к правилам</td><td>Всегда</td><td>Только при вызове</td></tr><tr><td>Риск &#171;забыть&#187; загрузить</td><td>Нет (всегда есть)</td><td>Да (зависит от description)</td></tr><tr><td>Нагрузка на контекст</td><td>Всегда максимальная</td><td>Минимальная</td></tr><tr><td>Гранулярность</td><td>Грубая (всё или ничего)</td><td>Тонкая (по теме)</td></tr><tr><td>Контроль LLM</td><td>Пассивный (авто)</td><td>Активный (выбор)</td></tr></table>
+<br>
+<p><strong>Важно:</strong> критичные правила (язык, безопасность, кодировка) <strong>не должны</strong> быть скиллами — они всегдаApply.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Рекомендации: какие скиллы создать</h2>
+<br>
+<h3>3.1. Приоритет 1 — критичные скиллы (создать сейчас)</h3>
+<br>
+<h4>3.1.1. `pb-object-skill` — Правила PowerBuilder объектов</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при анализе, правке, генерации PB-объектов (.srw, .sru, .srd, .srf, .srm, .srs).</p>
+<br>
+<p><strong>Выигрыш:</strong> не нужно грузить pb-object-rules.mdc (≈150 строк) для задач, не связанных с PB.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Как работать с event-ами (Click, ItemChanged, etc.)</p>
+<p>- Правила call super:: и наследования</p>
+<p>- HEX-кодирование русского текста (~n, ~t)</p>
+<p>- Правила именования: w_, u_, dddw_</p>
+<p>- Одна PBL — одна сущность</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\.opencode\pb-object-rules.mdc</code></p>
+<br>
+<p><strong>Пример SKILL.md:</strong></p>
+<br>
+<pre>
+---
+
+name: pb-object-skill
+
+description: Используй ТОЛЬКО при работе с объектами PowerBuilder: анализ .sr* файлов, правка PB-кода, генерация нового кода, рефакторинг PowerScript. Ключевые слова: .sru, .srw, .srd, event, function, call super, PBL, PB объект.
+
+---
+
+
+
+# Правила PowerBuilder объектов
+
+
+
+## Базовые правила
+
+- Одна PBL — одна сущность (golden_subject, golden_bill и т.д.)
+
+- Не смешивать объекты из разных PBL
+
+- При правке — проверять файловую кодировку Windows-1251
+
+
+
+## Event-ы
+
+[содержимое из pb-object-rules.mdc]
+
+
+
+## Функции и переменные
+
+[содержимое из pb-object-rules.mdc]
+
+
+
+## HEX-кодирование
+
+[содержимое из pb-object-rules.mdc]
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h4>3.1.2. `sql-skill` — Правила SQL (Sybase ASE)</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при анализе, правке, генерации SQL-кода для Sybase ASE 15.5.</p>
+<br>
+<p><strong>Выигрыш:</strong> sql-rules.mdc (≈120 строк) не будет загружаться для задач без SQL.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Специфика Sybase ASE 15.5 (min/max, ISNULL, конвертация типов)</p>
+<p>- Запрещённые конструкции (iif, ??, ?., =&gt;)</p>
+<p>- Правила оформления: отступы, алиасы, WHERE-порядок</p>
+<p>- Безопасность данных: только ID, не выводить имена/номера/суммы</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\.opencode\sql-rules.mdc</code></p>
+<br>
+<p><strong>Пример SKILL.md:</strong></p>
+<br>
+<pre>
+---
+
+name: sql-skill
+
+description: Используй ТОЛЬКО при работе с SQL Sybase ASE 15.5: анализ .sql файлов, правка хранимых процедур, генерация запросов, дампы. Ключевые слова: SQL, procedure, function, trigger, SELECT, INSERT, UPDATE, CREATE, golden, dev_golden.
+
+---
+
+
+
+# Правила SQL для Sybase ASE 15.5
+
+
+
+## Специфика ASE
+
+- ISNULL() вместо COALESCE()
+
+- string конкатенация: +
+
+- Дата: getdate(), dateadd(), datediff()
+
+
+
+## Безопасность данных
+
+[из sql-rules.mdc — раздел безопасности]
+
+
+
+## Оформление кода
+
+[из sql-rules.mdc]
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h4>3.1.3. `jira-task-skill` — Управление задачами Jira</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при начале/продолжении/завершении задач SYBASE-<em>/SUPRT-</em>, при любых манипуляциях с папками Git_/Test_/Ready_, при ТЗ, PLAN_РЕАЛИЗАЦИИ.</p>
+<br>
+<p><strong>Выигрыш:</strong> значительная часть AGENTS.md (раздел &#171;Правило TASK&#187;) не нужна при обычных вопросах.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Правило TASK: корневые пути, именование сессий</p>
+<p>- Правило поиска папки (0a): <code>&lt;задача&gt;_*</code> потом <code>&lt;задача&gt;</code></p>
+<p>- Получение описания из Jira (0b)</p>
+<p>- Авто-выгрузка оригиналов в Git_</p>
+<p>- Операции с Test_/Ready_/Describe</p>
+<p>- ПЛАН_РЕАЛИЗАЦИИ.txt и PlanState.json</p>
+<p>- Правило остановки/продолжения</p>
+<p>- Стратегия LLM-роутинга</p>
+<p>- MCP-знание: <code>ais-catalog_save_knowledge</code></p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\AGENTS.md</code> (разделы TASK, Правило остановки, Стратегия LLM)</p>
+<br>
+<p><strong>Пример SKILL.md:</strong></p>
+<br>
+<pre>
+---
+
+name: jira-task-skill
+
+description: Используй при ТЕКСТОВОМ упоминании задач SYBASE-*, SUPRT-*, TASK-*, команд TASK/ПРОДОБР, при работе с папками Git_/Test_/Ready_/Describe, при ПЛАН_РЕАЛИЗАЦИИ.txt. Не используй для простых вопросов без упоминания задач.
+
+---
+
+
+
+# Управление задачами Jira
+
+
+
+## Правило TASK
+
+[ПОЛНЫЙ текст раздела TASK из AGENTS.md]
+
+
+
+## Правило остановки/продолжения
+
+[текст из AGENTS.md]
+
+
+
+## Стратегия LLM-роутинга
+
+[текст из AGENTS.md]
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>3.2. Приоритет 2 — важные скиллы (создать в ближайшее время)</h3>
+<br>
+<h4>3.2.1. `vss-skill` — Работа с VSS</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при командах VSS, checkout/checkin, истории, проблемах с VSS.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Команды VSS (Get, Status, Checkout, Checkin)</p>
+<p>- Модуль VSS-Utils.ps1</p>
+<p>- Известные ошибки и решения</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\.opencode\vss-rules.mdc</code></p>
+<br>
+<p>---</p>
+<br>
+<h4>3.2.2. `sborka-skill` — Сборка проекта</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при командах СБОРКА, при сборке golden.exe + *.pbd.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Скрипт <code>Sborka-Golden.ps1</code></p>
+<p>- Режимы: GALAXY (тестирование), DEBUG</p>
+<p>- Версия из <code>golden.srj</code></p>
+<p>- Папки выхода: <code>Exe_yyyy_mm_dd__hh_mm\</code></p>
+<p>- Процесс: компиляция → PBD → EXE</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\docs\services\sborka.md</code></p>
+<br>
+<p>---</p>
+<br>
+<h4>3.2.3. `gui-wpf-skill` — WPF-интерфейс (СТАНДАРТ2)</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при правке GUI-кода, WPF-окон, СТАНДАРТ2, themes.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Архитектура СТАНДАРТ2 (vs СТАНДАРТ1)</p>
+<p>- Runspace + DispatcherTimer</p>
+<p>- Metro-темы</p>
+<p>- Визуальные стили и control templates</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\.opencode\standard2-gui.mdc</code></p>
+<br>
+<p>---</p>
+<br>
+<h4>3.2.4. `taskplan-skill` — Управление TaskPlan</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при командах TaskPl, ТаскПлан, управлении планами.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Запуск GUI: <code>Show-TaskPlanGUI.ps1</code></p>
+<p>- Вкладки: Список задач, Управление, Тесты</p>
+<p>- TaskPlan-Tracker.ps1, TaskPlan-Manager.ps1</p>
+<p>- Автотесты: <code>TaskPlan-Tests.ps1</code></p>
+<p>- OUTPL — анализ ошибок</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\docs\taskplan-gui-guide.md</code></p>
+<br>
+<p>---</p>
+<br>
+<h3>3.3. Приоритет 3 — специализированные скиллы (по мере необходимости)</h3>
+<br>
+<h4>3.3.1. `out-obr-skill` — Анализ вывода (ОБР/OUT/OUTPL)</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при командах ОБР, OUT, OUTPL, при анализе <code>temp/last_output.log</code>.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Формат логов (МОРДА, МОРДА2)</p>
+<p>- Распознавание ошибок</p>
+<p>- Автоисправление (fix-циклы)</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\scripts\Out-LastOutput.ps1</code></p>
+<br>
+<p>---</p>
+<br>
+<h4>3.3.2. `security-skill` — Безопасность и секреты</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при работе с паролями, токенами, <code>.local_secrets.json</code>, шифрованием.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Правила хранения секретов</p>
+<p>- <code>config/.local_secrets.json</code></p>
+<p>- <code>Read-SecretFromConfig</code></p>
+<p>- Запрет на Git-коммит секретов</p>
+<p>- Шифрование AES-256</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\AGENTS.md</code> (раздел &#171;Безопасность&#187;)</p>
+<br>
+<p>---</p>
+<br>
+<h4>3.3.3. `sql-diagnostics-skill` — Диагностические SQL-запросы</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при создании/модификации DIAG-объектов, диагностических MessageBox.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- DIAG-N messagebox в PB</p>
+<p>- Только SELECT (ЭКСТРА-режим)</p>
+<p>- Безопасность: только ID, не имена/номера/суммы</p>
+<p>- Формат DIAG_YYYY_MM_DD_hh_mm</p>
+<br>
+<p>---</p>
+<br>
+<h4>3.3.4. `mcp-skill` — Работа с MCP-серверами</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при вопросах о настройке MCP, подключении серверов.</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Список MCP-серверов проекта</p>
+<p>- <code>opencode.jsonc</code> → секция <code>mcp</code></p>
+<p>- Установка <code>uvx.exe mcp-atlassian</code></p>
+<p>- Переменные окружения</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\docs\services\mcp-servers.md</code></p>
+<br>
+<p>---</p>
+<br>
+<h4>3.3.5. `plugin-skill` — Плагины OpenCode</h4>
+<br>
+<p><strong>Описание:</strong> Загружать при разработке, настройке, отладке плагинов (.js).</p>
+<br>
+<p><strong>Содержание:</strong></p>
+<p>- Архитектура плагинов (PluginInput → Hooks)</p>
+<p>- Хуки: <code>tool.execute.before</code>, <code>config</code>, <code>chat.message</code></p>
+<p>- Существующие плагины проекта</p>
+<p>- Ссылки на <code>C:\AIS\AI\Prod\docs\services\plugins.md</code></p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Какие правила НЕ должны стать скиллами</h2>
+<br>
+<p><strong>Критичные правила (всегда в контексте):</strong></p>
+<br>
+<table><tr><th>Файл</th><th>Почему alwaysApply</th></tr><tr><td><code>russian-language.mdc</code></td><td>Язык коммуникации — невозможно &#171;забыть&#187;</td></tr><tr><td><code>russian-mandatory.md</code></td><td>То же</td></tr><tr><td><code>preflight.mdc</code></td><td>Проверки перед записью — критичны всегда</td></tr><tr><td><code>knowledge-first.mdc</code></td><td>Порядок поиска — всегда</td></tr><tr><td><code>save-analysis.mdc</code></td><td>Автосохранение — всегда</td></tr><tr><td><code>save-large-prompts.mdc</code></td><td>Автосохранение больших промптов — всегда</td></tr><tr><td><code>task-save-results.mdc</code></td><td>Фиксация результатов — всегда</td></tr><tr><td><code>token-economy.mdc</code></td><td>Экономия токенов — всегда</td></tr><tr><td><code>index.mdc</code></td><td>Точка входа — всегда</td></tr><tr><td><code>project-context.mdc</code></td><td>Контекст проекта — всегда</td></tr><tr><td><code>repository-layout.mdc</code></td><td>Структура репозитория — всегда</td></tr><tr><td><code>glossary.mdc</code></td><td>Глоссарий — всегда (еньё)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Пошаговый план внедрения</h2>
+<br>
+<h3>5.1. Подготовка</h3>
+<br>
+<p>1. <strong>Создать папку</strong> <code>C:\AIS\AI\Prod\.opencode\skills\</code> (если не существует)</p>
+<p>2. <strong>Добавить в</strong> <code>C:\AIS\AI\Prod\opencode.jsonc</code>:</p>
+<br>
+<pre>
+{
+
+  &quot;skills&quot;: {
+
+    &quot;paths&quot;: [&quot;.opencode/skills&quot;],
+
+    &quot;urls&quot;: []
+
+  }
+
+}
+
+</pre>
+<br>
+<h3>5.2. Создание скиллов (по приоритету)</h3>
+<br>
+<table><tr><th>Шаг</th><th>Скилл</th><th>Файл</th><th>Статус</th></tr><tr><td>1</td><td><code>pb-object-skill</code></td><td><code>.opencode/skills/pb-object-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>2</td><td><code>sql-skill</code></td><td><code>.opencode/skills/sql-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>3</td><td><code>jira-task-skill</code></td><td><code>.opencode/skills/jira-task-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>4</td><td><code>vss-skill</code></td><td><code>.opencode/skills/vss-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>5</td><td><code>sborka-skill</code></td><td><code>.opencode/skills/sborka-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>6</td><td><code>gui-wpf-skill</code></td><td><code>.opencode/skills/gui-wpf-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>7</td><td><code>taskplan-skill</code></td><td><code>.opencode/skills/taskplan-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>8</td><td><code>out-obr-skill</code></td><td><code>.opencode/skills/out-obr-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>9</td><td><code>security-skill</code></td><td><code>.opencode/skills/security-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>10</td><td><code>sql-diagnostics-skill</code></td><td><code>.opencode/skills/sql-diagnostics-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>11</td><td><code>mcp-skill</code></td><td><code>.opencode/skills/mcp-skill/SKILL.md</code></td><td>✅ Создан</td></tr><tr><td>12</td><td><code>plugin-skill</code></td><td><code>.opencode/skills/plugin-skill/SKILL.md</code></td><td>✅ Создан</td></tr></table>
+<br>
+<h3>5.3. Миграция</h3>
+<br>
+<p>1. Для каждого создаваемого скилла:</p>
+<p>   - Скопировать содержимое <code>.mdc</code>-файла в тело <code>SKILL.md</code></p>
+<p>   - Написать description с ключевыми словами (front-load)</p>
+<p>   - Убрать дублирующиеся блоки (ссылки на AGENTS.md вместо копирования)</p>
+<p>2. <strong>Убрать из alwaysApply</strong> (убрать <code>alwaysApply: true</code> или удалить <code>.mdc</code>):</p>
+<p>   - <code>pb-object-rules.mdc</code> → заменить <code>pb-object-skill</code></p>
+<p>   - <code>sql-rules.mdc</code> → заменить <code>sql-skill</code></p>
+<p>   - <code>vss-rules.mdc</code> → заменить <code>vss-skill</code></p>
+<p>   - <code>jira-table-rules.mdc</code> → включить в <code>jira-task-skill</code></p>
+<p>   - <code>standard2-gui.mdc</code> → заменить <code>gui-wpf-skill</code></p>
+<p>3. <strong>Оставить alwaysApply</strong> все критичные правила (язык, безопасность, кодировка)</p>
+<br>
+<p>&gt; ✅ <strong>Реализовано 15.09.2026:</strong> папка <code>.opencode\skills\</code> создана, блок <code>skills.paths</code> добавлен в <code>opencode.jsonc</code>, созданы все 12 скиллов. Значения <code>alwaysApply</code> в <code>pb-object-rules.mdc</code>, <code>vss-rules.mdc</code>, <code>jira-table-rules.mdc</code>, <code>standard2-gui.mdc</code> переведены в <code>false</code> (доступ через скиллы). <code>sql-rules.mdc</code> оставлен как был (<code>alwaysApply: false</code> изначально, критичный раздел &#171;Безопасность данных&#187; продублирован в скилле <code>sql-skill</code>). Для применения изменений требуется перезапуск OpenCode.</p>
+<br>
+<h3>5.4. Проверка</h3>
+<br>
+<p>1. Перезапустить OpenCode</p>
+<p>2. Проверить: <code>skill(name=&quot;pb-object-skill&quot;)</code> — должен загрузиться</p>
+<p>3. Проверить: контекст сессии уменьшился (в Debugger/логах)</p>
+<p>4. Проверить: LLM корректно вызывает скиллы при нужных задачах</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Дополнительные возможности</h2>
+<br>
+<h3>6.1. Skills через URLs (удалённые скиллы)</h3>
+<br>
+<p>Если в будущем понадобится шарить скиллы между проектами:</p>
+<br>
+<pre>
+{
+
+  &quot;skills&quot;: {
+
+    &quot;paths&quot;: [&quot;.opencode/skills&quot;],
+
+    &quot;urls&quot;: [
+
+      &quot;https://example.com/opencode-skills/&quot;,
+
+      &quot;git@github.com:company/opencode-skills.git&quot;
+
+    ]
+
+  }
+
+}
+
+</pre>
+<br>
+<h3>6.2. Скиллы как команда (hybrid)</h3>
+<br>
+<p>Можно комбинировать: скилл + команда для явного вызова:</p>
+<br>
+<pre>
+# .opencode/command/sborka.md
+
+---
+
+description: &quot;Запуск сборки проекта. Формат: СБОРКА [GALAXY|DEBUG]&quot;
+
+---
+
+
+
+Загрузи скилл sborka-skill и выполни сборку с параметрами: $ARGUMENTS
+
+</pre>
+<br>
+<h3>6.3. Скиллы и ссылки (references)</h3>
+<br>
+<p>Скиллы могут ссылаться на внешние документы через <code>references</code>:</p>
+<br>
+<pre>
+{
+
+  &quot;references&quot;: {
+
+    &quot;ais-docs&quot;: {
+
+      &quot;path&quot;: &quot;docs&quot;,
+
+      &quot;description&quot;: &quot;Документация проекта AIS&quot;
+
+    }
+
+  }
+
+}
+
+</pre>
+<br>
+<p>Внутри скилла: <code> см. @ais-docs/taskplan-guide.md </code></p>
+<br>
+<p>---</p>
+<br>
+<h2>7. Риски и ограничения</h2>
+<br>
+<table><tr><th>Риск</th><th>Описание</th><th>Решение</th></tr><tr><td>LLM не вызовет скилл</td><td>Нет гарантии, что описание триггерит</td><td>Точное front-loading ключевых слов</td></tr><tr><td>Задержка загрузки</td><td>Скилл грузится отдельным вызовом</td><td>Приемлемо для не-аварийных задач</td></tr><tr><td>Дублирование</td><td>Частичное дублирование с alwaysApply</td><td>Оставить базовые правила alwaysApply, скиллы — детали</td></tr><tr><td>Версионирование</td><td>Скиллы могут устареть</td><td>Хранить в git, версионировать через changelog</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>8. Заключение</h2>
+<br>
+<p><strong>Механизм скиллов — ключ к масштабированию правил проекта</strong> без перегрузки контекста. При текущем объёме правил (≈30+ .mdc-файлов, ≈1000 строк alwaysApply) скиллы позволяют:</p>
+<br>
+<p>- <strong>Экономить 40-70% токенов</strong> на правилах в каждой сессии</p>
+<p>- <strong>Повышать точность</strong> — LLM получает только релевантные правила</p>
+<p>- <strong>Упрощать поддержку</strong> — каждый скилл изолирован в своей папке</p>
+<p>- <strong>Шарить знания</strong> — через <code>skills.urls</code> между проектами</p>
+<br>
+<p><strong>Приоритет:</strong> начать с <code>pb-object-skill</code>, <code>sql-skill</code>, <code>jira-task-skill</code> — они покрывают 80% рабочих сценариев.</p>
+<br>
+</body></html>

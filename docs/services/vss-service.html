@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>vss-service</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>VSS-сервис — система контроля версий</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>VSS-сервис обеспечивает интеграцию с Microsoft Visual SourceSafe (ss.exe) для контроля версий PowerBuilder-объектов.</p>
+<br>
+<p><strong>Файлы:</strong></p>
+<p>- <code>scripts\VSS-Utils.ps1</code> — PowerShell-модуль (Get-VssLatest, Get-VssStatus, Set-VssCheckout, Set-VssCheckin, Undo)</p>
+<p>- <code>scripts\VSS-History.ps1</code> — история версий с поиском текста</p>
+<p>- <code>scripts\VSS-History-Show.ps1</code> — WPF-окно истории с TortoiseMerge</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Операции МОРДА2</h2>
+<br>
+<table><tr><th>№</th><th>Операция</th><th>Команда VSS</th></tr><tr><td>11</td><td>Get Latest</td><td><code>ss Get $/SRC125/... -R</code></td></tr><tr><td>12</td><td>Check Status</td><td><code>ss Status $/SRC125/... -R</code></td></tr><tr><td>13</td><td>Who Is Using</td><td><code>ss Properties $/SRC125/... -R</code></td></tr><tr><td>14</td><td>Checkout</td><td><code>ss Checkout $/SRC125/... -C&quot;comment&quot;</code></td></tr><tr><td>15</td><td>Checkin</td><td><code>ss Checkin $/SRC125/... -C&quot;comment&quot;</code></td></tr><tr><td>16</td><td>Undo Check Out</td><td><code>ss Undocheckout $/SRC125/...</code></td></tr><tr><td>17</td><td>Object History</td><td><code>ss History $/SRC125/...</code></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. История объекта</h2>
+<br>
+<p>Окно <code>VSS-History-Show.ps1</code> показывает все версии объекта с возможностью:</p>
+<p>- Сравнения через TortoiseMerge</p>
+<p>- Поиска текста по всем версиям</p>
+<p>- Прогресс-бары (фаза: версия N из M, шаг: поиск)</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Экономическая выгода</h2>
+<br>
+<p>- <strong>Автоматизация VSS:</strong> вместо ручного запуска ss.exe — один клик в МОРДА2</p>
+<p>- <strong>Массовые операции:</strong> рекурсивный Get Latest/Status для сотен объектов</p>
+<p>- <strong>Поиск по истории:</strong> поиск текста во всех версиях объекта за секунды</p>
+</body></html>

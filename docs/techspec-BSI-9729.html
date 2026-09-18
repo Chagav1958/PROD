@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>techspec-BSI-9729</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Техническая спецификация: Доработки справочника брокеров (BSI-9729)</h1>
+<br>
+<table><tr><th>Поле</th><th>Значение</th></tr><tr><td><strong>Задача</strong></td><td>BSI-9729 / SYBASE-18412 / SYBASE-17256</td></tr><tr><td><strong>Статус</strong></td><td>Черновик (TQ закрыты)</td></tr><tr><td><strong>Дата</strong></td><td>31.08.2026</td></tr><tr><td><strong>Платформа</strong></td><td>AIS (Sybase + PowerBuilder)</td></tr><tr><td><strong>Автор</strong></td><td>Автоматическая генерация</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>1. КОНТЕКСТ</h2>
+<br>
+<h3>1.1 Проблема/запрос</h3>
+<p>Доработки справочника брокеров для перевода партнёров на автоматизированную выгрузку КВ. Расширение кодов <code>generation_point</code> (СР12, СР13, СР14, СР123, СР124, СР134), добавление признака &#171;Дата акта&#187;, кнопки &#171;Обновить&#187; и dblclick → карточка посредника.</p>
+<br>
+<h3>1.2 Связи</h3>
+<p>- Связанные задачи: SYBASE-18412, SYBASE-17256, SYBASE-15496, SYBASE-8938, SYBASE-14391</p>
+<p>- Затронутые продукты: AIS</p>
+<p>- Владелец продукта: Лейч Марина (PO)</p>
+<p>- Технический владелец: Сердюков Анатолий</p>
+<br>
+<h3>1.3 Источники</h3>
+<p>- Продуктовая спека: <a href="https://wiki.renins.com/pages/viewpage.action?pageId=1012635352&amp;pageVersion=2">Wiki 1012635352 v2</a></p>
+<p>- Задача: <a href="https://mytask.renins.com/browse/BSI-9729">BSI-9729</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>2. AS-IS (текущее состояние)</h2>
+<br>
+<h3>2.1 Объекты</h3>
+<br>
+<p><strong>Справочник (SYBASE-18412):</strong></p>
+<br>
+<table><tr><th>Проект</th><th>Библиотека/БД</th><th>Объект</th><th>Роль</th></tr><tr><td>AIS</td><td>golden_commission</td><td><code>dddw_generate_point</code></td><td>DDDW &#171;Срок форм. отчета&#187;</td></tr><tr><td>AIS</td><td>golden_sprw</td><td><code>d_ref_pdf_location_card_9039</code></td><td>Карточка строки справочника</td></tr><tr><td>AIS</td><td>golden_sprw</td><td><code>d_ais_cat_pdf_location_import</code></td><td>Excel-загрузка справочника</td></tr></table>
+<br>
+<p><strong>Вознаграждение посредников (SYBASE-17256):</strong></p>
+<br>
+<table><tr><th>Проект</th><th>Библиотека/БД</th><th>Объект</th><th>Роль</th></tr><tr><td>DEV_GOLDEN</td><td>golden</td><td><code>usp_broker_commission_ex</code></td><td>Отбор КВ брокеров + признак &#171;генерация сегодня&#187;</td></tr><tr><td>AIS</td><td>golden_commission</td><td><code>d_broker_commission_list</code></td><td>DW списка</td></tr><tr><td>AIS</td><td>golden_commission</td><td><code>d_mid_com_filter_new_20201222</code></td><td>Фильтр формы, галка Спр.Брокеров</td></tr><tr><td>AIS</td><td>golden_commission</td><td><code>dddw_generate_point</code></td><td>DDDW фильтра &#171;Срок форм. отчета&#187;</td></tr><tr><td>AIS</td><td>golden_commission</td><td><code>d_generate_report_accept</code></td><td>Выбор группировки</td></tr><tr><td>AIS</td><td>golden_commission</td><td><code>w_generate_report_accept</code></td><td>Окно группировки</td></tr><tr><td>AIS</td><td>golden_commission</td><td><code>w_middleman_commission_b2b</code></td><td>Форма &#171;Вознаграждение посредников&#187;</td></tr></table>
+<br>
+<h3>2.2 Данные</h3>
+<br>
+<p><strong>Таблица:</strong> <code>ais_cat_pdf_location</code></p>
+<br>
+<table><tr><th>Колонка</th><th>Тип</th><th>Описание</th></tr><tr><td><code>generation_point</code></td><td>varchar(64) NOT NULL</td><td>Код среды (СР0, СР1, СР2, ...)</td></tr><tr><td><code>entity_id</code></td><td>numeric(10,0)</td><td>ID посредника</td></tr></table>
+<br>
+<p><strong>Текущие значения <code>generation_point</code>:</strong></p>
+<br>
+<table><tr><th>UI</th><th>Код</th></tr><tr><td>Нет</td><td>*пусто*</td></tr><tr><td>КаждаяСР</td><td>СР0</td></tr><tr><td>ПерваяСР</td><td>СР1</td></tr><tr><td>ВтораяСР</td><td>СР2</td></tr><tr><td>ТретьяСР</td><td>СР3</td></tr><tr><td>ЧетвертаяСР</td><td>СР4</td></tr><tr><td>ВтораяСР/ТретьяСР</td><td>СР23</td></tr><tr><td>ВтораяСР/ЧетвертаяСР</td><td>СР24</td></tr><tr><td>ТретьяСР/ЧетвертаяСР</td><td>СР34</td></tr><tr><td>ВтораяСР/ТретьяСР/ЧетвертаяСР</td><td>СР234</td></tr></table>
+<br>
+<h3>2.3 Логика</h3>
+<br>
+<p><strong>Определение недели (usp_broker_commission_ex, строки 1908-1913):</strong></p>
+<pre>
+SELECT @numWeek = Convert(int, datename(dd, @DateCurrent)) / 7 +
+
+    Case When Convert(int, datename(dd, @DateCurrent)) % 7 = 0 then 0 else 1 end
+
+
+
+AND p.generation_point LIKE &#39;%&#39; + Convert(varchar(1), @numWeek) + &#39;%&#39;
+
+</pre>
+<br>
+<p><strong>Правило:</strong> код содержит цифру N → попадает в среду N. СР0 — все среды.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. TO-BE (целевое состояние)</h2>
+<br>
+<h3>3.1 Блок 1: Коды сред</h3>
+<br>
+<p><strong>Цель:</strong> Расширить допустимые значения <code>generation_point</code>.</p>
+<br>
+<p><strong>Изменения:</strong></p>
+<br>
+<table><tr><th>Объект</th><th>Библиотека</th><th>Изменение</th></tr><tr><td><code>dddw_generate_point</code></td><td>golden_commission</td><td>Добавить 6 новых строк UNION</td></tr><tr><td><code>d_ref_pdf_location_card_9039</code></td><td>golden_sprw</td><td>Если список зашит не только в DDDW</td></tr><tr><td><code>d_ais_cat_pdf_location_import</code></td><td>golden_sprw</td><td>Маппинг Excel → generation_point</td></tr><tr><td><code>usp_broker_commission_ex</code></td><td>golden</td><td><strong>Без изменений</strong> (автоматически)</td></tr><tr><td>Автогенерация</td><td>golden</td><td><strong>Без изменений</strong> (автоматически)</td></tr><tr><td>Фильтр формы</td><td>golden_commission</td><td>Проверить маппинг СР1 → все коды с &#171;1&#187;</td></tr></table>
+<br>
+<p><strong>Новые коды:</strong></p>
+<br>
+<table><tr><th>UI</th><th>Код</th><th>Новое</th></tr><tr><td>ПерваяСР/ВтораяСР</td><td>СР12</td><td>да</td></tr><tr><td>ПерваяСР/ТретьяСР</td><td>СР13</td><td>да</td></tr><tr><td>ПерваяСР/ЧетвертаяСР</td><td>СР14</td><td>да</td></tr><tr><td>ПерваяСР/ВтораяСР/ТретьяСР</td><td>СР123</td><td>да</td></tr><tr><td>ПерваяСР/ВтораяСР/ЧетвертаяСР</td><td>СР124</td><td>да</td></tr><tr><td>ПерваяСР/ТретьяСР/ЧетвертаяСР</td><td>СР134</td><td>да</td></tr></table>
+<br>
+<p><strong>Фильтр формы:</strong></p>
+<br>
+<table><tr><th>Значение фильтра</th><th><code>generation_point</code></th></tr><tr><td>ПерваяСР</td><td>СР1, СР12, СР13, СР14, СР123, СР124, СР134</td></tr><tr><td>ВтораяСР</td><td>СР2, СР12, СР23, СР24, СР123, СР124, СР234</td></tr><tr><td>ТретьяСР</td><td>СР3, СР13, СР23, СР34, СР123, СР134, СР234</td></tr><tr><td>ЧетвертаяСР</td><td>СР4, СР14, СР24, СР34, СР124, СР134, СР234</td></tr><tr><td>КаждаяСР</td><td>СР0</td></tr></table>
+<br>
+<p><strong>Риск:</strong> Низкий — логика автоматически поддерживает новые коды.</p>
+<br>
+<p>---</p>
+<br>
+<h3>3.2 Блок 2: Обновить / Retrieve</h3>
+<br>
+<p><strong>Цель:</strong> Добавить кнопку &#171;Обновить&#187; в окно справочника.</p>
+<br>
+<p><strong>Изменения:</strong></p>
+<br>
+<table><tr><th>Объект</th><th>Библиотека</th><th>Изменение</th></tr><tr><td><code>d_ref_pdf_location_card_9039</code></td><td>golden_sprw</td><td>Добавить обработчик кнопки</td></tr></table>
+<br>
+<p><strong>Реализация (псевдокод PB):</strong></p>
+<pre>
+// ue_toolbar (кнопка &#171;Обновить&#187;)
+
+if dw_list.ModifiedCount() &gt; 0 then
+
+    if MessageBox(&quot;Внимание&quot;, &quot;Данные были изменены. Сохранить?&quot;,
+
+                  Exclamation!, YesNo!, 2) = 1 then
+
+        dw_list.Update()
+
+    end if
+
+end if
+
+dw_list.Retrieve()
+
+</pre>
+<br>
+<p><strong>Риск:</strong> Низкий — стандартный PB-паттерн.</p>
+<br>
+<p>---</p>
+<br>
+<h3>3.3 Блок 3: Дата акта</h3>
+<br>
+<p><strong>Цель:</strong> Добавить признак &#171;Дата акта&#187; + отбор комиссий по дате оплаты.</p>
+<br>
+<p><strong>Изменения:</strong></p>
+<br>
+<table><tr><th>Объект</th><th>Библиотека</th><th>Изменение</th></tr><tr><td><code>ais_cat_pdf_location</code></td><td>БД</td><td>ALTER TABLE — добавить <code>act_date_mode</code></td></tr><tr><td><code>d_ref_pdf_location_card_9039</code></td><td>golden_sprw</td><td>Добавить DDDW/dropdown для <code>act_date_mode</code></td></tr><tr><td><code>d_ais_cat_pdf_location_import</code></td><td>golden_sprw</td><td>Маппинг Excel → <code>act_date_mode</code></td></tr><tr><td><code>usp_broker_commission_ex</code></td><td>golden</td><td>Добавить фильтр по оплате при <code>act_date_mode=&#39;1&#39;</code></td></tr><tr><td>Автогенерация</td><td>golden</td><td>То же правило</td></tr><tr><td>Отчёт</td><td>golden</td><td>Присвоение даты акта — <code>external_date</code></td></tr></table>
+<br>
+<p><strong>DDL:</strong></p>
+<pre>
+ALTER TABLE ais_cat_pdf_location
+
+ADD act_date_mode char(1) null
+
+GO
+
+
+
+sp_addextendedproperty &#39;MS_Description&#39;,
+
+    &#39;Режим даты акта: NULL=не указано (default), 1=последний день пред. месяца&#39;,
+
+    &#39;user&#39;, &#39;dbo&#39;, &#39;table&#39;, &#39;ais_cat_pdf_location&#39;, &#39;column&#39;, &#39;act_date_mode&#39;
+
+GO
+
+</pre>
+<br>
+<p><strong>Маппинг:</strong></p>
+<br>
+<table><tr><th>UI</th><th>БД</th><th>Excel</th></tr><tr><td>не указано</td><td>NULL</td><td>пусто и любое значение ≠ <code>1</code></td></tr><tr><td>последний день пред. месяца</td><td><code>1</code></td><td><code>1</code></td></tr></table>
+<br>
+<p><strong>Вычисление даты акта:</strong></p>
+<pre>
+DECLARE @act_date datetime
+
+IF @act_date_mode = &#39;1&#39;
+
+    SET @act_date = dateadd(day, -1, dateadd(month, datediff(month, 0, @gen_date), 0))
+
+ELSE
+
+    SET @act_date = @gen_date
+
+</pre>
+<br>
+<p><strong>Отбор комиссий:</strong></p>
+<pre>
+AND (p.pay_date IS NOT NULL AND p.pay_date &lt;= @act_date)
+
+</pre>
+<br>
+<p><strong>Риск:</strong> Средний — затрагивает usp и автогенерацию.</p>
+<br>
+<p>---</p>
+<br>
+<h3>3.4 Блок 4: Dblclick → карточка посредника</h3>
+<br>
+<p><strong>Цель:</strong> Открытие карточки посредника по dblclick на строке справочника.</p>
+<br>
+<p><strong>Изменения:</strong></p>
+<br>
+<table><tr><th>Объект</th><th>Библиотека</th><th>Изменение</th></tr><tr><td><code>d_ref_pdf_location_card_9039</code></td><td>golden_sprw</td><td>Добавить обработчик dblclick</td></tr></table>
+<br>
+<p><strong>Реализация (псевдокод PB):</strong></p>
+<pre>
+// ue_dblclick в окне справочника
+
+Long ll_entity_id
+
+ll_entity_id = dw_list.GetItemNumber(row, &quot;entity_id&quot;)
+
+
+
+if IsNull(ll_entity_id) or ll_entity_id = 0 then
+
+    return  // no-op
+
+end if
+
+
+
+OpenWithParm(w_middleman_card, ll_entity_id)
+
+
+
+// После close — Retrieve
+
+dw_list.Retrieve()
+
+</pre>
+<br>
+<p><strong>Поведение:</strong></p>
+<br>
+<table><tr><th>Условие</th><th>Поведение</th></tr><tr><td><code>entity_id</code> пустой</td><td>no-op</td></tr><tr><td>посредник не найден</td><td>карточка не открывается</td></tr><tr><td>найден</td><td>стандартная карточка</td></tr></table>
+<br>
+<p><strong>Риск:</strong> Низкий — стандартный PB-паттерн.</p>
+<br>
+<p>---</p>
+<br>
+<h3>3.5 Матрица изменений</h3>
+<br>
+<table><tr><th>Блок</th><th>Объекты</th><th>DDL</th><th>Код</th><th>Риск</th></tr><tr><td>1</td><td>dddw_generate_point, d_ref_pdf_location_card_9039, d_ais_cat_pdf_location_import</td><td>нет</td><td>нет</td><td>низкий</td></tr><tr><td>2</td><td>d_ref_pdf_location_card_9039</td><td>нет</td><td>да</td><td>низкий</td></tr><tr><td>3</td><td>ais_cat_pdf_location, d_ref_pdf_location_card_9039, d_ais_cat_pdf_location_import, usp_broker_commission_ex</td><td>да</td><td>да</td><td>средний</td></tr><tr><td>4</td><td>d_ref_pdf_location_card_9039</td><td>нет</td><td>да</td><td>низкий</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. ЗАТРОНУТЫЕ СИСТЕМЫ</h2>
+<br>
+<table><tr><th>Система</th><th>Изменение</th><th>Влияние</th></tr><tr><td>AIS Sybase + PB</td><td>Да: справочник, usp, окна, автогенерация</td><td>Прямое</td></tr><tr><td>ЛК партнёра</td><td>Нет (только замер PSI)</td><td>Нет</td></tr><tr><td>ЭДО / Диадок</td><td>Нет (только замер % ЭДО)</td><td>Нет</td></tr><tr><td>API</td><td>Нет</td><td>Нет</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. РИСКИ</h2>
+<br>
+<table><tr><th>Риск</th><th>Вероятность</th><th>Влияние</th><th>Снижение</th></tr><tr><td>Новый код СР* не попал в автомат / фильтр / Excel</td><td>низкая</td><td>среднее</td><td>Smoke по матрице блока 1</td></tr><tr><td>DDDW фильтра и карточки разъехались</td><td>низкая</td><td>среднее</td><td>Один источник <code>dddw_generate_point</code></td></tr><tr><td>Excel <code>1</code> vs UI-текст</td><td>низкая</td><td>низкое</td><td>Маппинг только на границе загрузки</td></tr><tr><td>Auto-Retrieve недоступен</td><td>низкая</td><td>среднее</td><td>Кнопка обязательна</td></tr><tr><td>Отбор оплаты сломает агентские списки</td><td>низкая</td><td>высокое</td><td>Менять только broker-контур</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>6. КРИТЕРИИ ПРИЁМКИ</h2>
+<br>
+<h3>6.1 Продуктовые критерии</h3>
+<br>
+<table><tr><th>ID</th><th>Критерий</th></tr><tr><td>AC-1</td><td>Коды СР12, СР13, СР14, СР123, СР124, СР134 доступны в DDDW</td></tr><tr><td>AC-2</td><td>Фильтр ПерваяСР включает все коды с &#171;1&#187;</td></tr><tr><td>AC-3</td><td>Автогенерация работает с новыми кодами</td></tr><tr><td>AC-4</td><td>Дата акта вычисляется корректно</td></tr><tr><td>AC-5</td><td>Excel-загрузка корректно обрабатывает <code>act_date_mode</code></td></tr></table>
+<br>
+<h3>6.2 Технические критерии</h3>
+<br>
+<table><tr><th>ID</th><th>Критерий</th></tr><tr><td>TAC-1</td><td>В <code>ais_cat_pdf_location</code> пишутся и читаются 6 новых кодов</td></tr><tr><td>TAC-2</td><td>Фильтр ПерваяСР включает все коды с &#171;1&#187;</td></tr><tr><td>TAC-3</td><td>Job автогенерации в 1-ю среду берёт СР1 и новые коды с &#171;1&#187;</td></tr><tr><td>TAC-4</td><td><code>act_date_mode=&#39;1&#39;</code>, формирование в марте → дата акта 28/29.02</td></tr><tr><td>TAC-5</td><td>Excel: <code>1</code> / пусто / мусор — по BR-12; неизвестный СР* — ошибка</td></tr><tr><td>TAC-6</td><td>Dblclick: открытие по entity_id; пустой entity_id — нет вызова Open</td></tr><tr><td>TAC-7</td><td>Retrieve кнопкой без close окна; ModifiedCount не теряется молча</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. ДЕКОМПОЗИЦИЯ SYBASE</h2>
+<br>
+<h3>7.1 User Story</h3>
+<br>
+<table><tr><th>Поле</th><th>Значение</th></tr><tr><td>Название</td><td>Доработки справочника брокеров (BSI-9729)</td></tr><tr><td>Приоритет</td><td>High</td></tr><tr><td>Оценка</td><td>40 часов (оценка предварительная)</td></tr></table>
+<br>
+<h3>7.2 Подзадачи</h3>
+<br>
+<table><tr><th>#</th><th>Подзадача</th><th>Оценка</th><th>Статус</th></tr><tr><td>1</td><td>Анализ объектов</td><td>8 ч</td><td>[x]</td></tr><tr><td>2</td><td>Разработка блока 1 (коды сред)</td><td>8 ч</td><td>[ ]</td></tr><tr><td>3</td><td>Разработка блока 2 (Retrieve)</td><td>4 ч</td><td>[ ]</td></tr><tr><td>4</td><td>Разработка блока 3 (дата акта)</td><td>12 ч</td><td>[ ]</td></tr><tr><td>5</td><td>Разработка блока 4 (dblclick)</td><td>4 ч</td><td>[ ]</td></tr><tr><td>6</td><td>Тестирование</td><td>8 ч</td><td>[ ]</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>8. ПРИЛОЖЕНИЯ</h2>
+<br>
+<h3>8.1 Закрытые вопросы (TQ)</h3>
+<br>
+<table><tr><th>#</th><th>Вопрос</th><th>Ответ</th></tr><tr><td>TQ-1</td><td>Имя/тип колонки &#171;Дата акта&#187;</td><td><code>act_date_mode char(1) null</code></td></tr><tr><td>TQ-2</td><td>Объекты автогенерации</td><td>Автоматически через LIKE</td></tr><tr><td>TQ-3</td><td>Объект Excel-загрузки</td><td><code>d_ais_cat_pdf_location_import</code></td></tr><tr><td>TQ-4</td><td>Объект карточки посредника</td><td>Стандартное окно через OpenWithParm</td></tr><tr><td>TQ-5</td><td>Объект list-окна справочника</td><td><code>d_ref_pdf_location_card_9039</code></td></tr><tr><td>TQ-6</td><td>Мотивационные акты / АР / сторно</td><td>Отдельные процедуры</td></tr><tr><td>TQ-7</td><td>Где пишется дата акта</td><td><code>external_date</code> таблицы отчёта</td></tr><tr><td>TQ-8</td><td>Auto-Retrieve после close</td><td><code>PostEvent(&#39;ue_refresh&#39;)</code></td></tr></table>
+<br>
+<h3>8.2 Источники</h3>
+<br>
+<p>- Продуктовая спека BSI-9729, Wiki 1012635352 v2</p>
+<p>- Wiki 854327672, 457900103</p>
+<p>- SYBASE-14391, 15491/15496, 17254/17256, 18410/18412</p>
+<p>- BSI-8391, BSI-9729</p>
+<br>
+<p>---</p>
+<br>
+<h2>ИСТОРИЯ ИЗМЕНЕНИЙ</h2>
+<br>
+<table><tr><th>Дата</th><th>Автор</th><th>Описание</th></tr><tr><td>31.08.2026</td><td>Автоматическая генерация</td><td>Создание документа на основе черновика</td></tr></table>
+<br>
+</body></html>

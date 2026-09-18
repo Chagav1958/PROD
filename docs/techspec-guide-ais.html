@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>techspec-guide-ais</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Краткое руководство по шаблону техспеки AIS</h1>
+<br>
+<h2>Структура файла</h2>
+<br>
+<pre>
+techspec-BSI-XXXX.md
+
+├── 1. КОНТЕКСТ           — проблема, связи, источники
+
+├── 2. AS-IS              — текущее состояние (объекты, данные, логика)
+
+├── 3. TO-BE              — целевое состояние (блоки, DDL, код)
+
+├── 4. ЗАТРОНУТЫЕ СИСТЕМЫ — влияние на другие системы
+
+├── 5. РИСКИ              — риски и снижение
+
+├── 6. КРИТЕРИИ ПРИЁМКИ   — продуктовые и технические критерии
+
+├── 7. ДЕКОМПОЗИЦИЯ       — US и подзадачи
+
+└── 8. ПРИЛОЖЕНИЯ         — схемы, примеры, скриншоты
+
+</pre>
+<br>
+<h2>Порядок заполнения</h2>
+<br>
+<h3>Шаг 1: Контекст</h3>
+<p>- Заполните задачу (SYBASE-XXXX / BSI-XXXX)</p>
+<p>- Укажите связи и источники</p>
+<br>
+<h3>Шаг 2: AS-IS</h3>
+<p>- Найдите объекты через <code>ais-objects_search_objects</code></p>
+<p>- Прочитайте структуру таблиц через <code>ais-objects_get_object</code></p>
+<p>- Опишите текущую логику</p>
+<br>
+<h3>Шаг 3: TO-BE</h3>
+<p>- Разбейте на логические блоки</p>
+<p>- Для каждого блока: объекты, DDL, код</p>
+<p>- Используйте pseudocode для PB</p>
+<br>
+<h3>Шаг 4: Остальные секции</h3>
+<p>- Заполните затронутые системы</p>
+<p>- Оцените риски</p>
+<p>- Запишите критерии приёмки</p>
+<p>- Создайте декомпозицию</p>
+<br>
+<h2>Интеграция с инструментами</h2>
+<br>
+<h3>Поиск объектов</h3>
+<pre>
+ais-objects_search_objects(query=&quot;имя объекта&quot;)
+
+ais-objects_get_object(name=&quot;имя объекта&quot;, src=&quot;current&quot;)
+
+</pre>
+<br>
+<h3>Сохранение знаний</h3>
+<pre>
+ais-catalog_save_knowledge(text=&quot;описание&quot;, tags=&quot;теги&quot;)
+
+</pre>
+<br>
+<h3>Jira</h3>
+<p>- Ссылка на задачу в шапке</p>
+<p>- US и подзадачи → SYBASE-XXXX</p>
+<br>
+<h2>Примеры</h2>
+<br>
+<h3>Пример блока DDL</h3>
+<pre>
+-- Добавление колонки
+
+ALTER TABLE ais_cat_pdf_location
+
+ADD act_date_mode char(1) null
+
+GO
+
+</pre>
+<br>
+<h3>Пример блока PB</h3>
+<pre>
+// ue_toolbar (кнопка &#171;Обновить&#187;)
+
+if dw_list.ModifiedCount() &gt; 0 then
+
+    if MessageBox(&quot;Внимание&quot;, &quot;Сохранить?&quot;,
+
+                  Exclamation!, YesNo!, 2) = 1 then
+
+        dw_list.Update()
+
+    end if
+
+end if
+
+dw_list.Retrieve()
+
+</pre>
+<br>
+<h2>Чек-лист перед утверждением</h2>
+<br>
+<p>- [ ] Все TQ закрыты</p>
+<p>- [ ] DDL проверены</p>
+<p>- [ ] Код проверен на совместимость с PS 5.1</p>
+<p>- [ ] Критерии приёмки заполнены</p>
+<p>- [ ] Декомпозиция оценена</p>
+<p>- [ ] Риски описаны</p>
+<p>- [ ] Документ конвертирован в HTML/PDF</p>
+<br>
+</body></html>

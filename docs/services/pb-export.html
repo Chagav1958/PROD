@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>pb-export</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>PB Export — сервис выгрузки PowerBuilder</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.1 от 01.09.2026 (добавлен раздел &#171;7. Тестирование&#187;)</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>Сервис выгрузки объектов PowerBuilder из PBL-файлов в текстовый формат (.sru, .srw, .srd) через утилиту pbldump.</p>
+<br>
+<p><strong>Файлы:</strong></p>
+<p>- <code>scripts\Export-PB.ps1</code> — основной скрипт выгрузки (31 библиотека, 2617 объектов)</p>
+<p>- <code>scripts\Extract-PbSrw.ps1</code> — извлечение .srw (Window)</p>
+<p>- <code>scripts\Extract-PbSru.ps1</code> — извлечение .sru (UserObject)</p>
+<p>- <code>scripts\Extract-PbRest.ps1</code> — извлечение остальных (.srd, .srm, .srs)</p>
+<p>- <code>scripts\Extract-PbMetadata.ps1</code> — извлечение метаданных</p>
+<p>- <code>tools\pbldump-1.3.1stable\PblDump.exe</code> — утилита экспорта</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Процесс выгрузки</h2>
+<br>
+<pre>
+PBL-файлы (C:\Work\gold\*.pbl)
+
+    ↓ pbldump
+
+.sr* файлы (PB_Current\библиотека\*.sr*)
+
+    ↓ Convert-ExportEncoding.ps1
+
+UTF-8 с BOM, CRLF
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>3. Параметры МОРДА2 (ОП5)</h2>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td>Source</td><td>Current (C:\Work\gold) / Main (C:\SRC125\gold)</td></tr><tr><td>TaskName</td><td>Имя задачи Jira (опционально)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. Библиотеки (31 шт.)</h2>
+<br>
+<p><code>golden_subject</code>, <code>golden_rule</code>, <code>golden_correct</code>, <code>golden_...</code> — набор библиотек страхового продукта.</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. Кодировка</h2>
+<br>
+<table><tr><th>Этап</th><th>Кодировка</th></tr><tr><td>PBL (исходный)</td><td>ANSI (CP1251)</td></tr><tr><td>.sr* после pbldump</td><td>CP1251 / UTF-16</td></tr><tr><td>.sr* после конвертации</td><td><strong>UTF-8 с BOM, CRLF</strong></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>6. Экономическая выгода</h2>
+<br>
+<p>- <strong>Массовая выгрузка:</strong> 2617 объектов за ~5 минут (ручной: ~6 часов)</p>
+<p>- <strong>Автоматическая кодировка:</strong> нормализация CP1251→UTF-8 без ручного вмешательства</p>
+<p>- <strong>Инкрементальная:</strong> выгрузка только объектов конкретной задачи</p>
+<br>
+<p>---</p>
+<br>
+<h2>7. Тестирование (01.09.2026)</h2>
+<br>
+<p>Проверено на <code>dev_golden</code>/<code>gold</code> (Current) и <code>C:\SRC125\gold</code> (Main). Багов в <code>Export-PB.ps1</code> не выявлено.</p>
+<br>
+<h3>7.1. Полный экспорт Current</h3>
+<br>
+<table><tr><th>Параметр</th><th>Результат</th></tr><tr><td>Библиотек выгружено</td><td>31</td></tr><tr><td>Объектов (файлов)</td><td><strong>2611</strong> (0 пустых)</td></tr><tr><td>Пропущено</td><td>2 (PBD: <code>winlogon_syb.pbd</code>, <code>pbdom125.pbd</code> — корректно)</td></tr><tr><td>Время</td><td>~13 сек</td></tr><tr><td>Свежесть</td><td>файлы <code>LastWriteTime</code> в окне запуска</td></tr><tr><td>Кодировка</td><td>.sr* → UTF-8 с BOM, CRLF → ✓</td></tr><tr><td>Расширения</td><td>.srd 1366, .sru 695, .srw 394, .srf 90, .srp 21, .srs 20, .srm 19, .srj 5, .sra 1</td></tr></table>
+<br>
+<h3>7.2. Полный экспорт Main</h3>
+<br>
+<p>- Библиотек: 31, объектов: <strong>2601</strong> (10 расхождений с Current — рабочая разница контуров), 0 пустых, BOM ✓.</p>
+<p>- Разница Current/Main = 10 объектов — ожидаемое отличие &#171;песочница/боевой&#187; в процессе разработки.</p>
+<br>
+<h3>7.3. Фильтрация по задаче (`-TaskName`)</h3>
+<br>
+<p><code>Export-PB.ps1 -Source Current -TaskName SYBASE-19298</code> → выгружено <strong>10 объектов</strong> (уникальные <code>.sr<em></code> из всех папок <code>Ready_</em></code> задачи). Полный экспорт (2611) не выполняется — фильтрация работает.</p>
+<br>
+<h3>7.4. Негативные тесты</h3>
+<br>
+<table><tr><th>Сценарий</th><th>Результат</th></tr><tr><td><code>-Source WrongSource</code> (не из ValidateSet)</td><td>exit 1, <code>Cannot validate argument</code> ✓</td></tr><tr><td><code>-TaskName NOSUCHTASK_99999</code> (нет папки задачи)</td><td>exit 1, &#171;Папка задачи не найдена&#187; ✓</td></tr><tr><td>Повторный запуск в существующую папку</td><td>даты файлов обновляются ✓</td></tr></table>
+<br>
+<h3>7.5. Вывод</h3>
+<br>
+<p>Сервис выгрузки PB работает корректно при любых комбинациях параметров (Source / TaskName / OutputDir), файлы создаются со свежей датой/временем, кодировка .sr* приводится к UTF-8 BOM, фильтрация по задаче и пропуск PBD отработаны.</p>
+</body></html>

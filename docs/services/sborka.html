@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>sborka</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Техническая спецификация: Сервис «СБОРКА»</h1>
+<br>
+<p>&gt; <strong>Гибрид (важно):</strong> Если в этой или предыдущей сессии была запущена команда <code>TASK</code>/<code>TASK &lt;имя&gt;</code> и идёт выполнение требований ТЗ — &#171;СБОРКА&#187; может быть запущена <strong>как подрежим TASK-сессии</strong>, для тестирования доработанных по ТЗ объектов (сборка exe, проверка на тестовой среде или galaxy). Это не отдельный однодневный сервис, а вспомогательный этап внутри задачи. См. также <code>rules/sborka-rules.md</code> → раздел &#171;Гибрид TASK&#187;, и <code>docs/services/extra.md</code> (ЭКСТРА — аналогично).</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>&gt; <strong>Гибрид (важно):</strong> Если в этой или предыдущей сессии была запущена команда <code>TASK</code> (<code>TASK</code>, <code>&lt;имя&gt;</code>) и идёт выполнение требований ТЗ — &#171;СБОРКА&#187; может быть запущена <strong>как подрежим TASK-сессии</strong> для тестирования доработанных по ТЗ объектов (сборка exe + pbd + проверка). Это не обязательно отдельный сервис; см. также <code>rules/sborka-rules.md</code> → &#171;Гибрид TASK&#187; и <code>rules/extra-rules.md</code> (ЭКСТРА — аналогично).</p>
+<br>
+<p>Сервис <strong>&#171;СБОРКА&#187;</strong> автоматизирует сборку исполняемого файла <code>golden.exe</code> и динамических библиотек <code><em>.pbd</code> из исходных объектов PowerBuilder для задач типа <code>SYBASE-</em></code>, <code>SUPRT-*</code>, произвольных задач TASK.</p>
+<br>
+<p>Цель — получить готовый к передаче тестировщикам комплект: исполняемый файл + библиотеки + вспомогательные файлы (dll, ini, ocx).</p>
+<br>
+<h2>2. Область применения</h2>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td>Типы задач</td><td><code>TASK</code>, <code>SYBASE-*</code>, <code>SUPRT-*</code>, любые проектные задачи</td></tr><tr><td>Категория</td><td>Сборка (Build)</td></tr><tr><td>Выходной каталог</td><td><code>Exe_yyyy_mm_dd__hh_mm</code></td></tr><tr><td>Инструмент</td><td>PowerBuilder 12.5 (командная строка)</td></tr></table>
+<br>
+<h2>3. Входные данные</h2>
+<br>
+<p>1. <strong>Исходные объекты PB</strong> из рабочих библиотек (<code>PB_Current</code> / <code>C:\SRC125\gold</code>).</p>
+<p>2. <strong>Наиболее свежие объекты PB</strong> из папок <code>Test_yyyy_mm_dd</code> (готовые, доработанные объекты, подменяющие исходные).</p>
+<p>3. <strong>Вспомогательные файлы</strong> из <code>C:\Work\gold\golden_start\EXE</code> — <code><em>.dll</code>, <code></em>.ini</code>, <code>*.ocx</code>.</p>
+<br>
+<h2>4. Выходной каталог `Exe_yyyy_mm_dd__hh_mm`</h2>
+<br>
+<p>Формат имени — по тем же правилам, что и папки <code>Test_</code>:</p>
+<br>
+<p>- <code>Exe_2026_09_14__15_30</code> — дата и время сборки.</p>
+<p>- Если за эту дату папка уже существует — НЕ перезаписывать, а создать новую с суффиксом времени.</p>
+<br>
+<p>Содержимое:</p>
+<br>
+<pre>
+Exe_2026_09_14__15_30/
+
+├── golden.exe              — основной исполняемый файл
+
+├── *.pbd                   — все динамические библиотеки
+
+├── *.dll                   — вспомогательные библиотеки (из EXE-набора)
+
+├── *.ini                   — конфигурационные файлы (из EXE-набора)
+
+├── *.ocx                   — ActiveX (если есть)
+
+└── RELEASE_NOTES.txt       — описание сборки (версия, состав, дата)
+
+</pre>
+<br>
+<h2>5. Процесс генерации exe</h2>
+<br>
+<p>Генерация через командную строку PowerBuilder (см. документацию PowerBuilder 12.5 — построение из командной строки, <code>pbx125.exe</code> / <code>pbw125.exe</code> без GUI).</p>
+<br>
+<p>Общая схема:</p>
+<br>
+<pre>
+pbx125.exe &lt;workspace&gt; /build /target &lt;target&gt; /lib &lt;lib&gt; /project &lt;project&gt;
+
+</pre>
+<br>
+<h3>5.1. Перед генерацией — обновление golden.srj</h3>
+<br>
+<p>Файл: объект PB <code>golden.srj</code> (библиотека <code>golden_start</code>).</p>
+<br>
+<table><tr><th>Поле</th><th>Требование</th></tr><tr><td><code>Copyright</code></td><td><code>(c) 10.09.2026 Renaissance Insurance AI</code> — вместо <code>10.09.2026</code> подставляется <strong>текущая дата</strong></td></tr><tr><td><code>Product version</code></td><td>Повышается с каждой генерацией exe</td></tr><tr><td><code>File version</code></td><td>Повышается с каждой генерацией exe (в <strong>двух местах</strong>)</td></tr></table>
+<br>
+<p>Повышение версии:</p>
+<p>- Строковый формат вида <code>X.Y.Z</code> (например <code>1.0.0</code> → <code>1.0.1</code>).</p>
+<p>- Текущее значение читается из <code>golden.srj</code>, счётчик увеличивается на 1.</p>
+<p>- Дата в Copyright — сегодняшняя.</p>
+<br>
+<h3>5.2. Генерация</h3>
+<br>
+<p>- Сборка <code>golden.exe</code> (exe + all pbd).</p>
+<p>- Компиляция всех библиотек, входящих в workspace.</p>
+<p>- Проверка ошибок компиляции (нет ошибок → сборка успешна).</p>
+<br>
+<h3>5.3. Копирование вспомогательных файлов</h3>
+<br>
+<p>- Из <code>C:\Work\gold\golden_start\EXE</code> копируются: <code><em>.dll</code>, <code></em>.ini</code>, <code>*.ocx</code> (все вспомогательные файлы).</p>
+<p>- Копируются в <code>Exe_yyyy_mm_dd__hh_mm</code>.</p>
+<br>
+<h2>6. Режим «СБОРКА GALAXY»</h2>
+<br>
+<p>Если указываем <strong>&#171;СБОРКА GALAXY&#187;</strong> — это значит, что сборка будет тестироваться на сервере galaxy, <strong>одновременно с рабочим процессом</strong>.</p>
+<br>
+<h3>6.1. Ограничение</h3>
+<br>
+<p>Мы <strong>НЕ МОЖЕМ вносить изменения в объекты SQL и тестировать эти изменения в galaxy</strong> — нельзя изменять рабочие SQL-объекты.</p>
+<br>
+<h3>6.2. Правило _CHAGA</h3>
+<br>
+<p>Аналоги SQL-объектов создаются с добавлением к имени суффикса <strong><code>_CHAGA</code></strong>:</p>
+<br>
+<table><tr><th>Рабочий объект</th><th>Тестовый аналог</th></tr><tr><td><code>usp_report_list_multi_m</code></td><td><code>usp_report_list_multi_m_CHAGA</code></td></tr><tr><td><code>v_report_detail</code></td><td><code>v_report_detail_CHAGA</code></td></tr></table>
+<br>
+<p>Требования:</p>
+<br>
+<p>1. Такие объекты (<code>*_CHAGA</code>) создаются для тестирования на сервере galaxy.</p>
+<p>2. Именно такие объекты вызываются из объектов PB, входящих в сборку.</p>
+<p>3. На именно таких объектах проверяется работа.</p>
+<br>
+<h3>6.3. Порядок для GALAXY</h3>
+<br>
+<pre>
+1. Экспорт рабочих SQL-объектов из dev_golden.
+
+2. Создание аналогов *_CHAGA.
+
+3. Внесение изменений ТОЛЬКО в *_CHAGA версии.
+
+4. Настройка PB-объектов на вызов *_CHAGA.
+
+5. Сборка exe.
+
+6. Тестирование на galaxy параллельно рабочему процессу.
+
+7. После подтверждения — перенос изменений в рабочие объекты и снятие *_CHAGA.
+
+</pre>
+<br>
+<h2>7. Структура команд</h2>
+<br>
+<table><tr><th>Команда</th><th>Параметры</th><th>Действие</th></tr><tr><td><code>СБОРКА</code></td><td>—</td><td>Обычная сборка exe + pbd + вспомогательные файлы</td></tr><tr><td><code>СБОРКА GALAXY</code></td><td>—</td><td>Сборка для тестирования на galaxy + создание SQL-аналогов <code>*_CHAGA</code></td></tr><tr><td><code>СБОРКА &lt;путь&gt;</code></td><td>путь к папке Exe</td><td>Сборка с указанием места размещения</td></tr></table>
+<br>
+<h2>8. Проверка результата</h2>
+<br>
+<table><tr><th>Что проверяем</th><th>Как</th></tr><tr><td>Файлы созданы</td><td><code>golden.exe</code> существует, не пустой</td></tr><tr><td>PBD есть</td><td>Список <code>*.pbd</code> совпадает с библиотеками workspace</td></tr><tr><td>Версия повышена</td><td><code>golden.srj</code> — Product/File version увеличены</td></tr><tr><td>Дата актуальна</td><td><code>Copyright</code> содержит сегодняшнюю дату</td></tr><tr><td>Вспомогательные файлы</td><td>Все dll/ini/ocx из EXE-набора присутствуют в папке</td></tr></table>
+<br>
+<h2>9. Хранение и документирование</h2>
+<br>
+<p>- Папки <code>Exe_yyyy_mm_dd__hh_mm</code> создаются в корне задачи (та же папка, где <code>Test_</code>).</p>
+<p>- <code>RELEASE_NOTES.txt</code> — обязательный файл: версия, состав, дата, режим (обычная / GALAXY).</p>
+<p>- В <code>Describe\</code> — запись &#171;СБОРКА YYYY-MM-DD HH:MM: версия X.Y.Z, состав, результат&#187;.</p>
+<br>
+<h2>10. Инструменты (реализовано)</h2>
+<br>
+<table><tr><th>Инструмент</th><th>Путь</th><th>Назначение</th></tr><tr><td><code>Sborka-Golden.ps1</code></td><td><code>C:\AIS\AI\Prod\scripts\Sborka-Golden.ps1</code></td><td>Консольный скрипт сборки: генерация <code>.PBS</code>, запуск <code>orcascr125.exe</code>, повышение версии, копирование в <code>Exe_yyyy_mm_dd__hh_mm</code>, <code>RELEASE_NOTES.txt</code>, обновление <code>golden.srj</code></td></tr><tr><td><code>Show-Sborka-GUI.ps1</code></td><td><code>C:\AIS\AI\Prod\scripts\Show-Sborka-GUI.ps1</code></td><td>ДО (диалоговое окно) сервиса: параметры (имя задачи, папка выгрузки, вариант 1/2), запуск сборки в фоне, лог и прогресс</td></tr><tr><td>OrcaScript</td><td><code>C:\Program Files (x86)\Sybase\Shared\PowerBuilder\orcascr125.exe</code></td><td>Командная строка PB 12.5 для сборки exe + pbd</td></tr></table>
+<br>
+<h3>10.1. Принцип работы (OrcaScript)</h3>
+<br>
+<p>- Скрипт <code>.PBS</code> (генерация <code>temp\sborka\sborka_*.pbs</code>):</p>
+<p>  - <code>start session</code></p>
+<p>  - <code>set liblist</code> — 33 библиотеки из <code>LibList</code> файла <code>gold.pbt</code> (пути относительные от рабочего каталога)</p>
+<p>  - <code>set application &quot;golden_start\golden_start.pbl&quot; &quot;golden&quot;</code></p>
+<p>  - <code>set exeinfo property</code> — copyright, fileversion, fileversionnum, productversion, productversionnum</p>
+<p>  - <code>build executable &quot;golden_start\golden.exe&quot; &quot;users.ico&quot; &quot;golden_start\golden.pbr&quot; &quot;&lt;PbdFlags&gt;&quot;</code></p>
+<p>  - <code>end session</code></p>
+<p>- <code>PbdFlags</code>: <code>N</code> для <code>golden_start.pbl</code> (компилируется в exe), <code>Y</code> для остальных (pbd).</p>
+<p>- Комментарии в <code>.PBS</code> — только <code>//</code> (символ <code>#</code> OrcaScript не поддерживает → <code>Command syntax error</code>).</p>
+<p>- <strong>Критично:</strong> <code>orcascr125.exe</code> запускать из рабочего каталога <code>C:\Work\gold</code> (относительные пути liblist).</p>
+<p>- Запуск from PS: <code>cmd /c &quot;orcascr125.exe file.pbs &gt; log 2&gt;&amp;1&quot;</code> (прямой вызов PowerShell ломает захват stdout).</p>
+<br>
+<h3>10.2. Версия и Copyright</h3>
+<br>
+<p>- Версия перед сборкой повышается на 1 в последнем компоненте (X.Y.Z → X.Y.Z+1), читается из <code>golden.srj</code> (<code>PVS</code>/<code>PVN</code>/<code>FVS</code>/<code>FVN</code>).</p>
+<p>- Copyright: <code>(c) ДД.ММ.ГГГГ Renaissance Insurance AI</code> (дата — сегодняшняя).</p>
+<br>
+<h3>10.3. ДО Show-Sborka-GUI.ps1</h3>
+<br>
+<p>Параметры формы:</p>
+<p>- <strong>Имя задачи</strong> — для папки выгрузки по умолчанию (по правилу TASK: <code>C:\AIS\1 Release\&lt;имя&gt;</code> / <code>C:\AIS\AI\Prod\tasks\&lt;имя&gt;</code>).</p>
+<p>- <strong>Папка выгрузки</strong> — куда класть <code>Exe_yyyy_mm_dd__hh_mm</code>; если пусто — автоопределение.</p>
+<p>- <strong>Вариант 1</strong> — сухой прогон (dry-run): подготовить <code>.PBS</code>, сборку не выполнять.</p>
+<p>- <strong>Вариант 2</strong> — сразу собрать exe + pbd (<code>-RunBuild</code>).</p>
+<p>- Кнопка &#171;Открыть результат&#187; — открыть последнюю собранную папку <code>Exe_*</code>.</p>
+<p>- Лог + неопределённый прогресс во время сборки (запуск в фоновом потоке, UI не блокируется).</p>
+<br>
+<p>Запуск: <code>powershell -NoLogo -File scripts\Show-Sborka-GUI.ps1</code>.</p>
+<br>
+<h2>11. Точки неопределённости (уточнить при реализации)</h2>
+<br>
+<p>1. ~~Точный инструмент командной строки PB для сборки~~ → <strong>реализовано</strong>: OrcaScript <code>orcascr125.exe</code>.</p>
+<p>2. ~~Формат записи версии в <code>golden.srj</code>~~ → <strong>реализовано</strong>: <code>PVS</code>/<code>PVN</code>/<code>FVS</code>/<code>FVN</code>/<code>CPY</code>.</p>
+<p>3. ~~Список целевых PBD-библиотек для workspace~~ → <strong>реализовано</strong>: из <code>LibList</code> файла <code>gold.pbt</code> (33 библиотеки).</p>
+<p>4. Взаимодействие с galaxy (каталог, права, способ развёртывания).</p>
+</body></html>

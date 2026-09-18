@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>dllm</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>DLLM — Диалоговое окно управления LLM-моделями</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>DLLM (Диалоговое окно LLM) — WPF-интерфейс для просмотра, управления и тестирования языковых моделей, подключённых через провайдеры OpenCode.</p>
+<br>
+<p><strong>Файл:</strong> <code>scripts\Show-LLMs.ps1</code> (1625 строк)</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Возможности</h2>
+<br>
+<p>- <strong>Список моделей</strong> — таблица всех LLM с полями: название, доступность, рейтинг PB/SQL, цена, контекст</p>
+<p>- <strong>Сортировка и фильтрация</strong> — по цене, интеллекту, рассуждениям, скорости</p>
+<p>- <strong>Кнопка &#171;Проверить все&#187;</strong> — автоматическая проверка доступности всех моделей через API</p>
+<p>- <strong>Смена текущей модели</strong> — выбор основной и малой моделей для OpenCode</p>
+<p>- <strong>Статистика</strong> — счётчики: всего, работоспособно, недоступно</p>
+<p>- <strong>Process-ключи</strong> — отображение предупреждений об API-ключах из process environment</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Провайдеры (из opencode.jsonc)</h2>
+<br>
+<table><tr><th>Провайдер</th><th>Тип</th><th>Моделей</th></tr><tr><td>RouterAI</td><td>основной, платный</td><td>6 (Claude, GPT, DeepSeek, Gemini)</td></tr><tr><td>Ollama</td><td>локальный, бесплатный</td><td>2 (Qwen, DeepSeek Coder)</td></tr><tr><td>Yandex GPT</td><td>отключён</td><td>1</td></tr><tr><td>Anthropic</td><td>отключён</td><td>1</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. Критерии оценки моделей</h2>
+<br>
+<table><tr><th>Параметр</th><th>Шкала</th><th>Описание</th></tr><tr><td>PB Rating</td><td>1-11</td><td>Качество анализа PowerBuilder-кода</td></tr><tr><td>SQL Rating</td><td>1-11</td><td>Качество анализа SQL/Sybase</td></tr><tr><td>Cost</td><td>$/токен</td><td>input &#215; output</td></tr><tr><td>Context</td><td>токенов</td><td>Максимальный размер контекста</td></tr><tr><td>Reasoning</td><td>bool</td><td>Поддержка рассуждений</td></tr><tr><td>Tool Call</td><td>bool</td><td>Поддержка вызова инструментов</td></tr><tr><td>Speed</td><td>строка</td><td>Оценка скорости ответа</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Экономическая выгода</h2>
+<br>
+<p>- <strong>Быстрый выбор модели:</strong> вместо ручного редактирования opencode.jsonc — один клик</p>
+<p>- <strong>Экономия токенов:</strong> автоматический выбор дешёвой модели для простых задач</p>
+<p>- <strong>Мониторинг доступности:</strong> кнопка &#171;Проверить все&#187; экономит ~10 минут ручной проверки</p>
+</body></html>

@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>plugins</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Плагины OpenCode — каталог и описание</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Общее описание</h2>
+<br>
+<p>Плагины OpenCode — JavaScript/Node.js модули, расширяющие функциональность OpenCode Desktop. Загружаются при старте и регистрируют хуки на события чата, сессии и файловой системы.</p>
+<br>
+<p>Конфигурация: <code>opencode.jsonc</code> → секция <code>plugin</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Плагины проекта</h2>
+<br>
+<h3>2.1. save-prompts.js</h3>
+<p><strong>Файл:</strong> <code>.opencode\plugins\save-prompts.js</code></p>
+<br>
+<p>Автосохранение промптов пользователя в <code>temp\user_prompts.log</code>. Каждый промпт длиной &gt; 20 символов записывается с датой и временем.</p>
+<br>
+<h3>2.2. russian-compaction.js</h3>
+<p><strong>Файл:</strong> <code>.opencode\plugins\russian-compaction.js</code></p>
+<br>
+<p>Заменяет стандартный английский промпт сжатия сессии на русский. Сводки диалогов создаются на русском языке (Objective → Цель, Work State → Состояние работы и т.д.).</p>
+<br>
+<h3>2.3. claude-code.js</h3>
+<p><strong>Файл:</strong> <code>.opencode\plugins\claude-code.js</code></p>
+<br>
+<p>Интеграция с Claude Code для анализа и рефакторинга объектов PowerBuilder (.sr*) и SQL (.sql). Предоставляет инструменты <code>claude_pb</code> и <code>claude_sql</code>.</p>
+<br>
+<h3>2.4. loop-guard.js</h3>
+<p><strong>Файл:</strong> <code>.opencode\plugin\loop-guard.js</code></p>
+<br>
+<p>Защита от бесконечных циклов правок. Отслеживает количество последовательных правок одного файла и блокирует при превышении порога.</p>
+<br>
+<h3>2.5. task-progress.js</h3>
+<p><strong>Файл:</strong> <code>.opencode\plugin\task-progress.js</code></p>
+<br>
+<p>Отслеживание прогресса задач. Интегрируется с todowrite для визуализации состояния этапов.</p>
+<br>
+<h3>2.6. @betterspec/opencode</h3>
+<p><strong>Тип:</strong> npm-пакет</p>
+<br>
+<p>Улучшенная спецификация промптов. Добавляет валидацию и форматирование инструкций.</p>
+<br>
+<h3>2.7. @relf108/opencode-watchdog</h3>
+<p><strong>Тип:</strong> npm-пакет</p>
+<br>
+<p>Система безопасности правок:</p>
+<p>- <strong>Scope enforcement</strong> — блокировка правок вне утверждённого scope.txt</p>
+<p>- <strong>Baseline testing</strong> — тесты до/после изменений</p>
+<p>- <strong>Commit gate</strong> — блокировка git commit без test-baseline.txt и test-latest.txt</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Экономическая выгода</h2>
+<br>
+<p>- <strong>Автосохранение промптов:</strong> восстановление контекста после сбоя</p>
+<p>- <strong>Русские сводки:</strong> экономия токенов на переводе</p>
+<p>- <strong>Watchdog:</strong> предотвращение случайных правок вне scope</p>
+</body></html>

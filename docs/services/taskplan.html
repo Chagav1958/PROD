@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>taskplan</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>TaskPlan — сервис планирования и управления задачами</h1>
+<br>
+<p>&gt; <strong>Версия:</strong> 1.0 от 07.08.2026</p>
+<p>&gt; <strong>Родительский том:</strong> <a href="../master-index.md">Главный том документации</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>TaskPlan — сервис управления объёмными задачами через WPF-интерфейс, трекер этапов и диспетчер задач. Позволяет разбивать большие задачи на этапы, отслеживать прогресс и переключаться между задачами.</p>
+<br>
+<p><strong>Файлы:</strong></p>
+<p>- <code>scripts\Show-TaskPlanGUI.ps1</code> — WPF ДО</p>
+<p>- <code>scripts\TaskPlan-Tracker.ps1</code> — ядро логики этапов</p>
+<p>- <code>scripts\TaskPlan-Manager.ps1</code> — диспетчер множества задач</p>
+<p>- <code>scripts\TaskPlan-Tests.ps1</code> — 15 автотестов</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Вкладки ДО</h2>
+<br>
+<table><tr><th>Вкладка</th><th>Назначение</th></tr><tr><td><strong>Список задач</strong></td><td>Таблица этапов с цветовой маркировкой (зелёный=[x], жёлтый=[~], красный=[!], серый=[ ])</td></tr><tr><td><strong>Управление</strong></td><td>Создание/редактирование планов, установка статусов, добавление этапов</td></tr><tr><td><strong>Тесты</strong></td><td>Запуск 15 автотестов полного цикла</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>3. Статусы этапов</h2>
+<br>
+<table><tr><th>Маркер</th><th>Статус</th><th>Значение</th></tr><tr><td><code>[ ]</code></td><td>todo</td><td>Не начат</td></tr><tr><td><code>[~]</code></td><td>wip</td><td>В работе</td></tr><tr><td><code>[x]</code></td><td>done</td><td>Готово</td></tr><tr><td><code>[!]</code></td><td>defer</td><td>Отложен на дорогую LLM</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. Диспетчер задач</h2>
+<br>
+<p>- Хранит <code>task_index.json</code> в корне задач</p>
+<p>- Поддерживает: create, list, show, switch, suspend, resume, edit-prompt, delete</p>
+<p>- <strong>Текущая задача</strong> — одна активная, остальные paused при переключении</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. OUTPL — анализ ошибок TaskPlan</h2>
+<br>
+<p><code>scripts\Out-TaskPlan.ps1</code> анализирует <code>temp\taskplan_last_output.log</code>, распознаёт 8 типов ошибок и выдаёт диагностику с автоисправлением.</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Экономическая выгода</h2>
+<br>
+<p>- <strong>Структурирование больших задач:</strong> разбивка на этапы с отслеживанием</p>
+<p>- <strong>Передача контекста:</strong> любая LLM продолжает с контрольной точки</p>
+<p>- <strong>Автотестирование:</strong> 15 тестов без участия человека</p>
+</body></html>

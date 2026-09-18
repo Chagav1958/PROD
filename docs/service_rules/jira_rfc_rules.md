@@ -11,7 +11,7 @@
 ## Зависимости
 
 - **Jira REST API** — версия 2 (`/rest/api/2/`)
-- **HTTP Bearer Auth** — API-токен
+- **HTTP-авторизация (схема Bearer)** — API-токен
 - Invoke-RestMethod (встроенный в PowerShell)
 
 ## Поля RFC (из RFC-12336 / RFC-12359)

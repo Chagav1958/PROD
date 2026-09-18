@@ -1,0 +1,375 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>services_catalog</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Каталог сервисов и исполняемых файлов проекта AIS</h1>
+<br>
+<p><strong>Дата обновления:</strong> 14.09.2026</p>
+<p><strong>Всего сервисов:</strong> 24</p>
+<br>
+<p>---</p>
+<br>
+<h2>Содержание</h2>
+<br>
+<p>1. <a href="#1-консольные-сервисы">Консольные сервисы</a></p>
+<p>2. <a href="#2-wpf-приложения">WPF приложения</a></p>
+<p>3. <a href="#3-git-хуки">Git хуки</a></p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Консольные сервисы</h2>
+<br>
+<h3>1.1. Library (Сервис «Библиотека»)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\services\Library\Library\Library.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Сканирование docs/ и Specs/ для создания каталога документации в форматах MD, HTML, PDF</td></tr><tr><td><strong>Входные файлы</strong></td><td><code>docs\*.md</code>, <code>docs\*.html</code>, <code>docs\*.pdf</code>, <code>C:\AIS\AI\Test\Specs\*</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td><code>docs\catalog.md</code>, <code>docs\catalog.html</code>, <code>docs\catalog.pdf</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0</td></tr><tr><td><strong>Зависимости</strong></td><td>PdfSharpCore</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\services\Library\Library
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>1.2. SqlExport (Экспорт SQL объектов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\SqlExport\SqlExport.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Экспорт SQL-объектов из Sybase ASE через SQL_exp_param.bat (восстановлено 01.09.2026: Found 2250 / OK 2250)</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>server</code>, <code>db</code>, <code>password</code>, <code>exportPath</code>, <code>objectType (optional)</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td>Экспортированные SQL объекты</td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\SqlExport
+
+dotnet run -- &lt;server&gt; &lt;db&gt; &lt;password&gt; &lt;exportPath&gt; [objectType]
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>1.3. CountToken (Подсчёт токенов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\CountToken\CountToken.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Подсчёт токенов текста с использованием SharpToken</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>model (optional, default: cl100k_base)</code>, <code>file path или stdin</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td>JSON: <code>{model, tokens, chars}</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0</td></tr><tr><td><strong>Зависимости</strong></td><td>SharpToken</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\CountToken
+
+dotnet run -- [model] &lt;file.txt&gt;
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>1.4. ExportFull (Полный экспорт PB/SQL)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\ExportFull\ExportFull.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Полный экспорт всех PB и SQL объектов из БД каталога в JSON файлы</td></tr><tr><td><strong>Входные файлы</strong></td><td><code>C:\AIS\AI\Prod\scripts\ais_objects_mcp\objects.db</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td><code>temp\pb_full.json</code>, <code>temp\sql_full.json</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0</td></tr><tr><td><strong>Зависимости</strong></td><td>Microsoft.Data.Sqlite</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\ExportFull
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>2. WPF приложения</h2>
+<br>
+<h3>2.1. Show-Abbreviations-CS (Сокращения)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-Abbreviations-CS\Show-Abbreviations.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Просмотр сокращений проекта. Загружает данные из abbreviations_data.json</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>config\abbreviations_data.json</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-Abbreviations-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.2. Show-Diagrams-CS (Диаграммы)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-Diagrams-CS\Show-Diagrams.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Просмотрщик диаграмм (Mermaid, PlantUML, Graphviz DOT, SVG)</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>C:\AIS\AI\Visualization\diagrams\*</code>, <code>C:\AIS\AI\BP\docs\*</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-Diagrams-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.3. Show-LLMs-CS (Тестирование LLM)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-LLMs-CS\Show-LLMs.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Тестирование доступности LLM моделей. Загружает конфиг из opencode.jsonc</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>opencode.jsonc</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td><code>temp\llm_test_results.json</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-LLMs-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.4. Show-TaskPlan-CS (Лаунчер TaskPlan)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-TaskPlan-CS\Show-TaskPlan.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Лаунчер TaskPlan — запускает Show-TaskPlanGUI.ps1</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-TaskPlan-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.5. Show-Report-CS (Отчёт по задаче)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-Report-CS\Show-Report.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>WPF окно отчёта по задаче — показывает изменённые объекты</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>taskName</code>, <code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>C:\AIS\1 Release\&lt;taskName&gt;\*</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-Report-CS
+
+dotnet run -- &lt;taskName&gt;
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.6. Show-Rules-CS (Правила)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-Rules-CS\Show-Rules.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Просмотрщик правил проекта (.mdc файлы). Группирует по категориям</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>.opencode\*.mdc</code>, <code>rules\*.mdc</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-Rules-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.7. Show-OpStatus-CS (Статус операций)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-OpStatus-CS\Show-OpStatus.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Дерево объектов с цветовой маркировкой статусов (OK, FIX, ERROR, SKIP)</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>config\operation_status.json</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td><code>config\operation_status.json</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-OpStatus-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.8. Show-TimeFIX-CS (Календарь + EWS)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS\Show-TimeFIX.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Календарь рабочей недели с интеграцией EWS (Exchange)</td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-TimeFIX-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.9. Show-ProgressState-CS (Индикатор прогресса)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-ProgressState-CS\Show-ProgressState.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Опрашивает temp\progress_state.json и показывает прогресс-бары задач</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>temp\progress_state.json</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-ProgressState-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.10. Show-Appl2Standard-CS (Миграция объектов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-Appl2Standard-CS\ShowAppl2Standard.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Миграция объектов Application → Standard. Таблица объектов с фильтрацией</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-Appl2Standard-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.11. Show-Prompts-CS (Промпты)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-Prompts-CS\Show-Prompts.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Просмотрщик промптов пользователя. Загружает из temp\user_prompts.log</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>temp\user_prompts.log</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-Prompts-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.12. Show-RestoreDialog-CS (Восстановление из снапшотов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-RestoreDialog-CS\ShowRestoreDialog.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Диалог восстановления OpenCode из снапшотов</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>archives\OpenCode\Snapshot_*\*</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-RestoreDialog-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.13. Show-TestMsg-CS (Тестовое окно)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-TestMsg-CS\Show-TestMsg.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Тестовое окно с прогресс-барами и анимацией. Для отладки GUI</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-TestMsg-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.14. Show-Report-Launcher-CS (Лаунчер отчётов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-Report-Launcher-CS\Show-Report-Launcher.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Выбор задачи из C:\AIS\1 Release и запуск Show-Report.ps1</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>C:\AIS\1 Release\SYBASE-*\*</code>, <code>C:\AIS\1 Release\SUPRT-*\*</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-Report-Launcher-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.15. Show-RestoreFromBackup-CS (Восстановление из бэкапов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-RestoreFromBackup-CS\ShowRestoreFromBackup.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Восстановление критичных файлов из бэкапов</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>archives\SNAPSHOT\*</code>, <code>Restore\*</code>, <code>archives\FIX\*</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-RestoreFromBackup-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.16. Show-TaskPlanGUI-CS (GUI TaskPlan)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\Show-TaskPlanGUI-CS\Show-TaskPlanGUI.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>GUI для TaskPlan — список скриптов и файлов задачи</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>scripts\*.ps1</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\Show-TaskPlanGUI-CS
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>2.17. SetupSecrets (Настройка секретов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\SetupSecrets\SetupSecrets.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Шифрование/дешифрование паролей Sybase, VSS, Jira, EWS</td></tr><tr><td><strong>Параметры вызова</strong></td><td><code>--autotest &lt;file&gt; (optional)</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>config\.local_secrets.json</code>, <code>~\.config\ews-mcp\credentials.env</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td><code>config\.local_secrets.json</code>, <code>~\.config\ews-mcp\credentials.env</code></td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0-windows</td></tr></table>
+<br>
+<p><strong>Запуск:</strong></p>
+<pre>
+cd C:\AIS\AI\Prod\scripts\SetupSecrets
+
+dotnet run
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>3. Git хуки</h2>
+<br>
+<h3>3.1. PreCommitHook (Блокировка секретов)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Путь</strong></td><td><code>C:\AIS\AI\Prod\scripts\PreCommitHook\PreCommitHook.csproj</code></td></tr><tr><td><strong>Описание</strong></td><td>Блокирует коммиты с паролями, токенами, логинами, API-ключами</td></tr><tr><td><strong>Входные файлы</strong></td><td>git staged files</td></tr><tr><td><strong>Фреймворк</strong></td><td>.NET 6.0</td></tr></table>
+<br>
+<p><strong>Установка:</strong></p>
+<pre>
+# Скопировать в .git/hooks/pre-commit
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>4. Сервисы задач (TASK)</h2>
+<br>
+<p>&gt; Полные спецификации: <a href="services/sborka.md">sborka.md</a> (СБОРКА), <a href="services/extra.md">extra.md</a> (ЭКСТРА)</p>
+<br>
+<h3>4.1. СБОРКА (Сборка дистрибутива PB)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Описание</strong></td><td>Сборка <code>golden.exe</code> + <code>*.pbd</code> + вспомогательных файлов (dll/ini/ocx) из исходных PB-объектов и свежих объектов из <code>Test_*</code></td></tr><tr><td><strong>Выходные файлы</strong></td><td><code>Exe_yyyy_mm_dd__hh_mm\</code> (по правилам папок <code>Test_</code>), <code>RELEASE_NOTES.txt</code></td></tr><tr><td><strong>Входные файлы</strong></td><td><code>C:\AIS\AI\Prod\PB_Current\*</code>, <code>C:\SRC125\gold\*</code>, <code>Test_*\*</code>, <code>C:\Work\gold\golden_start\EXE\*</code></td></tr><tr><td><strong>Версионирование</strong></td><td><code>golden.srj</code> (библиотека <code>golden_start</code>): Copyright <code>(c) dd.mm.yyyy Renaissance Insurance AI</code>; Product/File version повышаются с каждой сборкой</td></tr><tr><td><strong>Режимы</strong></td><td><code>СБОРКА</code> (обычная), <code>СБОРКА GALAXY</code> (тестирование на galaxy), <code>СБОРКА DEBUG</code></td></tr><tr><td><strong>Режим GALAXY</strong></td><td>SQL-объекты для теста создаются с суффиксом <code>_CHAGA</code>; PB-объекты сборки вызывают только <code>*_CHAGA</code> версии; рабочие SQL-объекты в galaxy НЕ изменяются</td></tr></table>
+<br>
+<p><strong>Команды:</strong></p>
+<pre>
+СБОРКА            # обычная сборка
+
+СБОРКА GALAXY     # сборка для тестирования на сервере galaxy
+
+СБОРКА DEBUG      # debug-сборка
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h3>4.2. ЭКСТРА (Экстренный однодневный режим SQL)</h3>
+<br>
+<table><tr><th>Параметр</th><th>Значение</th></tr><tr><td><strong>Описание</strong></td><td>Экстренный режим (1 день), разрешающий LLM выполнять SELECT-запросы к БД для анализа и поиска решений по ТЗ</td></tr><tr><td><strong>Длительность</strong></td><td>Только день, объявленный &#171;ЭКСТРА&#187;</td></tr><tr><td><strong>Доступ</strong></td><td>Исключительно <code>SELECT</code> (только чтение); всё остальное запрещено</td></tr><tr><td><strong>Безопасность данных</strong></td><td>Без конфиденциальной информации: без имён, документов, номеров полисов/договоров, сумм, адресов, телефонов, email; текстовые поля не более 10 символов</td></tr><tr><td><strong>Назначение</strong></td><td>Анализ ТЗ, поиск решений, когда иначе не обойтись и время критически не хватает</td></tr></table>
+<br>
+<p><strong>Запрещено:</strong> INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, TRUNCATE, EXEC и любые другие команды.</p>
+<br>
+<p>---</p>
+<br>
+<h2>Статистика</h2>
+<br>
+<table><tr><th>Тип</th><th>Количество</th></tr><tr><td>Консольные сервисы</td><td>5</td></tr><tr><td>WPF приложения</td><td>17</td></tr><tr><td>Git хуки</td><td>1</td></tr><tr><td>Сервисы задач (TASK)</td><td>2</td></tr><tr><td><strong>Итого</strong></td><td><strong>24</strong></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>Связанные документы</h2>
+<br>
+<p>- <a href="catalog.md">Каталог документации</a> — MD/HTML/PDF каталог всей документации</p>
+<p>- <a href="../rules/abbreviations.md">rules/abbreviations.md</a> — Сокращения проекта</p>
+<p>- <a href="../AGENTS.md">AGENTS.md</a> — Правила проекта</p>
+<br>
+</body></html>

@@ -79,6 +79,7 @@
 | `scripts\Save-Snapshot.ps1` | Архивирование проекта (команда СОХР) |
 | `scripts\Save-UserPrompt.ps1` | Сохранение промптов пользователя в архив |
 | `scripts\Export-PB.ps1`, `SQL_exp_single.bat` | Выгрузка объектов PB и SQL |
+| `docs\sql-export-restore-spec.md` | Спецификация восстановления сервиса SqlExport (01.09.2026: причина отказа, исправления, тесты) |
 
 ## 3. MCP-серверы
 

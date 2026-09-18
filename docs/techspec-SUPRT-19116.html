@@ -1,0 +1,531 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>techspec-SUPRT-19116</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Техническая спецификация: SUPRT-19116 — Ошибка формирования акта по комиссиям брокера (ОСАГО)</h1>
+<br>
+<table><tr><th>Поле</th><th>Значение</th></tr><tr><td><strong>Задача</strong></td><td>SUPRT-19116</td></tr><tr><td><strong>Статус</strong></td><td>Утверждён</td></tr><tr><td><strong>Дата</strong></td><td>10.09.2026</td></tr><tr><td><strong>Платформа</strong></td><td>AIS (Sybase + PowerBuilder)</td></tr><tr><td><strong>Автор</strong></td><td>Чага Валерий</td></tr><tr><td><strong>Исполнитель</strong></td><td>Чага Валерий</td></tr><tr><td><strong>Связанные задачи</strong></td><td>ITSM-442938</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>1. КОНТЕКСТ</h2>
+<br>
+<h3>1.1 Проблема/запрос</h3>
+<br>
+<p>По полисам (ос_policy_id: 139477263, 140633041) выставлена ошибка в системе АИС:</p>
+<p>- &#171;В комиссии нет АД&#187; (RC = -105)</p>
+<p>- &#171;В полисе нет посредника с ролью Брокер&#187;</p>
+<br>
+<p>Ошибка блокирует формирование акта по полисам.</p>
+<br>
+<p>В ОСС (внешняя система) посредник выставлен, АД (агентский договор) сайт авторизован и подписан.</p>
+<br>
+<p><strong>Заявитель:</strong> Маслова Екатерина</p>
+<p><strong>Аналитик:</strong> Карпова Ольга</p>
+<br>
+<h3>1.2 Связи</h3>
+<br>
+<p>- Связанные задачи: ITSM-442938</p>
+<p>- Затронутые продукты: AIS (модуль комиссий посредников, формирование актов)</p>
+<p>- Владелец продукта: (уточнить)</p>
+<p>- Технический владелец: Чага Валерий</p>
+<br>
+<h3>1.3 Источники</h3>
+<br>
+<p>- Jira: https://mytask.renins.com/browse/SUPRT-19116</p>
+<p>- ITSM: https://helpdesk.renins.com/browse/ITSM-442938</p>
+<p>- Комментарий аналитика (Карпова Ольга, 09.09.2026):</p>
+<p>  &gt; &#171;Проверь, пожалуйста, почему для комиссий не определился договор посредника.</p>
+<p>  &gt; com_id: 187671845, 186262303</p>
+<p>  &gt; Это комиссия брокера за ОСАГО.</p>
+<p>  &gt; Посредник subj_id = 4912608.</p>
+<p>  &gt; У посредника есть договор АД Сайт, позволяющий получать оф КВ за еОСАГО.</p>
+<p>  &gt; AG_ID = 484460&#187;</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. AS-IS (текущее состояние)</h2>
+<br>
+<h3>2.1 Объекты</h3>
+<br>
+<table><tr><th>Проект</th><th>Библиотека/БД</th><th>Объект</th><th>Роль</th></tr><tr><td>AIS</td><td>golden_commission</td><td><code>w_middleman_commission_b2b.srw</code></td><td>Окно комиссий посредников B2B — проверка АД</td></tr><tr><td>AIS</td><td>golden</td><td><code>usp_middleman_commission.sql</code></td><td>Процедура выборки комиссий (ссылается на <code>c.ag_id</code>)</td></tr><tr><td>AIS</td><td>golden</td><td><code>ais_commission</code></td><td>Таблица комиссий (поле <code>ag_id</code> — агентский договор)</td></tr><tr><td>AIS</td><td>golden</td><td><code>ais_entity_basis</code></td><td>Таблица договоров посредников (поле <code>mis_ag_id</code>)</td></tr><tr><td>AIS</td><td>golden</td><td><code>ais_policy</code> / <code>oss_agreement</code></td><td>Таблица полисов</td></tr><tr><td>AIS</td><td>golden</td><td><code>oss_middleman</code></td><td>Таблица посредников по полисам</td></tr></table>
+<br>
+<h3>2.2 Данные</h3>
+<br>
+<p><strong>Комиссии (проблемные):</strong></p>
+<p>- <code>com_id = 187671845</code> (os_policy_id = 140633041)</p>
+<p>- <code>com_id = 186262303</code> (os_policy_id = 139477263)</p>
+<br>
+<p><strong>Посредник:</strong></p>
+<p>- <code>entity_id = 67339</code> (subj_id = 4912608)</p>
+<p>- Роль: Брокер (business_role = &#39;B&#39;)</p>
+<p>- Договор: <code>ag_id = 484460</code> (АД Сайт, позволяет получать оф КВ за еОСАГО)</p>
+<br>
+<h3>2.3 Логика</h3>
+<br>
+<p><strong>Результаты диагностики (PROD, galaxy/golden, 10.09.2026):</strong></p>
+<br>
+<pre>
+-- Комиссии (ais_commission):
+
+-- com_id=186262303: entity_id=67339, ag_id=NULL, com_type=B, system=AVT, state=A, os_policy_id=139477263
+
+-- com_id=187671845: entity_id=67339, ag_id=NULL, com_type=B, system=AVT, state=A, os_policy_id=140633041
+
+
+
+-- Посредник (ais_entity_data):
+
+-- entity_id=67339, subj_id=4912608, entity_legal_code=&#39;C&#39;, entity_type_id=2
+
+
+
+-- Договор (ais_entity_basis):
+
+-- mis_ag_id=65461349, ag_id=484460, entity_id=67339, state=1 -- договор существует и активен
+
+
+
+-- Полисы (oss_agreement):
+
+-- os_policy_id=139477263: blocked=NULL (не заблокирован)
+
+-- os_policy_id=140633041: (данные не выведены, но комиссия существует)
+
+
+
+-- Посредники по полисам (oss_middleman):
+
+-- os_policy_id=139477263: mid_name_id=7375864, business_role=&#39;Курьер&#39;, cover_id=0
+
+-- os_policy_id=140633041: записей НЕТ
+
+</pre>
+<br>
+<p><strong>Вывод:</strong> Обнаружены <strong>две проблемы</strong>:</p>
+<br>
+<p>1. <strong><code>ag_id=NULL</code></strong> в таблице <code>ais_commission</code> для комиссий 186262303 и 187671845, хотя у посредника entity_id=67339 есть активный договор ag_id=484460. Это вызывает ошибку &#171;В комиссии нет АД&#187; (RC=-105).</p>
+<br>
+<p>2. <strong>В таблице <code>oss_middleman</code> отсутствует посредник с ролью Брокер</strong> для обоих полисов:</p>
+<p>   - Для полиса 139477263 есть только посредник с ролью &#171;Курьер&#187; (mid_name_id=7375864)</p>
+<p>   - Для полиса 140633041 записей в <code>oss_middleman</code> нет вообще</p>
+<br>
+<p>   Это вызывает ошибку &#171;В полисе нет посредника... с ролью Брокер&#187;.</p>
+<br>
+<p><strong>Проверка АД в окне комиссий</strong> (<code>w_middleman_commission_b2b.srw</code>, строки 491-500):</p>
+<br>
+<pre>
+// Для комиссий Агентов (com_type = &#39;A&#39;) нельзя менять статус на Принято или Удержано,
+
+// если в комиссии нет АД (ag_id &lt;= 0) и птичка &quot;Без проверки аг. договора&quot; не установлена.
+
+if row &gt; 0 and (as_status = &#39;A&#39; or as_status = &#39;D&#39;) and ls_com_type = &quot;A&quot; then
+
+    ld_ag_id = dw_list.GetItemDecimal(row, &quot;ag_id&quot;)
+
+    if nvl(ld_ag_id, 0) &lt;= 0 and cbx_ignore.checked = FALSE then li_res = -1
+
+    if li_res = -1 then
+
+        MessageBox(&quot;Внимание&quot;, &quot;Для комиссий Агентов нельзя менять статус на Принято или Удержано~r~nесли в комиссии нет АД и птичка &#39;Без проверки аг. договора&#39; не установлена.&quot;)
+
+        return -1
+
+    end if
+
+end if
+
+</pre>
+<br>
+<p><strong>Процедура выборки комиссий</strong> (<code>usp_middleman_commission.sql</code>, строка 176):</p>
+<p>- Возвращает поле <code>c.ag_id</code> из таблицы <code>ais_commission</code></p>
+<p>- Связь с договорами: <code>LEFT OUTER JOIN ais_entity_basis agr ON (agr.mis_ag_id = c.ag_id)</code> (строка 210)</p>
+<br>
+<p><strong>Гипотеза причины ошибки:</strong></p>
+<p>1. Для комиссий <code>com_id = 187671845, 186262303</code> поле <code>ag_id</code> в таблице <code>ais_commission</code> не заполнено (NULL или 0).</p>
+<p>2. При формировании акта вызывается проверка наличия АД в комиссии → ошибка &#171;В комиссии нет АД&#187; (RC = -105).</p>
+<p>3. Также проверяется наличие посредника в полисе (таблица <code>oss_middleman</code> или аналог) → ошибка &#171;В полисе нет посредника... с ролью Брокер&#187;.</p>
+<p>4. В ОСС посредник и договор существуют, но в AIS данные не синхронизированы или не были автоматически подставлены при создании комиссии.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. TO-BE (целевое состояние)</h2>
+<br>
+<h3>3.1 Блок 1: Диагностика данных</h3>
+<br>
+<p><strong>Цель:</strong> Определить точную причину незаполнения <code>ag_id</code> в комиссиях.</p>
+<br>
+<p><strong>Действия:</strong></p>
+<br>
+<p>1. Проверить в БД <code>galaxy</code> (PROD):</p>
+<p>   ```sql</p>
+<p>   -- Проверить комиссии (только ID и коды)</p>
+<p>   SELECT com_id, entity_id, ag_id, com_type, system, state, os_policy_id</p>
+<p>   FROM dbo.ais_commission</p>
+<p>   WHERE com_id IN (187671845, 186262303)</p>
+<p>   go</p>
+<br>
+<p>   -- Проверить посредника (только ID, без имени)</p>
+<p>   SELECT entity_id, subj_id, entity_legal_code, entity_type_id</p>
+<p>   FROM dbo.ais_entity_data</p>
+<p>   WHERE subj_id = 4912608 AND date_to IS NULL</p>
+<p>   go</p>
+<br>
+<p>   -- Проверить договор (только ID и статус)</p>
+<p>   SELECT mis_ag_id, ag_id, entity_id, state</p>
+<p>   FROM dbo.ais_entity_basis</p>
+<p>   WHERE ag_id = 484460</p>
+<p>   go</p>
+<br>
+<p>   -- Проверить полисы (только ID и статус, без номеров)</p>
+<p>   SELECT oss_policy_id, blocked</p>
+<p>   FROM dbo.oss_agreement</p>
+<p>   WHERE oss_policy_id IN (139477263, 140633041)</p>
+<p>   go</p>
+<br>
+<p>   -- Проверить посредников по полисам (только ID и роли, без имён)</p>
+<p>   SELECT os_policy_id, mid_name_id, business_role, cover_id</p>
+<p>   FROM dbo.oss_middleman</p>
+<p>   WHERE os_policy_id IN (139477263, 140633041)</p>
+<p>   go</p>
+<p>   ```</p>
+<br>
+<p>2. Определить:</p>
+<p>   - Есть ли записи для этих комиссий в <code>ais_commission</code>?</p>
+<p>   - Какое значение <code>ag_id</code> в комиссиях (NULL, 0, или другое)?</p>
+<p>   - Существует ли договор <code>ag_id = 484460</code> в <code>ais_entity_basis</code>?</p>
+<p>   - Есть ли посредник в таблице <code>oss_middleman</code> для этих полисов?</p>
+<br>
+<p><strong>Результат:</strong> Точная диагностика — почему <code>ag_id</code> не подставился.</p>
+<br>
+<h3>3.2 Блок 2: Исправление данных (если требуется)</h3>
+<br>
+<p><strong>Цель:</strong> Проставить <code>ag_id</code> в комиссиях, чтобы акт формировался.</p>
+<br>
+<p><strong>Действия (подтверждено диагностикой):</strong></p>
+<br>
+<pre>
+-- Исправление комиссий (после согласования с аналитиком)
+
+UPDATE dbo.ais_commission
+
+SET ag_id = 484460,
+
+    update_foundation = &#39;SUPRT-19116&#39;,
+
+    update_user = SUSER_NAME()
+
+WHERE com_id IN (186262303, 187671845)
+
+  AND ag_id IS NULL
+
+go
+
+</pre>
+<br>
+<p><strong>Риск:</strong> Низкий. Точечная правка данных по явно указанным <code>com_id</code>. Требуется подтверждение аналитиком перед выполнением в PROD.</p>
+<br>
+<h3>3.3 Блок 3: Добавление посредника в `oss_middleman`</h3>
+<br>
+<p><strong>Цель:</strong> Добавить запись о посреднике с ролью Брокер для полисов, где она отсутствует.</p>
+<br>
+<p><strong>Проблема:</strong> В таблице <code>oss_middleman</code> для полисов 139477263 и 140633041 отсутствует посредник с ролью Брокер (entity_id=67339).</p>
+<br>
+<p><strong>Действия:</strong></p>
+<br>
+<p>1. Проверить структуру таблицы <code>oss_middleman</code>:</p>
+<p>   ```sql</p>
+<p>   SELECT name FROM syscolumns</p>
+<p>   WHERE id = object_id(&#39;oss_middleman&#39;)</p>
+<p>   ORDER BY colid</p>
+<p>   go</p>
+<p>   ```</p>
+<br>
+<p>2. Добавить записи (после согласования с аналитиком):</p>
+<p>   ```sql</p>
+<p>   -- Для полиса 139477263 (уже есть Курьер, нужен Брокер)</p>
+<p>   INSERT INTO dbo.oss_middleman (</p>
+<p>       os_policy_id, mid_name_id, business_role, cover_id</p>
+<p>       -- добавить другие обязательные поля после проверки структуры</p>
+<p>   )</p>
+<p>   VALUES (</p>
+<p>       139477263, 67339, &#39;Брокер&#39;, 0</p>
+<p>   )</p>
+<p>   go</p>
+<br>
+<p>   -- Для полиса 140633041 (нет записей вообще)</p>
+<p>   INSERT INTO dbo.oss_middleman (</p>
+<p>       os_policy_id, mid_name_id, business_role, cover_id</p>
+<p>       -- добавить другие обязательные поля после проверки структуры</p>
+<p>   )</p>
+<p>   VALUES (</p>
+<p>       140633041, 67339, &#39;Брокер&#39;, 0</p>
+<p>   )</p>
+<p>   go</p>
+<p>   ```</p>
+<br>
+<p><strong>ВАЖНО:</strong> Перед выполнением INSERT необходимо:</p>
+<p>- Узнать обязательные поля таблицы <code>oss_middleman</code> (через <code>syscolumns</code>)</p>
+<p>- Согласовать с аналитиком значения для других полей (commission_percent, date_from, date_to и т.д.)</p>
+<p>- Проверить, нет ли ограничений (unique constraints, triggers)</p>
+<br>
+<p><strong>Риск:</strong> Средний. Вставка данных в <code>oss_middleman</code> может повлиять на расчёт комиссий и формирование отчётов. Требуется обязательное согласование с аналитиком.</p>
+<br>
+<h3>3.4 Блок 4: Проверка формирования акта</h3>
+<br>
+<p><strong>Цель:</strong> Убедиться, что после исправления акт формируется без ошибок.</p>
+<br>
+<p><strong>Действия:</strong></p>
+<p>1. В окне <code>w_middleman_commission_b2b</code> открыть комиссию <code>com_id = 187671845</code> (и <code>186262303</code>).</p>
+<p>2. Проверить, что поле АД заполнено (должно отображаться <code>AG_ID = 484460</code>).</p>
+<p>3. Попробовать сформировать акт по полису.</p>
+<p>4. Убедиться, что ошибка &#171;В комиссии нет АД&#187; больше не возникает.</p>
+<br>
+<p><strong>Результат:</strong> Акт формируется успешно.</p>
+<br>
+<h3>3.5 Матрица изменений</h3>
+<br>
+<table><tr><th>Блок</th><th>Объекты</th><th>DDL</th><th>Код</th><th>Риск</th></tr><tr><td>1</td><td>ais_commission, ais_entity_basis, oss_middleman</td><td>нет</td><td>нет (SELECT-запросы)</td><td>низкий</td></tr><tr><td>2</td><td>ais_commission</td><td>нет</td><td>UPDATE (точечный)</td><td>низкий</td></tr><tr><td>3</td><td>oss_middleman</td><td>нет</td><td>INSERT (с согласованием)</td><td>средний</td></tr><tr><td>4</td><td>w_middleman_commission_b2b</td><td>нет</td><td>нет (ручная проверка)</td><td>низкий</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. ЗАТРОНУТЫЕ СИСТЕМЫ</h2>
+<br>
+<table><tr><th>Система</th><th>Изменение</th><th>Влияние</th></tr><tr><td>AIS Sybase + PB</td><td>Да (правка данных)</td><td>Комиссии получают корректный <code>ag_id</code>, акт формируется</td></tr><tr><td>ОСС</td><td>Нет</td><td>Данные в ОСС уже корректны</td></tr><tr><td>ЛК партнёра</td><td>Нет</td><td>Не затрагивается</td></tr><tr><td>ЭДО / Диадок</td><td>Нет</td><td>Не затрагивается</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. РИСКИ</h2>
+<br>
+<table><tr><th>Риск</th><th>Вероятность</th><th>Влияние</th><th>Снижение</th></tr><tr><td>Ошибочное обновление не тех комиссий</td><td>Низкая</td><td>Среднее</td><td>Использовать явный список <code>com_id</code> в WHERE, проверить перед UPDATE</td></tr><tr><td>Ошибочная вставка в <code>oss_middleman</code></td><td>Средняя</td><td>Высокое</td><td>Обязательное согласование с аналитиком, проверка структуры таблицы, тестирование в dev_golden</td></tr><tr><td>После правки акт всё равно не формируется</td><td>Низкая</td><td>Среднее</td><td>Диагностика выполнена, выявлены обе проблемы (ag_id + oss_middleman)</td></tr><tr><td>Данные в PROD отличаются от dev_golden</td><td>Низкая</td><td>Среднее</td><td>Проверить в PROD перед правкой</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>6. КРИТЕРИИ ПРИЁМКИ</h2>
+<br>
+<h3>6.1 Продуктовые критерии</h3>
+<br>
+<table><tr><th>ID</th><th>Критерий</th></tr><tr><td>AC-1</td><td>По полисам (os_policy_id: 139477263, 140633041) формируется акт без ошибок</td></tr><tr><td>AC-2</td><td>В комиссиях 187671845, 186262303 поле <code>ag_id</code> заполнено корректным договором (ag_id = 484460)</td></tr><tr><td>AC-3</td><td>Ошибка &#171;В комиссии нет АД&#187; (RC = -105) больше не возникает</td></tr></table>
+<br>
+<h3>6.2 Технические критерии</h3>
+<br>
+<table><tr><th>ID</th><th>Критерий</th></tr><tr><td>TAC-1</td><td>В таблице <code>ais_commission</code> для <code>com_id IN (187671845, 186262303)</code> поле <code>ag_id = 484460</code></td></tr><tr><td>TAC-2</td><td>В окне <code>w_middleman_commission_b2b</code> для этих комиссий отображается корректный АД</td></tr><tr><td>TAC-3</td><td>Формирование акта проходит без ошибок (ручная проверка в тестовой среде)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. ДЕКОМПОЗИЦИЯ</h2>
+<br>
+<h3>7.1 User Story</h3>
+<br>
+<table><tr><th>Поле</th><th>Значение</th></tr><tr><td>Название</td><td>Исправление ошибки формирования акта по комиссиям брокера (ОСАГО)</td></tr><tr><td>Приоритет</td><td>High (блокирует бизнес-процесс)</td></tr><tr><td>Оценка</td><td>4 часа</td></tr></table>
+<br>
+<h3>7.2 Подзадачи</h3>
+<br>
+<table><tr><th>#</th><th>Подзадача</th><th>Оценка</th><th>Статус</th></tr><tr><td>1</td><td>Диагностика данных в PROD (galaxy/golden)</td><td>1 ч</td><td>[x]</td></tr><tr><td>2</td><td>Определение причины незаполнения <code>ag_id</code></td><td>0.5 ч</td><td>[x]</td></tr><tr><td>3</td><td>Подготовка SQL-скрипта исправления (UPDATE)</td><td>0.5 ч</td><td>[x]</td></tr><tr><td>4</td><td>Согласование с аналитиком (Карпова Ольга)</td><td>0.5 ч</td><td>[ ]</td></tr><tr><td>5</td><td>Выполнение правки в PROD (после согласования)</td><td>0.5 ч</td><td>[ ]</td></tr><tr><td>6</td><td>Проверка формирования акта в PROD</td><td>0.5 ч</td><td>[ ]</td></tr><tr><td>7</td><td>Закрытие задачи в Jira</td><td>0.5 ч</td><td>[ ]</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>8. ПРИЛОЖЕНИЯ</h2>
+<br>
+<h3>8.1 SQL-запросы для диагностики</h3>
+<br>
+<pre>
+-- 1. Комиссии (только ID и коды)
+
+SELECT com_id, entity_id, ag_id, com_type, system, state, os_policy_id
+
+FROM dbo.ais_commission
+
+WHERE com_id IN (187671845, 186262303)
+
+go
+
+
+
+-- 2. Посредник (только ID, без имени)
+
+SELECT entity_id, subj_id, entity_legal_code, entity_type_id
+
+FROM dbo.ais_entity_data
+
+WHERE subj_id = 4912608 AND date_to IS NULL
+
+go
+
+
+
+-- 3. Договор (только ID и статус)
+
+SELECT mis_ag_id, ag_id, entity_id, state
+
+FROM dbo.ais_entity_basis
+
+WHERE ag_id = 484460
+
+go
+
+
+
+-- 4. Полисы (только ID и статус, без номеров)
+
+SELECT oss_policy_id, blocked
+
+FROM dbo.oss_agreement
+
+WHERE oss_policy_id IN (139477263, 140633041)
+
+go
+
+
+
+-- 5. Посредники по полисам (только ID и роли, без имён)
+
+SELECT os_policy_id, mid_name_id, business_role, cover_id
+
+FROM dbo.oss_middleman
+
+WHERE os_policy_id IN (139477263, 140633041)
+
+go
+
+
+
+-- 6. Структура таблицы oss_middleman (для INSERT)
+
+SELECT name FROM syscolumns
+
+WHERE id = object_id(&#39;oss_middleman&#39;)
+
+ORDER BY colid
+
+go
+
+</pre>
+<br>
+<h3>8.2 SQL-скрипт исправления (черновик)</h3>
+<br>
+<pre>
+-- ТОЛЬКО после диагностики и согласования с аналитиком!
+
+-- Выполнять в PROD после тестирования в dev_golden
+
+
+
+-- ============================================
+
+-- 1. Исправление ag_id в ais_commission
+
+-- ============================================
+
+
+
+UPDATE dbo.ais_commission
+
+SET ag_id = 484460,
+
+    update_foundation = &#39;SUPRT-19116&#39;,
+
+    update_user = SUSER_NAME()
+
+WHERE com_id IN (186262303, 187671845)
+
+  AND ag_id IS NULL
+
+go
+
+
+
+-- Проверка
+
+SELECT com_id, ag_id, update_foundation, update_user
+
+FROM dbo.ais_commission
+
+WHERE com_id IN (186262303, 187671845)
+
+go
+
+
+
+-- ============================================
+
+-- 2. Добавление посредника в oss_middleman
+
+-- ============================================
+
+
+
+-- ВАЖНО: перед выполнением проверить структуру таблицы через syscolumns
+
+-- и согласовать с аналитиком значения для обязательных полей
+
+
+
+-- Для полиса 139477263 (уже есть Курьер, нужен Брокер)
+
+INSERT INTO dbo.oss_middleman (
+
+    os_policy_id, mid_name_id, business_role, cover_id
+
+    -- добавить другие обязательные поля после проверки структуры
+
+)
+
+VALUES (
+
+    139477263, 67339, &#39;Брокер&#39;, 0
+
+)
+
+go
+
+
+
+-- Для полиса 140633041 (нет записей вообще)
+
+INSERT INTO dbo.oss_middleman (
+
+    os_policy_id, mid_name_id, business_role, cover_id
+
+    -- добавить другие обязательные поля после проверки структуры
+
+)
+
+VALUES (
+
+    140633041, 67339, &#39;Брокер&#39;, 0
+
+)
+
+go
+
+
+
+-- Проверка
+
+SELECT os_policy_id, mid_name_id, business_role, cover_id
+
+FROM dbo.oss_middleman
+
+WHERE os_policy_id IN (139477263, 140633041)
+
+go
+
+</pre>
+<br>
+<h3>8.3 Источники</h3>
+<br>
+<p>- Jira: https://mytask.renins.com/browse/SUPRT-19116</p>
+<p>- ITSM: https://helpdesk.renins.com/browse/ITSM-442938</p>
+<p>- Папка задачи: <code>C:\AIS\1 Release\SUPRT-19116\</code></p>
+<br>
+<p>---</p>
+<br>
+<h2>ИСТОРИЯ ИЗМЕНЕНИЙ</h2>
+<br>
+<table><tr><th>Дата</th><th>Автор</th><th>Описание</th></tr><tr><td>10.09.2026</td><td>Чага Валерий</td><td>Создание документа (черновик)</td></tr><tr><td>10.09.2026</td><td>Чага Валерий</td><td>Обновление: ASA SQL синтаксис (SUSER_NAME, date_from/date_to, oss_agreement), безопасность данных (убраны номера полисов и имена)</td></tr><tr><td>10.09.2026</td><td>Чага Валерий</td><td>Добавлен Блок 3: добавление посредника в oss_middleman (обнаружена вторая проблема — отсутствие записи с ролью Брокер)</td></tr><tr><td>16.09.2026</td><td>Чага Валерий</td><td>Новые полисы (11 шт.) с той же ошибкой: добавлены в Test_2026_09_16\DIAG_new_policies.sql и FIX_new_policies.sql</td></tr></table>
+<br>
+</body></html>

@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>techspec-template-ais</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Шаблон технической спецификации (AIS + OpenSpec)</h1>
+<br>
+<table><tr><th>Поле</th><th>Значение</th></tr><tr><td><strong>Задача</strong></td><td>SYBASE-XXXX / BSI-XXXX</td></tr><tr><td><strong>Статус</strong></td><td>Черновик / Утверждён / В работе / Завершено</td></tr><tr><td><strong>Дата</strong></td><td>ДД.ММ.ГГГГ</td></tr><tr><td><strong>Автор</strong></td><td>ФИО</td></tr><tr><td><strong>Платформа</strong></td><td>AIS (Sybase + PowerBuilder)</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>1. КОНТЕКСТ</h2>
+<br>
+<h3>1.1 Проблема/запрос</h3>
+<p>&gt; Опишите проблему или запрос, который решает данная задача.</p>
+<br>
+<h3>1.2 Связи</h3>
+<p>- Связанные задачи: SYBASE-XXXX, BSI-XXXX</p>
+<p>- Затронутые продукты: AIS, ЛК партнёра, ЭДО</p>
+<p>- Владелец продукта: ФИО</p>
+<p>- Технический владелец: ФИО</p>
+<br>
+<h3>1.3 Источники</h3>
+<p>- Продуктовая спека: ссылка</p>
+<p>- Wiki: ссылка</p>
+<p>- Документация: ссылки</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. AS-IS (текущее состояние)</h2>
+<br>
+<h3>2.1 Объекты</h3>
+<br>
+<table><tr><th>Проект</th><th>Библиотека/БД</th><th>Объект</th><th>Роль</th></tr><tr><td>AIS</td><td>golden_commission</td><td><code>объект</code></td><td>описание</td></tr><tr><td>DEV_GOLDEN</td><td>golden</td><td><code>процедура</code></td><td>описание</td></tr></table>
+<br>
+<h3>2.2 Данные</h3>
+<br>
+<table><tr><th>Таблица</th><th>Колонки</th><th>Описание</th></tr><tr><td><code>таблица</code></td><td>колонка1, колонка2</td><td>описание</td></tr></table>
+<br>
+<h3>2.3 Логика</h3>
+<br>
+<p>&gt; Опишите текущую логику работы (псевдокод или SQL).</p>
+<br>
+<pre>
+-- Текущая логика
+
+SELECT ...
+
+FROM ...
+
+WHERE ...
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>3. TO-BE (целевое состояние)</h2>
+<br>
+<h3>3.1 Изменения по блокам</h3>
+<br>
+<h4>Блок 1: [Название блока]</h4>
+<br>
+<p><strong>Цель:</strong> Описание цели блока.</p>
+<br>
+<p><strong>Изменения:</strong></p>
+<br>
+<table><tr><th>Объект</th><th>Библиотека</th><th>Изменение</th></tr><tr><td><code>объект</code></td><td>golden</td><td>описание</td></tr></table>
+<br>
+<p><strong>DDL:</strong></p>
+<pre>
+-- Изменения таблицы
+
+ALTER TABLE ...
+
+ADD ...
+
+GO
+
+</pre>
+<br>
+<p><strong>Код:</strong></p>
+<pre>
+-- Изменения процедуры
+
+...
+
+</pre>
+<br>
+<p><strong>Риск:</strong> Описание рисков.</p>
+<br>
+<p>---</p>
+<br>
+<h4>Блок 2: [Название блока]</h4>
+<br>
+<p><strong>Цель:</strong> Описание цели блока.</p>
+<br>
+<p><strong>Изменения:</strong></p>
+<br>
+<table><tr><th>Объект</th><th>Библиотека</th><th>Изменение</th></tr><tr><td><code>объект</code></td><td>golden</td><td>описание</td></tr></table>
+<br>
+<p><strong>Реализация (псевдокод PB):</strong></p>
+<pre>
+// Описание логики
+
+...
+
+</pre>
+<br>
+<p><strong>Риск:</strong> Описание рисков.</p>
+<br>
+<p>---</p>
+<br>
+<h3>3.2 Матрица изменений</h3>
+<br>
+<table><tr><th>Блок</th><th>Объекты</th><th>DDL</th><th>Код</th><th>Риск</th></tr><tr><td>1</td><td>список</td><td>да/нет</td><td>да/нет</td><td>низкий/средний/высокий</td></tr><tr><td>2</td><td>список</td><td>да/нет</td><td>да/нет</td><td>низкий/средний/высокий</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>4. ЗАТРОНУТЫЕ СИСТЕМЫ</h2>
+<br>
+<table><tr><th>Система</th><th>Изменение</th><th>Влияние</th></tr><tr><td>AIS Sybase + PB</td><td>да/нет</td><td>описание</td></tr><tr><td>ЛК партнёра</td><td>да/нет</td><td>описание</td></tr><tr><td>ЭДО / Диадок</td><td>да/нет</td><td>описание</td></tr><tr><td>API</td><td>да/нет</td><td>описание</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. РИСКИ</h2>
+<br>
+<table><tr><th>Риск</th><th>Вероятность</th><th>Влияние</th><th>Снижение</th></tr><tr><td>описание</td><td>низкая/средняя/высокое</td><td>низкое/среднее/высокое</td><td>описание</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>6. КРИТЕРИИ ПРИЁМКИ</h2>
+<br>
+<h3>6.1 Продуктовые критерии</h3>
+<br>
+<table><tr><th>ID</th><th>Критерий</th></tr><tr><td>AC-1</td><td>описание</td></tr><tr><td>AC-2</td><td>описание</td></tr></table>
+<br>
+<h3>6.2 Технические критерии</h3>
+<br>
+<table><tr><th>ID</th><th>Критерий</th></tr><tr><td>TAC-1</td><td>описание</td></tr><tr><td>TAC-2</td><td>описание</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. ДЕКОМПОЗИЦИЯ SYBASE</h2>
+<br>
+<h3>7.1 User Story</h3>
+<br>
+<table><tr><th>Поле</th><th>Значение</th></tr><tr><td>Название</td><td>Описание</td></tr><tr><td>Приоритет</td><td>High / Medium / Low</td></tr><tr><td>Оценка</td><td>X часов</td></tr></table>
+<br>
+<h3>7.2 Подзадачи</h3>
+<br>
+<table><tr><th>#</th><th>Подзадача</th><th>Оценка</th><th>Статус</th></tr><tr><td>1</td><td>Анализ</td><td>X ч</td><td>[ ]</td></tr><tr><td>2</td><td>Разработка</td><td>X ч</td><td>[ ]</td></tr><tr><td>3</td><td>Тестирование</td><td>X ч</td><td>[ ]</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>8. ПРИЛОЖЕНИЯ</h2>
+<br>
+<h3>8.1 Схемы данных</h3>
+<br>
+<p>&gt; Схемы таблиц (если применимо).</p>
+<br>
+<h3>8.2 Примеры данных</h3>
+<br>
+<p>&gt; Примеры данных для тестирования.</p>
+<br>
+<h3>8.3 Скриншоты</h3>
+<br>
+<p>&gt; Скриншоты текущего/целевого интерфейса.</p>
+<br>
+<p>---</p>
+<br>
+<h2>ИСТОРИЯ ИЗМЕНЕНИЙ</h2>
+<br>
+<table><tr><th>Дата</th><th>Автор</th><th>Описание</th></tr><tr><td>ДД.ММ.ГГГГ</td><td>ФИО</td><td>Создание документа</td></tr></table>
+<br>
+</body></html>

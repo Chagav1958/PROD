@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>git-context-menu-instructions</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Инструкции по добавлению Git в контекстное меню Проводника</h1>
+<br>
+<h2>Способ 1: Импорт .reg файла (рекомендуется)</h2>
+<br>
+<p>1. Откройте Проводник Windows</p>
+<p>2. Перейдите в папку <code>C:\AIS\AI\Prod\docs\transfer-kit\</code></p>
+<p>3. Дважды кликните по файлу <code>git-context-menu.reg</code></p>
+<p>4. Подтвердите добавление в реестр (нажмите &quot;Да&quot; в диалоге UAC)</p>
+<p>5. Готово! Команды Git появятся в контекстном меню</p>
+<br>
+<h2>Способ 2: Ручной импорт через regedit</h2>
+<br>
+<p>1. Нажмите <code>Win + R</code>, введите <code>regedit</code>, нажмите Enter</p>
+<p>2. В меню &quot;Файл&quot; → &quot;Импорт&quot;</p>
+<p>3. Выберите файл <code>C:\AIS\AI\Prod\docs\transfer-kit\git-context-menu.reg</code></p>
+<p>4. Нажмите &quot;Открыть&quot;</p>
+<br>
+<h2>Доступные команды</h2>
+<br>
+<p>После импорта в контекстном меню (правый клик по папке или пустому месту в папке) появятся:</p>
+<br>
+<table><tr><th>Команда</th><th>Описание</th></tr><tr><td><strong>Git Bash Here</strong></td><td>Открыть Git Bash в текущей папке</td></tr><tr><td><strong>Git GUI Here</strong></td><td>Открыть Git GUI в текущей папке</td></tr><tr><td><strong>Git Pull</strong></td><td>Выполнить <code>git pull</code> с паузой для просмотра результата</td></tr><tr><td><strong>Git Push</strong></td><td>Выполнить <code>git push</code> с паузой для просмотра результата</td></tr><tr><td><strong>Git Status</strong></td><td>Показать <code>git status</code> с паузой</td></tr></table>
+<br>
+<h2>Удаление команд</h2>
+<br>
+<p>Если нужно удалить команды из контекстного меню:</p>
+<br>
+<p>1. Создайте файл <code>remove-git-context-menu.reg</code> со следующим содержимым:</p>
+<br>
+<pre>
+Windows Registry Editor Version 5.00
+
+
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\GitBash]
+
+[-HKEY_CLASSES_ROOT\Directory\shell\GitBash]
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\GitGUI]
+
+[-HKEY_CLASSES_ROOT\Directory\shell\GitGUI]
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\GitPull]
+
+[-HKEY_CLASSES_ROOT\Directory\shell\GitPull]
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\GitPush]
+
+[-HKEY_CLASSES_ROOT\Directory\shell\GitPush]
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\GitStatus]
+
+[-HKEY_CLASSES_ROOT\Directory\shell\GitStatus]
+
+</pre>
+<br>
+<p>2. Сохраните в UTF-16 LE (кодировка Unicode)</p>
+<p>3. Импортируйте файл двойным кликом</p>
+<br>
+<h2>Перенос на другой ПК</h2>
+<br>
+<p>1. Скопируйте файл <code>git-context-menu.reg</code> на новый ПК</p>
+<p>2. Убедитесь, что Git установлен в <code>C:\Program Files\Git\</code></p>
+<p>3. Если путь другой — отредактируйте .reg файл (замените пути)</p>
+<p>4. Импортируйте .reg файл</p>
+<br>
+<h2>Примечания</h2>
+<br>
+<p>- Команды работают для правого клика по папке И для правого клика по пустому месту внутри папки</p>
+<p>- Иконки команд берутся из исполняемых файлов Git</p>
+<p>- Команды Pull/Push/Status открывают cmd.exe, выполняют команду и ждут нажатия клавиши (pause)</p>
+<br>
+</body></html>

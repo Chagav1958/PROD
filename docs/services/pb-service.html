@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>pb-service</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Сервис «СЕРВИС PB» — управление мерами защиты разработки PowerBuilder и SQL</h1>
+<br>
+<h2>1. Назначение</h2>
+<br>
+<p>Сервис &#171;СЕРВИС PB&#187; (команда <code>PBSERV</code> / <code>СЕРВИС PB</code>) управляет <strong>пятью мерами защиты</strong></p>
+<p>разработки PowerBuilder (.sr*) и ASA SQL (.sql). Меры автоматически предупреждают</p>
+<p>типичные ошибки LLM: выдуманные константы (<code>Warning!</code>), запрещённые идиомы (<code>iif(</code>, <code>??</code>,</p>
+<p><code>?.</code>, <code>=&gt;</code>, <code>Switch(</code>), неверный формат дат (mdy-ловушка), обход защиты через PowerShell.</p>
+<br>
+<p><strong>Ключевое свойство:</strong> каждая мера может быть <strong>отключена</strong> (<code>PBSERV -Off mN</code>), если она</p>
+<p>блокирует разработку. Сервис ведёт статистику срабатываний, чтобы можно было оценить</p>
+<p>эффективность каждой меры и принять решение — отменять её или нет.</p>
+<br>
+<h2>2. Команды</h2>
+<br>
+<pre>
+PBSERV                              # статус всех мер (включены/отключены)
+
+PBSERV -Off m1                       # отключить меру M1 (снять блокировку)
+
+PBSERV -On  m1                       # включить меру M1 обратно
+
+PBSERV -Lint -Dir &lt;папка&gt;            # прогнать линтер по папке
+
+PBSERV -Stats                        # статистика срабатываний мер
+
+</pre>
+<br>
+<p>Запуск из консоли:</p>
+<br>
+<pre>
+powershell -NoLogo -File C:\AIS\AI\Prod\scripts\PB-Service.ps1
+
+powershell -NoLogo -File C:\AIS\AI\Prod\scripts\PB-Service.ps1 -Off m1
+
+powershell -NoLogo -File C:\AIS\AI\Prod\scripts\PB-Service.ps1 -Lint -Dir &quot;C:\AIS\1 Release\SUPRT-19100\Test_2026_09_16__13_50&quot;
+
+</pre>
+<br>
+<h2>3. Меры защиты</h2>
+<br>
+<table><tr><th>Мера</th><th>Что делает</th><th>Как блокирует</th><th>Как отменить</th></tr><tr><td><strong>M1</strong> Enforcer + белый список констант</td><td><code>pb-sql-enforcer.js</code> блокирует <code>edit/write</code> файлов .sr*/.sql без предварительной валидации, а также код с выдуманными перечисляемыми константами messageBox (<code>Warning!</code> и др.) и запрещёнными идиомами</td><td>Ошибка-блокировка при <code>edit</code>/<code>write</code></td><td><code>PBSERV -Off m1</code></td></tr><tr><td><strong>M2</strong> Запрет обхода через PowerShell</td><td>Правки .sr*/.sql — ТОЛЬКО через <code>edit</code>/<code>write</code> (их контролирует enforcer). Правка через bash — нарушение. Если обход неизбежен — сначала прогнать линтер</td><td>Правило поведения</td><td><code>PBSERV -Off m2</code></td></tr><tr><td><strong>M3</strong> Линтер</td><td><code>Lint-PB.ps1</code> проверяет папки Test_/Diag_ на идиомы, выдуманные константы, даты в формате ДД.ММ.ГГГГ (mdy), кракозябры. Отчёт: <code>temp/pb_lint_report.txt</code></td><td>Предупреждение (exit 1 при находках)</td><td><code>PBSERV -Off m3</code></td></tr><tr><td><strong>M4</strong> Обязательная валидация claude_*</td><td>Перед правкой .sr*/.sql вызывать <code>claude_pb</code> / <code>claude_sql</code> — реальная проверка фрагмента + кредиты enforcer</td><td>Косвенно: без кредитов enforcer блокирует</td><td><code>PBSERV -Off m4</code></td></tr><tr><td><strong>M5</strong> Ждать запуск MCP</td><td>Не начинать правки .sr*/.sql, пока <code>sybase-docs</code> / <code>rules-mcp</code> не поднялись в списке инструментов</td><td>Правило поведения</td><td><code>PBSERV -Off m5</code></td></tr></table>
+<br>
+<h2>4. Конфигурация</h2>
+<br>
+<p>Файл: <code>C:\AIS\AI\Prod\config\pb_service.json</code></p>
+<br>
+<pre>
+{
+
+  &quot;measures&quot;: {
+
+    &quot;m1_enforcer_allowlist&quot;: { &quot;enabled&quot;: true, ... },
+
+    &quot;m2_no_bash_bypass&quot;:     { &quot;enabled&quot;: true, ... },
+
+    &quot;m3_linter&quot;:             { &quot;enabled&quot;: true, ... },
+
+    &quot;m4_mandatory_claude&quot;:   { &quot;enabled&quot;: true, ... },
+
+    &quot;m5_wait_mcp&quot;:           { &quot;enabled&quot;: true, ... }
+
+  },
+
+  &quot;stats&quot;: { &quot;m1_enforcer_blocks&quot;: 0, &quot;m3_lint_runs&quot;: 0, &quot;m3_lint_findings&quot;: 0, &quot;m4_claude_validations&quot;: 0 },
+
+  &quot;history&quot;: []
+
+}
+
+</pre>
+<br>
+<p>- <code>enabled: false</code> — мера отключена (не блокирует и не предупреждает).</p>
+<p>- <code>stats</code> — накапливается автоматически (enforcer пишет блокировки M1, линтер — прогоны M3).</p>
+<p>- <code>history</code> — журнал действий <code>PBSERV -On/-Off</code> (последние 100).</p>
+<br>
+<h2>5. Проверенные константы messageBox (белый список)</h2>
+<br>
+<p>Проверено 16.09.2026 по всем объектам <code>PB_Main</code>:</p>
+<br>
+<table><tr><th>Константа</th><th>Встречаемость</th><th>Статус</th></tr><tr><td><code>Information!</code></td><td>36 файлов</td><td>разрешена</td></tr><tr><td><code>StopSign!</code></td><td>128 файлов</td><td>разрешена</td></tr><tr><td><code>Exclamation!</code></td><td>59 файлов</td><td>разрешена</td></tr><tr><td><code>Question!</code></td><td>160 файлов</td><td>разрешена</td></tr><tr><td><code>None!</code></td><td>5 файлов</td><td>разрешена</td></tr><tr><td><code>Error!</code></td><td>7 файлов</td><td>разрешена</td></tr><tr><td><code>Asterisk!</code></td><td>8 файлов</td><td>разрешена</td></tr><tr><td><code>Hand!</code></td><td>8 файлов</td><td>разрешена</td></tr><tr><td><strong><code>Warning!</code></strong></td><td><strong>0 файлов</strong></td><td><strong>ЗАПРЕЩЕНА (не существует в проекте)</strong></td></tr></table>
+<br>
+<p>Использование <code>Warning!</code> приводит к ошибке компиляции PB:</p>
+<p><code>C0060: Illegal enumerated constant: warning</code> и каскаду <code>C0020</code>. Вместо неё использовать</p>
+<p><code>Exclamation!</code> или <code>StopSign!</code>.</p>
+<br>
+<h2>6. Оценка эффективности мер</h2>
+<br>
+<p>Команда <code>PBSERV -Stats</code> показывает:</p>
+<br>
+<p>- <strong>M1</strong> — сколько раз enforcer заблокировал правку (несуществующая константа / идиома / без валидации). Большое число блокировок с нашими доработками = мера работает. Если блокировки происходят при корректных правках — мера мешает, её стоит отключить.</p>
+<p>- <strong>M3</strong> — сколько раз запускался линтер и сколько находок он выдал.</p>
+<p>- <strong>M4</strong> — сколько валидаций claude_* выполнено.</p>
+<br>
+<p>Решение об отмене меры принимается на основе этих цифр: если мера не срабатывает</p>
+<p>долгое время и не влияет на качество — её можно отключить без ущерба.</p>
+<br>
+<h2>7. Интеграция с enforcer</h2>
+<br>
+<p>Плагин <code>.opencode\plugins\pb-sql-enforcer.js</code> читает <code>config\pb_service.json</code> при каждом</p>
+<p>вызове <code>tool.execute.before</code>:</p>
+<br>
+<p>- если <code>m1_enforcer_allowlist.enabled=false</code> — enforcer НЕ блокирует правки (ни по кредитам,</p>
+<p>  ни по константам, ни по идиомам);</p>
+<p>- при блокировке увеличивается <code>stats.m1_enforcer_blocks</code>;</p>
+<p>- <code>pb_enforce_status</code> показывает статус мер M1/M4/M5.</p>
+<br>
+<h2>8. Связанные файлы</h2>
+<br>
+<p>- Конфиг: <code>C:\AIS\AI\Prod\config\pb_service.json</code></p>
+<p>- Сервис: <code>C:\AIS\AI\Prod\scripts\PB-Service.ps1</code></p>
+<p>- Линтер: <code>C:\AIS\AI\Prod\scripts\Lint-PB.ps1</code></p>
+<p>- Enforcer: <code>C:\AIS\AI\Prod\.opencode\plugins\pb-sql-enforcer.js</code></p>
+<p>- Правила: <code>C:\AIS\AI\Prod\.opencode\preflight.mdc</code></p>
+<p>- Константы: <code>C:\AIS\AI\Prod\.opencode\pb-object-rules.mdc</code> (раздел 7)</p>
+<p>- Ошибки: <code>C:\AIS\AI\Prod\rules\changelog.md</code> (Bug-068, Bug-069)</p>
+<br>
+<h2>9. История создания</h2>
+<br>
+<p>- 16.09.2026 — создан сервис по итогам SUPRT-19100: выдуманная константа <code>Warning!</code></p>
+<p>  (Bug-068) и повторная ошибка формата даты mdy (Bug-069). Пять мер + возможность отмены.</p>
+</body></html>

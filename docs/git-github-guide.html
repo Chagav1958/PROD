@@ -1,0 +1,389 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>git-github-guide</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Руководство по Git и GitHub для проекта AIS</h1>
+<br>
+<p>&gt; Назначение: подробная инструкция по работе с Git и GitHub на примере ваших проектов в <code>C:\AIS\AI</code>.</p>
+<p>&gt; Дата: 18.09.2026. Автор: подготовлено для проекта AIS.</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Что такое Git и GitHub (простыми словами)</h2>
+<br>
+<p>- <strong>Git</strong> — программа контроля версий. Она работает <strong>локально</strong> на вашем компьютере и запоминает</p>
+<p>  историю изменений файлов: кто, когда и что менял. Позволяет вернуться к любой прежней версии.</p>
+<p>- <strong>GitHub</strong> — сайт (<code>https://github.com</code>), где хранится <strong>копия</strong> вашего Git-репозитория в интернете.</p>
+<p>  Это резервная копия, средство обмена и совместной работы.</p>
+<p>- <strong>Репозиторий (repo)</strong> — папка проекта, в которой Git включён (внутри есть скрытая папка <code>.git</code>).</p>
+<p>- <strong>Коммит (commit)</strong> — &#171;снимок&#187; состояния файлов с подписью и комментарием. Это точка истории.</p>
+<p>- <strong>Ветка (branch)</strong> — независимая линия разработки. Обычно <code>main</code> (основная) и временные ветки.</p>
+<p>- <strong>Remote (origin)</strong> — ссылка на удалённый репозиторий (например, на GitHub).</p>
+<p>- <strong>Push</strong> — отправка коммитов на GitHub. <strong>Pull</strong> — получение изменений с GitHub.</p>
+<p>- <strong>Clone</strong> — копирование репозитория с GitHub на компьютер целиком.</p>
+<br>
+<p>Схема работы:</p>
+<br>
+<pre>
+[Рабочая папка]  --git add--&gt;  [Индекс (staging)]  --git commit--&gt;  [Локальный репозиторий .git]  --git push--&gt;  [GitHub]
+
+                                                                                                        &lt;--git pull--
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>2. Что установлено на вашем компьютере</h2>
+<br>
+<table><tr><th>Инструмент</th><th>Что это</th><th>Где / как вызвать</th></tr><tr><td><strong>Git 2.54</strong></td><td>Основная программа</td><td><code>C:\Program Files\Git\cmd\git.exe</code>, консоль <code>git ...</code></td></tr><tr><td><strong>Git Bash Here</strong></td><td>Консоль Git (Linux-подобная)</td><td>Правый клик в папке → &#171;Git Bash Here&#187;</td></tr><tr><td><strong>Git GUI Here</strong></td><td>Графический интерфейс Git</td><td>Правый клик в папке → &#171;Git GUI Here&#187;</td></tr><tr><td><strong>TortoiseGit</strong></td><td>Правый клик: Git Pull/Push/Commit/Status, значки-оверлеи</td><td>Правый клик в папке; значок &#171;черепашка&#187;</td></tr><tr><td><strong>Git Extensions</strong></td><td>Отдельное графическое приложение для Git</td><td>Правый клик → &#171;Git Extensions&#187;</td></tr><tr><td><strong>WinMerge</strong></td><td>Сравнение и слияние файлов (конфликты)</td><td>Правый клик → &#171;WinMerge&#187;</td></tr><tr><td><strong>TortoiseSVN</strong></td><td>Клиент SVN (другая система контроля версий)</td><td>Правый клик → &#171;SVN Checkout&#187;, &#171;TortoiseSVN&#187;</td></tr><tr><td><strong>GitHub CLI (<code>gh</code>)</strong></td><td>Работа с GitHub из консоли</td><td><strong>не установлен</strong> (можно поставить отдельно)</td></tr></table>
+<br>
+<p>Итог: у вас есть <strong>и консольный Git, и графические инструменты</strong> (TortoiseGit, Git GUI, Git Extensions).</p>
+<p>Для повседневной работы удобнее всего <strong>TortoiseGit</strong> (правый клик) или <strong>Git Extensions</strong> (визуальная история).</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Ваши проекты и репозитории</h2>
+<br>
+<table><tr><th>Папка</th><th>Что это</th><th>Remote (GitHub)</th><th>Ветка</th><th>Состояние</th></tr><tr><td><code>C:\AIS\AI\Prod</code></td><td><strong>Главный проект PROD</strong></td><td><code>https://github.com/Chagav1958/PROD.git</code></td><td><code>main</code></td><td>синхронизирован с origin</td></tr><tr><td><code>C:\AIS\AI\Prod_clean</code></td><td>Чистая копия PROD</td><td><code>https://github.com/Chagav1958/PROD.git</code></td><td><code>main</code></td><td>есть коммиты</td></tr><tr><td><code>C:\AIS\AI\MCP_EWS</code></td><td>Сервер MCP для Exchange</td><td><code>https://github.com/chagav/mcp_ews.git</code></td><td><code>master</code></td><td>связан с GitHub</td></tr><tr><td><code>C:\AIS\AI\SyBooks</code></td><td>Документация Sybase</td><td>— (только локально)</td><td><code>main</code></td><td>локальный</td></tr><tr><td><code>C:\AIS\AI\PB_LSP</code></td><td>LSP-сервер PowerBuilder</td><td>— (только локально)</td><td><code>master</code></td><td>локальный</td></tr><tr><td><code>C:\AIS\AI\Visualization\PB_LSP</code></td><td>Копия PB_LSP</td><td>— (только локально)</td><td><code>master</code></td><td>локальный</td></tr><tr><td><code>C:\AIS\AI\AIS</code>, <code>Service</code>, <code>BAD\OLD_BAD_Step1</code></td><td>Черновики</td><td>—</td><td><code>master</code></td><td>без коммитов</td></tr></table>
+<br>
+<p><strong>Главный рабочий репозиторий — <code>C:\AIS\AI\Prod</code></strong>, связанный с <code>github.com/Chagav1958/PROD</code>.</p>
+<p>У вас два аккаунта GitHub: <strong><code>Chagav1958</code></strong> (репозиторий <code>PROD</code>) и <strong><code>chagav</code></strong> (репозиторий <code>mcp_ews</code>).</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Уже настроено (проверено)</h2>
+<br>
+<p>- Имя и e-mail для коммитов заданы глобально:</p>
+<p>  - <code>user.name = Valery chagav</code></p>
+<p>  - <code>user.email = chagav58@gmail.com</code></p>
+<p>- Основная ветка главного репозитория — <code>main</code>, привязана к <code>origin/main</code> (отслеживается).</p>
+<p>- В <code>C:\AIS\AI\Prod</code> есть файл <code>.gitignore</code> с политикой &#171;игнорировать всё в корне, кроме явно разрешённого&#187;</p>
+<p>  (первая строка <code>/*</code>) — так секреты и большие файлы не попадают в GitHub.</p>
+<p>- Действует правило безопасности: логины/пароли/токены хранятся только в</p>
+<p>  <code>C:\AIS\AI\Prod\config\.local_secrets.json</code> (он в <code>.gitignore</code>).</p>
+<br>
+<p>---</p>
+<br>
+<h2>5. Основные команды Git (с примерами на вашем проекте)</h2>
+<br>
+<p>&gt; Все команды ниже выполняются в консоли <strong>Git Bash</strong> (правый клик в папке <code>C:\AIS\AI\Prod</code> → &#171;Git Bash Here&#187;).</p>
+<p>&gt; В примерах используется ваш главный проект.</p>
+<br>
+<h3>5.1. Где я и что изменилось</h3>
+<br>
+<pre>
+cd /c/AIS/AI/Prod        # перейти в папку проекта (в Git Bash диск указывается как /c/)
+
+git status               # показать: ветка, изменённые/новые файлы
+
+git status -s            # короткий формат
+
+</pre>
+<br>
+<p>Пример вывода: <code>On branch main</code>, далее список <code>modified:</code> и <code>untracked:</code>.</p>
+<br>
+<h3>5.2. Посмотреть историю</h3>
+<br>
+<pre>
+git log --oneline -10             # последние 10 коммитов (коротко)
+
+git log --oneline --graph --all   # история веток в виде графа
+
+git show addabcb                  # подробно показать коммит по его хэшу (первые 7 символов)
+
+</pre>
+<br>
+<p>У вас, например: <code>addabcb Новый сервис</code>, <code>576fcf4 Файл правил для сокращения</code>.</p>
+<br>
+<h3>5.3. Что именно изменилось в файлах</h3>
+<br>
+<pre>
+git diff                          # изменения ещё не добавленных в индекс файлов
+
+git diff --stat                   # только сводка (какие файлы и на сколько строк)
+
+git diff HEAD -- docs/git-github-guide.md   # изменения конкретного файла
+
+</pre>
+<br>
+<h3>5.4. Сохранить изменения (коммит)</h3>
+<br>
+<pre>
+git add .                         # добавить ВСЕ изменения в индекс (staging)
+
+git add docs/git-github-guide.md  # или добавить конкретный файл
+
+git commit -m &quot;Docs: руководство по Git и GitHub&quot;   # зафиксировать снимок
+
+</pre>
+<br>
+<p>Правила хорошего коммита:</p>
+<p>- один коммит — одна логическая правка;</p>
+<p>- сообщение на русском, кратко и по делу (какие изменения и зачем);</p>
+<p>- <strong>никогда</strong> не коммитить секреты (файл <code>.local_secrets.json</code> и т.п.).</p>
+<br>
+<h3>5.5. Отправить на GitHub (push)</h3>
+<br>
+<pre>
+git push                          # отправить коммиты в origin/main
+
+git push -u origin main           # первый раз для новой ветки (задать отслеживание)
+
+</pre>
+<br>
+<h3>5.6. Получить изменения с GitHub (pull)</h3>
+<br>
+<pre>
+git pull                          # скачать и влить изменения из origin/main
+
+git fetch                         # только скачать (без вливания), потом посмотреть: git log HEAD..origin/main
+
+</pre>
+<br>
+<h3>5.7. Ветки</h3>
+<br>
+<pre>
+git branch                        # список локальных веток (* — текущая)
+
+git switch -c feature-new-service  # создать ветку и переключиться  (или: git checkout -b ...)
+
+git switch main                   # вернуться на main
+
+git branch -d feature-new-service # удалить ветку (после слияния)
+
+</pre>
+<br>
+<p>Слияние ветки в main:</p>
+<br>
+<pre>
+git switch main
+
+git pull
+
+git merge feature-new-service
+
+git push
+
+</pre>
+<br>
+<h3>5.8. Отменить изменения</h3>
+<br>
+<pre>
+git restore docs/file.md          # отбросить правки в файле (вернуть как было в последнем коммите)
+
+git restore --staged docs/file.md # убрать файл из индекса (после &#171;git add&#187;)
+
+git revert &lt;хэш&gt;                  # создать коммит, отменяющий указанный коммит (безопасно)
+
+git reset --soft HEAD~1           # снять последний коммит, сохранив изменения в рабочей папке
+
+</pre>
+<br>
+<p>Важно: <code>git reset --hard</code> <strong>уничтожает</strong> изменения — применять только осознанно.</p>
+<br>
+<h3>5.9. Клонирование (получить проект на новый ПК)</h3>
+<br>
+<pre>
+cd /c/AIS/AI
+
+git clone https://github.com/Chagav1958/PROD.git PROD_new
+
+</pre>
+<br>
+<h3>5.10. Полезное</h3>
+<br>
+<pre>
+git remote -v                     # показать адреса удалённых репозиториев
+
+git remote show origin            # подробно об origin (нужна сеть)
+
+git tag -a v1.0 -m &quot;Версия 1.0&quot;   # поставить тег (метку версии)
+
+git push --tags                   # отправить теги на GitHub
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>6. Графические инструменты (без консоли)</h2>
+<br>
+<h3>6.1. TortoiseGit (правый клик по папке)</h3>
+<br>
+<p>- <strong>Git Commit → main…</strong> — выбрать изменённые файлы, написать сообщение, нажать &#171;Commit&#187;.</p>
+<p>- <strong>Git Pull</strong> — получить изменения с GitHub.</p>
+<p>- <strong>Git Push</strong> — отправить свои коммиты.</p>
+<p>- <strong>Git Status</strong> — окно со списком изменённых файлов.</p>
+<p>- <strong>Git Log</strong> — просмотр истории (можно правый клик → &#171;Show Log&#187; прямо в папке).</p>
+<p>- <strong>Diff</strong> (двойной клик по файлу в окне Commit/Log) — сравнение версий.</p>
+<p>- Иконки-оверлеи на файлах: зелёная галочка — без изменений, красный — изменён, &#171;+&#187; — новый.</p>
+<br>
+<p>Порядок отправки изменений через TortoiseGit:</p>
+<p>1. Правый клик по <code>C:\AIS\AI\Prod</code> → <strong>Git Commit → main…</strong>.</p>
+<p>2. Отметить галочками нужные файлы, ввести сообщение, &#171;Commit&#187;.</p>
+<p>3. Правый клик → <strong>Git Push</strong> → &#171;OK&#187;.</p>
+<br>
+<h3>6.2. Git Extensions (визуальный клиент)</h3>
+<br>
+<p>Правый клик по папке → <strong>Git Extensions</strong> → открывается окно с историей, ветками, файлами.</p>
+<p>Здесь удобно: смотреть граф коммитов, делать Commit/Pull/Push кнопками, разрешать конфликты.</p>
+<br>
+<h3>6.3. WinMerge (слияние конфликтов)</h3>
+<br>
+<p>Если при <code>git pull</code> возник конфликт, файл помечается как &#171;конфликтующий&#187;. Откройте его в WinMerge</p>
+<p>(правый клик → WinMerge, либо TortoiseGit → Edit conflicts), выберите нужные строки,</p>
+<p>сохраните файл, затем:</p>
+<br>
+<pre>
+git add конфликтный-файл.md
+
+git commit -m &quot;Разрешён конфликт&quot;
+
+</pre>
+<br>
+<p>Альтернатива SVN (если где-то используется): правый клик → <strong>SVN Checkout / TortoiseSVN</strong> — это</p>
+<p>другая система (Subversion), принцип похож (checkout/update/commit), но команды отличаются.</p>
+<br>
+<p>---</p>
+<br>
+<h2>7. GitHub: что можно делать на сайте</h2>
+<br>
+<p>Адрес: <code>https://github.com/Chagav1958/PROD</code> (ваш главный репозиторий).</p>
+<br>
+<table><tr><th>Возможность</th><th>Что даёт</th></tr><tr><td><strong>Repository (репозиторий)</strong></td><td>Хранение кода и истории, кнопки &#171;Code&#187; (ссылка для clone)</td></tr><tr><td><strong>README.md</strong></td><td>Главная страница описания проекта (отображается на странице репозитория)</td></tr><tr><td><strong>Issues (задачи)</strong></td><td>Список задач/ошибок с привязкой к обсуждению</td></tr><tr><td><strong>Pull Requests (PR)</strong></td><td>Предложение изменений (из ветки в main), обзор и слияние</td></tr><tr><td><strong>Releases (релизы)</strong></td><td>Помеченные версии с описанием и вложениями (файлы сборок)</td></tr><tr><td><strong>Actions (автоматизация)</strong></td><td>Автосборка/тесты при коммите (CI/CD)</td></tr><tr><td><strong>Pages (страницы)</strong></td><td>Публикация статичного сайта из репозитория</td></tr><tr><td><strong>Commits / Blame</strong></td><td>История изменений файла и авторство каждой строки</td></tr><tr><td><strong>Settings → Collaborators</strong></td><td>Доступ других людей к репозиторию</td></tr><tr><td><strong>Settings → Deploy keys / Tokens</strong></td><td>Доступ по SSH-ключу или токену (для автоматизации)</td></tr></table>
+<br>
+<p>Работа с сайтом (веб):</p>
+<p>- Посмотреть изменения: открыть файл → кнопка &#171;History&#187;.</p>
+<p>- Создать задачу: вкладка <strong>Issues</strong> → &#171;New issue&#187;.</p>
+<p>- Сравнить ветки и сделать PR: вкладка <strong>Pull requests</strong> → &#171;New pull request&#187;.</p>
+<br>
+<p>---</p>
+<br>
+<h2>8. Безопасность (важно!)</h2>
+<br>
+<p>1. <strong>Секреты только в <code>.local_secrets.json</code></strong> (<code>C:\AIS\AI\Prod\config\.local_secrets.json</code>).</p>
+<p>   Этот файл добавлен в <code>.gitignore</code> и <strong>никогда</strong> не попадает в Git/GitHub.</p>
+<p>2. В проекте реализован <strong>pre-commit hook</strong> и утилита очистки (<code>Clean-GitSecrets</code>) — они не дают</p>
+<p>   закоммитить пароли/токены. Если Git отказал в коммите — значит найден секрет, уберите его.</p>
+<p>3. <strong>Personal Access Token (PAT)</strong> для GitHub: создаётся на сайте (Settings → Developer settings →</p>
+<p>   Personal access tokens). Хранить токен — только в защищённом месте (не в файлах репозитория).</p>
+<p>4. Регулярно проверяйте <code>git status</code> перед push: не попадают ли лишние (большие/секретные) файлы.</p>
+<p>5. Правило проекта: <code>config\config.json</code> и <code>config\settings_history.json</code> — без секретов; значения</p>
+<p>   подстановочные (<code>***</code>), сами секреты — в <code>.local_secrets.json</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>9. Типовые сценарии (пошагово)</h2>
+<br>
+<h3>Сценарий A. «Я изменил файлы и хочу сохранить их на GitHub»</h3>
+<br>
+<pre>
+cd /c/AIS/AI/Prod
+
+git status                 # посмотреть, что изменилось
+
+git add .                  # добавить изменения
+
+git commit -m &quot;Краткое описание правок&quot;
+
+git push
+
+</pre>
+<br>
+<h3>Сценарий B. «Я хочу получить свежую версию с GitHub перед работой»</h3>
+<br>
+<pre>
+cd /c/AIS/AI/Prod
+
+git pull
+
+</pre>
+<br>
+<h3>Сценарий C. «Хочу вернуться к состоянию до правок»</h3>
+<br>
+<pre>
+git restore путь_к_файлу   # один файл
+
+# или откатить всё (осторожно):
+
+git restore .
+
+</pre>
+<br>
+<h3>Сценарий D. «Хочу посмотреть, что было в прошлом коммите»</h3>
+<br>
+<pre>
+git log --oneline -10
+
+git show &lt;хэш_коммита&gt;
+
+</pre>
+<br>
+<h3>Сценарий E. «Первая публикация локального проекта на GitHub»</h3>
+<br>
+<pre>
+cd /c/AIS/AI/MyProject
+
+git init
+
+git add .
+
+git commit -m &quot;Первый коммит&quot;
+
+git branch -M main
+
+git remote add origin https://github.com/ВАШ_ЛОГИН/ИМЯ_РЕПОЗИТОРИЯ.git
+
+git push -u origin main
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>10. Шпаргалка (одной строкой)</h2>
+<br>
+<pre>
+git status                     # состояние
+
+git pull                       # получить
+
+git add .                      # подготовить всё
+
+git commit -m &quot;текст&quot;          # сохранить
+
+git push                       # отправить
+
+git log --oneline -10          # история
+
+git diff                       # что изменилось
+
+git restore файл               # отменить правки файла
+
+git branch -vv                 # ветки и их привязка
+
+git clone URL                  # скопировать репозиторий
+
+</pre>
+<br>
+<p>---</p>
+<br>
+<h2>11. Частые вопросы и ошибки</h2>
+<br>
+<table><tr><th>Ситуация</th><th>Что делать</th></tr><tr><td><code>fatal: not a git repository</code></td><td>Вы не в папке проекта: <code>cd</code> в папку с <code>.git</code></td></tr><tr><td><code>Permission denied (publickey)</code> при push</td><td>Нет доступа: проверьте токен/GitHub-аккаунт, права на репозиторий</td></tr><tr><td><code>Updates were rejected</code> (push)</td><td>Сначала <code>git pull</code>, разрешите конфликт, затем <code>git push</code></td></tr><tr><td>Случайно закоммитил секрет</td><td>Отзовите (смените) секрет на сервере, удалите файл из Git и истории (утилита очистки проекта)</td></tr><tr><td>Конфликт при pull</td><td>Откройте конфликтные файлы (WinMerge), выберите строки, <code>git add</code>, <code>git commit</code></td></tr><tr><td>Хочу отменить последний (не отправленный) коммит</td><td><code>git reset --soft HEAD~1</code> (изменения останутся в папке)</td></tr><tr><td>Большой файл не нужен в Git</td><td>Добавьте его в <code>.gitignore</code></td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>12. Ссылки и дальнейшее чтение</h2>
+<br>
+<p>- Официальная документация Git (русский): <code>https://git-scm.com/book/ru/v2</code></p>
+<p>- Справка GitHub: <code>https://docs.github.com/ru</code></p>
+<p>- Ваш репозиторий: <code>https://github.com/Chagav1958/PROD</code></p>
+<p>- Локальная справка: в Git Bash команда <code>git help &lt;команда&gt;</code> (например, <code>git help commit</code>).</p>
+<p>- Инструмент GitHub CLI (<code>gh</code>) для работы из консоли (по желанию): <code>https://cli.github.com</code></p>
+<br>
+<p>&gt; Совет: начните с <strong>TortoiseGit</strong> (правый клик → Git Commit/Pull/Push) — это самый простой способ</p>
+<p>&gt; без командной строки. По мере освоения переходите к командам из разделов 5 и 10.</p>
+<br>
+</body></html>

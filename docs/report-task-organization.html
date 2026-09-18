@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>report-task-organization</title>
+<style>body{font-family:Segoe UI,sans-serif;max-width:800px;margin:20px auto;padding:0 20px;line-height:1.6}
+h1,h2,h3{color:#1a3a60}code{background:#f0f0f0;padding:2px 4px;border-radius:3px}
+pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #ccc;padding:6px;text-align:left}
+th{background:#eef2f7;font-weight:bold}tr:nth-child(even){background:#f9fafb}</style></head><body>
+<h1>Организация обработки задач в проекте AIS</h1>
+<br>
+<p>Дата: 15.09.2026</p>
+<br>
+<p>---</p>
+<br>
+<h2>1. Общая схема обработки задачи</h2>
+<br>
+<p>Обработка любой задачи строится вокруг <strong>Jira-задачи</strong> (SYBASE-<em> / SUPRT-</em>), которая является точкой входа. Вокруг неё организуется рабочая папка с фиксированной структурой и цикл перемещения объектов по папкам по мере их готовности.</p>
+<br>
+<h3>Жизненный цикл задачи</h3>
+<br>
+<p>1. <strong>Поступление задачи</strong> — в Jira создана задача с техническим заданием (ТЗ).</p>
+<p>2. <strong>Создание рабочей папки</strong> — по имени задачи в корне задач:</p>
+<p>   - <code>C:\AIS\1 Release\&lt;задача&gt;</code> — для задач SYBASE-<em> / SUPRT-</em>;</p>
+<p>   - <code>C:\AIS\AI\Prod\tasks\&lt;задача&gt;</code> — для остальных задач.</p>
+<p>3. <strong>Выгрузка оригиналов</strong> в папку <code>Git_YYYY_MM_DD</code>:</p>
+<p>   - SQL-объекты выгружаются из <code>dev_golden</code> через <code>SQL_exp_single.bat</code>;</p>
+<p>   - PB-объекты копируются из <code>PB_Current\&lt;lib&gt;\</code> или <code>C:\SRC125\gold\&lt;lib&gt;\</code> (только чтение).</p>
+<p>4. <strong>Разработка и размещение</strong> изменённых объектов в <code>Test_YYYY_MM_DD</code> — сюда попадают только ГОТОВЫЕ объекты (без диагностических вставок).</p>
+<p>5. <strong>Диалоговое сравнение</strong> в <code>Dial_YYYY_MM_DD</code> — пары &#171;старый/новый&#187; код для проверки side-by-side.</p>
+<p>6. <strong>Диагностика</strong> (при необходимости) в <code>DIAG_YYYY_MM_DD_hh_mm</code> — отдельная папка с инструкцией по тестированию в формате <code>.md</code>.</p>
+<p>7. <strong>Готовые объекты</strong> в <code>Ready_YYYY_MM_DD</code> — только по команде после тестирования.</p>
+<p>8. <strong>Ввод в продакшн</strong> — папка <code>Read_YYYY_MM_DD</code>.</p>
+<p>9. <strong>Фиксация изменений</strong> — <code>Describe\&lt;объект&gt;.txt</code> и <code>ПЛАН_РЕАЛИЗАЦИИ.txt</code>.</p>
+<br>
+<h3>Структура рабочей папки</h3>
+<br>
+<pre>
+&lt;задача&gt;\
+
+├── Git_YYYY_MM_DD\          — оригиналы (выгрузка из продакшна)
+
+├── Test_YYYY_MM_DD\         — готовые изменённые объекты
+
+├── Test_YYYY_MM_DD__hh_mm\  — повторные сборки за ту же дату
+
+├── Dial_YYYY_MM_DD\         — старый vs новый код
+
+├── DIAG_YYYY_MM_DD_hh_mm\   — диагностические объекты + ИНСТРУКЦИЯ.md
+
+├── Ready_YYYY_MM_DD\        — после тестирования (по команде)
+
+├── Read_YYYY_MM_DD\         — готово к продакшну
+
+├── Describe\                — описания изменений + анализ
+
+│   ├── &lt;объект&gt;.txt
+
+│   └── ПЛАН_РЕАЛИЗАЦИИ.txt
+
+└── rules/pending-tasks.md   — якорь задачи (статус для всех сессий)
+
+</pre>
+<br>
+<p>&gt; Папки <code>Test_</code> / <code>Dial_</code> раскладываются по подпапкам с именем библиотеки, например <code>golden_bill\</code>, <code>golden_sprw\</code>, а для SQL — <code>golden\Functions\</code>, <code>golden\Procedure\</code>.</p>
+<br>
+<p>---</p>
+<br>
+<h2>2. Что используется вместо SDD</h2>
+<br>
+<p>Классический документ проектирования (SDD) в проекте заменён набором лёгких артефактов, которые ведёт каждая задача:</p>
+<br>
+<h3>2.1. План реализации (ПЛАН_РЕАЛИЗАЦИИ.txt)</h3>
+<br>
+<p>Основной документ задачи. Ведётся в папке <code>Describe\</code>. Содержит:</p>
+<br>
+<p>- <strong>Цель</strong> задачи и статус (в работе / отложено / завершено);</p>
+<p>- <strong>Этапы</strong> — нумерованный список с чек-боксами:</p>
+<p>  - <code>[ ]</code> — не начат;</p>
+<p>  - <code>[~]</code> — в работе;</p>
+<p>  - <code>[x]</code> — готов;</p>
+<p>  - <code>[!]</code> — отложен на дорогую LLM;</p>
+<p>- у каждого этапа — результат и отметка, какой LLM выполнен;</p>
+<p>- <strong>СЛЕДУЮЩИЙ ШАГ</strong> — с чего продолжить при возобновлении;</p>
+<p>- <strong>ОЧЕРЕДЬ ДОРОГИХ ПОДЗАДАЧ</strong> — список <code>[!]</code>-этапов с обоснованием.</p>
+<br>
+<h3>2.2. Описания объектов (Describe\<объект>.txt)</h3>
+<br>
+<p>На каждый изменяемый объект заводится файл с описанием:</p>
+<br>
+<pre>
+Задача: SYBASE-NNNN
+
+Дата: ДД.ММ.ГГГГ ЧЧ:ММ
+
+Объект: &lt;имя_объекта&gt;
+
+
+
+=== Анализ ===
+
+=== Рекомендации ===
+
+=== Изменения ===
+
+</pre>
+<br>
+<h3>2.3. База знаний MCP (ais-catalog)</h3>
+<br>
+<p>Сводные записи сохраняются через <code>ais-catalog_save_knowledge</code>. Одна запись на задачу/объект со структурой: анализ → вывод → карта воздействия → точка возобновления. Теги используются для точного поиска.</p>
+<br>
+<h3>2.4. TaskPlan (для объёмных задач)</h3>
+<br>
+<p>TaskPlan — сервис управления объёмными задачами, заменяющий классическую проектную документацию:</p>
+<br>
+<p>- <strong>Show-TaskPlanGUI.ps1</strong> — диалоговое окно управления (вкладки: Список задач, Управление, Тесты);</p>
+<p>- <strong>TaskPlan-Tracker.ps1</strong> — ядро логики (работает с <code>ПЛАН_РЕАЛИЗАЦИИ.txt</code> и <code>plan_state.json</code>);</p>
+<p>- <strong>TaskPlan-Manager.ps1</strong> — диспетчер множества задач (<code>task_index.json</code>, статусы активная/приостановленная);</p>
+<p>- <strong>TaskPlan-Tests.ps1</strong> — 15 автотестов.</p>
+<br>
+<p>---</p>
+<br>
+<h2>3. Работающие правила</h2>
+<br>
+<h3>3.1. Правило TASK</h3>
+<br>
+<p>Ключевое правило запуска обработки задачи:</p>
+<p>- определение корневого пути по типу задачи;</p>
+<p>- поиск папки с префиксом <code>&lt;имя_задачи&gt;_*</code> (не создавать новую, если существует);</p>
+<p>- получение описания из Jira через <code>jira_get_issue</code>.</p>
+<br>
+<h3>3.2. Правило остановки/продолжения работы</h3>
+<br>
+<p>- <strong>Остановка</strong> — по команде пользователя или при неясности дальнейших шагов; фиксация через MCP (точка возобновления + команда продолжения) и якорь в <code>rules/pending-tasks.md</code>.</p>
+<p>- <strong>Возобновление</strong> — только по явной команде, через Knowledge First: <code>ais-catalog_search_knowledge</code> → чтение <code>Describe\</code> → продолжение с раздела &#171;СЛЕДУЮЩИЙ ШАГ&#187;.</p>
+<br>
+<h3>3.3. Knowledge First (MCP-поиск)</h3>
+<br>
+<p>Перед любым не-простым запросом выполняется поиск в базах знаний в строгом приоритете (правило Token Economy):</p>
+<br>
+<p>1. <strong>wiki-mcp</strong> — локальная вики;</p>
+<p>2. <strong>ais-catalog</strong> — база знаний AIS;</p>
+<p>3. <strong>sybase-docs</strong> — документация ASE/PB;</p>
+<p>4. <strong>rules-mcp</strong> — правила проекта;</p>
+<p>5. <strong>atlassian</strong> — Confluence/Jira (последний резерв).</p>
+<br>
+<h3>3.4. Правило документации (тройной формат)</h3>
+<br>
+<p>При создании/обновлении <code>.md</code>-документации одновременно формируются <code>.html</code> и <code>.pdf</code> через <code>scripts\Convert-Docs.ps1</code>. Требования: белый/светлый фон, тёмный текст, шрифт с кириллицей, чёткие таблицы, полные пути.</p>
+<br>
+<h3>3.5. Правило кодировок</h3>
+<br>
+<table><tr><th>Тип файла</th><th>Кодировка</th><th>BOM</th></tr><tr><td><code>.ps1</code></td><td>UTF-8</td><td>с BOM</td></tr><tr><td><code>.json</code> / <code>.jsonc</code></td><td>UTF-8</td><td>без BOM</td></tr><tr><td><code>.sql</code> / <code>.bat</code></td><td>Windows-1251</td><td>нет</td></tr><tr><td><code>.sr*</code> (экспорт PB)</td><td>Windows-1251</td><td>нет</td></tr><tr><td><code>.md</code></td><td>UTF-8</td><td>без BOM</td></tr></table>
+<br>
+<h3>3.6. Правило ЗАПОМНИ (куда писать правила)</h3>
+<br>
+<p>- Статическое правило для всех сессий → файл (AGENTS.md, .mdc);</p>
+<p>- Опыт конкретной ситуации → MCP-знание (opencode-mcp / ais-catalog).</p>
+<br>
+<h3>3.7. Прочие обязательные правила</h3>
+<br>
+<p>- <strong>Безопасность секретов</strong> — логины/пароли/токены только в <code>config/.local_secrets.json</code> (в <code>.gitignore</code>), никогда не попадают в Git/GitHub;</p>
+<p>- <strong>Безопасность данных SQL</strong> — при диагностике выводить только ID, коды, статусы; запрещены имена клиентов, номера полисов/договоров, суммы, адреса, телефоны, email;</p>
+<p>- <strong>Preflight</strong> — проверка BOM/кодировки/идиом PB/SQL перед записью файлов;</p>
+<p>- <strong>Антивирус</strong> — запрещённые паттерны PS (Bypass, IEX, base64-обёртки, скрытые окна), обязательный BOM для .ps1.</p>
+<br>
+<p>---</p>
+<br>
+<h2>4. Работающие сервисы</h2>
+<br>
+<table><tr><th>Сервис</th><th>Скрипт/модуль</th><th>Назначение</th></tr><tr><td><strong>TaskPlan</strong></td><td><code>Show-TaskPlanGUI.ps1</code></td><td>ДО управления этапами объёмных задач</td></tr><tr><td><strong>Tracker</strong></td><td><code>TaskPlan-Tracker.ps1</code></td><td>Логика планов, <code>plan_state.json</code></td></tr><tr><td><strong>Manager</strong></td><td><code>TaskPlan-Manager.ps1</code></td><td>Диспетчер многих задач, <code>task_index.json</code></td></tr><tr><td><strong>OUTPL</strong></td><td><code>Out-TaskPlan.ps1</code></td><td>Анализ и автоисправление ошибок TaskPlan</td></tr><tr><td><strong>СБОРКА</strong></td><td><code>Sborka-Golden.ps1</code>, <code>Show-Sborka-GUI.ps1</code></td><td>Сборка golden.exe + PBD; режим GALAXY (суффикс <code>_CHAGA</code>)</td></tr><tr><td><strong>ПРОДОБР</strong></td><td><code>Show-ProdObr-GUI.ps1</code></td><td>Продолжение обработки по утверждённому плану</td></tr><tr><td><strong>ОБР/OUT</strong></td><td><code>Out-LastOutput.ps1</code></td><td>Анализ свежего вывода (МОРДА / МОРДА2)</td></tr><tr><td><strong>МОРДА</strong></td><td>Главное окно GUI</td><td>Диалоговое окно обработки (стандарты STANDART1/STANDART2)</td></tr><tr><td><strong>СОХР</strong></td><td><code>Save-Snapshot.ps1</code></td><td>Архив проекта (только по команде)</td></tr><tr><td><strong>Документация</strong></td><td><code>Convert-Docs.ps1</code></td><td>md → html + pdf</td></tr><tr><td><strong>BOM/антивирус</strong></td><td><code>Add-Bom.ps1</code>, <code>Preflight-Antivirus.ps1</code></td><td>Контроль BOM, защита от удаления антивирусом</td></tr><tr><td><strong>Сохранение промптов</strong></td><td><code>Save-UserPrompt.ps1</code></td><td>Автоархив промптов при любом ответе</td></tr><tr><td><strong>Сохранение анализов</strong></td><td><code>Save-Analysis.ps1</code></td><td>Автосохранение дорогих анализов</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>5. Стратегия работы с LLM</h2>
+<br>
+<p>Объёмные задачи решаются недорогими/бесплатными LLM, дорогие мощные модели запускаются точечно:</p>
+<br>
+<p>1. <strong>Классификация</strong> задачи — короткая или объёмная (признаки: имя задачи, &gt; 3 этапов, &gt; 3 объектов);</p>
+<p>2. <strong>Составление общего плана</strong> — для объёмных задач создаётся <code>ПЛАН_РЕАЛИЗАЦИИ.txt</code>;</p>
+<p>3. <strong>Поэтапное выполнение с фиксацией</strong> — после каждого этапа обновляются план, описание, запись MCP;</p>
+<p>4. <strong>Переход на другую LLM</strong> при исчерпании ресурса — фиксация текущего этапа, возобновление только по команде;</p>
+<p>5. <strong>Откладывание непосильных подзадач</strong> — этап помечается <code>[!]</code>, выносится в ОЧЕРЕДЬ ДОРОГИХ ПОДЗАДАЧ;</p>
+<p>6. <strong>Подготовка брифа</strong> — перед запуском дорогой LLM собирается пакет: точный контекст, карта зависимостей, сужение задачи, критерий приёмки.</p>
+<br>
+<p>---</p>
+<br>
+<h2>6. Ключевые команды</h2>
+<br>
+<table><tr><th>Команда</th><th>Действие</th></tr><tr><td><code>TASK &lt;имя&gt;</code></td><td>Начать задачу (папка, выгрузка оригиналов, план)</td></tr><tr><td><code>PRODOBR</code></td><td>Продолжить обработку по утверждённому плану</td></tr><tr><td><code>TaskPl</code></td><td>Открыть ДО управления TaskPlan</td></tr><tr><td><code>OUTPL</code></td><td>Анализ ошибок TaskPlan</td></tr><tr><td><code>SBORKA [GALAXY/DEBUG]</code></td><td>Сборка golden.exe + PBD</td></tr><tr><td><code>OTCHET</code></td><td>Открыть отчёт по задаче</td></tr><tr><td><code>OUT / OBR</code></td><td>Анализ свежего вывода</td></tr><tr><td><code>DLLM</code></td><td>Список/статус моделей</td></tr><tr><td><code>GITHUB</code></td><td>Обновить git + push в GitHub</td></tr><tr><td><code>RR</code></td><td>Принудительно русский язык</td></tr></table>
+<br>
+<p>---</p>
+<br>
+<h2>7. Выводы</h2>
+<br>
+<p>- Процесс полностью построен вокруг <strong>Jira + файловой структуры папок</strong> без тяжёлой проектной документации.</p>
+<p>- <strong>SDD заменён</strong> на <code>ПЛАН_РЕАЛИЗАЦИИ.txt</code>, <code>Describe\</code> и MCP-записи — лёгкие, поддерживаемые любой LLM-сессией артефакты.</p>
+<p>- <strong>Правила</strong> охватывают: запуск задач, остановку/возобновление, поиск знаний, кодировки, безопасность секретов и данных, документирование.</p>
+<p>- <strong>Сервисы</strong> автоматизируют: управление этапами, сборку, анализ вывода, автоподмену моделей, документацию.</p>
+<p>- Ключевой принцип — <strong>продолжаемость</strong>: любая новая LLM-сессия может продолжить задачу с &#171;СЛЕДУЮЩЕГО ШАГА&#187; без потери контекста.</p>
+</body></html>
