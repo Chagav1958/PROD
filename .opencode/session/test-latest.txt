@@ -1,5 +1,45 @@
-Latest (итог сессии, 03.08.2026):
-- AutoTest-Pipe.ps1 (ObjectInfo): 6/6 OK, 0 FAILED, PASSED (ping, sel_pb 93, st_pb, sel_sql 0, st_sql, close)
-- AutoTest-Morda2-Real.ps1 (МОРДА2): 9 операций, Passed 9, Failed 0, Blocked 0, VERDICT PASS
-  ПБ в реальном времени: 10%-16%-22%-30%-100%; UI не блокируется (async Runspace)
-Регрессий нет. Новые функции покрыты тестами.
+﻿=== WATCHDOG QA BASELINE === 2026-09-18 21:26:41
+Project: C:\AIS\AI\Prod (PowerShell / PB / SQL ops repo)
+
+--- QA commands configured? ---
+Стандартные QA-команды (lint/format/types) не настроены
+
+--- PowerShell syntax check (sampled scripts) ---
+OK Add-Bom.ps1
+OK Add-ReleaseComment.ps1
+OK AIS_export.ps1
+OK Apply-DesignChanges.ps1
+OK AutoClick-ProdObr.ps1
+OK AutoTest-ObjectInfo.ps1
+OK AutoTest-Pipe.ps1
+OK AutoTest-ProdObr.ps1
+OK auto_fix_loop.ps1
+OK Background-Runner.ps1
+OK Backup-OpenCode.ps1
+OK Backup-PowerShell.ps1
+OK Build-FullCatalog.ps1
+PARSE-ERR Build-ObjectCatalog.ps1: 21 ошибок
+OK Build-PbGraph.ps1
+OK Cache-Guard.ps1
+OK Clean-GitSecrets.ps1
+OK Close-MordaWindows.ps1
+OK Compare-Export.ps1
+OK Compare-PB.ps1
+OK Compare-SQL-Task.ps1
+OK Compare-SQL.ps1
+OK Convert-Docs.ps1
+OK Convert-ExportEncoding.ps1
+OK ConvertTo-BatLauncher.ps1
+OK Copy-ApiKeysToMachine.ps1
+OK Create-RFC.ps1
+OK Export-PB.ps1
+OK Export-Service.ps1
+OK Extract-AllSqlMetadata.ps1
+PS_PARSE_ERRORS=21  (файлов проверено: 30)
+
+--- BOM check (.ps1 должны быть UTF-8 with BOM) ---
+BOM: все проверенные .ps1 с BOM (OK)
+
+--- Tests ---
+Полные тесты (TaskPlan-Tests, Run-Tests) требуют GUI/БД/внешних сервисов - пропущены в baseline (см. примечание).
+TESTS_RUN=0  PASS=0  FAIL=0

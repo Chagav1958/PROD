@@ -1,6 +1,6 @@
 ---
 description: Правила формирования таблицы объектов PB и SQL для комментария в Jira
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Правила таблицы Jira для комментария к релизу

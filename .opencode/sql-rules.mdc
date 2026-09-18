@@ -8,6 +8,27 @@ alwaysApply: false
 
 Сервер базы данных: **Sybase Adaptive Server Enterprise (ASE) 15.5** (СУБД проекта AIS). Язык SQL этого сервера имеет ряд отличий от других СУБД (MS SQL, PostgreSQL, Oracle). Ниже приведены ключевые особенности, актуальные для данного репозитория.
 
+## ПРАВИЛО 0 (КРИТИЧНО): Читай MCP ПЕРЕД написанием SQL
+
+**ОБЯЗАТЕЛЬНО** перед написанием ЛЮБОГО SQL-кода (даже простого SELECT):
+
+1. **`sybase-docs_search_docs`** — найти документацию по функциям/конструкциям
+2. **`sybase-docs_validate_code(product="ase15.5")`** — проверить синтаксис
+3. **НЕ полагаться на память** — синтаксис ASE отличается от T-SQL, PostgreSQL, Oracle
+
+**Типичные ошибки из-за памяти:**
+- `i.rowcnt` — такой колонки НЕТ в `sysindexes` ASE (есть в MS SQL)
+- `data_pgs()`, `index_pgs()` — не документированы в ASE 15.5
+- `reserved_pgs()` — документирована, работает
+- `DATALENGTH()` — проверить через validate_code
+- `CONVERT(char(10), date, 120)` — стиль 120 может не поддерживаться в ASE
+
+**Последовательность действий:**
+1. Запросить документацию: `sybase-docs_search_docs(query="sysindexes columns ASE")`
+2. Проверить функции: `sybase-docs_validate_code(code="...", product="ase15.5")`
+3. Если есть предупреждения — исправить код
+4. Только после успешной валидации — записывать файл
+
 ## Строковые функции
 
 ### STR_REPLACE — вместо REPLACE
@@ -69,6 +90,35 @@ CHAR(9)    -- табуляция (TAB)
 ```
 
 ## Функции даты и времени
+
+### КРИТИЧНО: формат даты в SQL-литералах — только ISO `YYYY-MM-DD`
+
+**На серверах ASE проекта (в т.ч. galaxy) действует формат даты `mdy`** (месяц-день-год).
+Строка `'07.09.2026'` интерпретируется как **9 июля 2026**, а НЕ 7 сентября!
+Это приводит к ложным результатам сравнения дат и к неверным выводам в диагностике.
+
+**Правило:** все даты в SQL-литералах указывать ТОЛЬКО в формате ISO `YYYY-MM-DD`:
+```sql
+-- ПРАВИЛЬНО (однозначно, не зависит от dateformat сервера)
+WHERE d.date_from <= '2026-09-07'
+AND IsNull(d.date_cancel, d.date_to) >= '2026-09-07'
+
+-- НЕПРАВИЛЬНО (на galaxy с dateformat mdy читается как 9 июля)
+WHERE d.date_from <= '07.09.2026'
+```
+
+Проверка интерпретации:
+```sql
+-- 104 = dd.mm.yyyy. Ожидается: ISO -> 07.09.2026; '07.09.2026' -> 09.07.2026
+SELECT convert(varchar(30), convert(datetime, '2026-09-07'), 104),  -- 07.09.2026 (верно)
+       convert(varchar(30), convert(datetime, '07.09.2026'), 104)   -- 09.07.2026 (mdy!)
+```
+
+**Опыт (16.09.2026, SUPRT-19100):** тест на galaxy с `'07.09.2026 00:00:00'` дал
+положительный ID просроченной доверенности (190028527), т.к. дата прочитана как
+9 июля — доверенность тогда ещё действовала. С ISO `'2026-09-07'` функция вернула
+минус-ID `-190028527` (корректно). Знание хранилось только в файлах задачи и не
+попало в глобальные правила — из-за этого ошибка повторилась.
 
 ### Текущая дата/время
 
@@ -424,3 +474,144 @@ FROM dbo.ais_cat_product
 **Коварство бага — user-зависимость:** у пользователя, который в БД маппится на `dbo` (например, разработчик), префикс `таблица.` резолвится в `dbo.таблица` и совпадает — ошибки НЕТ. У обычного пользователя (не dbo) префикс резолвится через его имя, НЕ совпадает со строкой `dbo.таблица` → **ошибка 107** («The column prefix ... does not match with a table name or alias name used in the query»). Поэтому у автора правки всё работает, а у других пользователей падает.
 
 Правило распространяется и на SQL внутри PB DataWindow/DDDW (retrieve). Прецедент: `dddw_ais_cat_product`, `d_ais_cat_product` в карточке договора с посредником (знания ais-catalog #204-206).
+
+## Различия ASA SQL и T-SQL (MS SQL) — ОБЯЗАТЕЛЬНО
+
+**Критическое правило:** Sybase ASE 15.5 — НЕ MS SQL Server. Перед написанием SQL-скриптов ОБЯЗАТЕЛЬНО:
+1. Читать документацию через `sybase-docs_search_docs`
+2. Проверять синтаксис через `sybase-docs_validate_code(product="ase15.5")`
+3. Не использовать T-SQL-специфичные конструкции
+
+### Таблица соответствий (ASA SQL vs T-SQL)
+
+| Конструкция | ASA SQL (Sybase) | T-SQL (MS SQL) | Комментарий |
+|-------------|------------------|----------------|-------------|
+| Имя пользователя | `SUSER_NAME()` | `USER_NAME()` или `SUSER_SNAME()` | В ASE `USER_NAME()` возвращает имя пользователя БД, не сервера |
+| Разделитель пакетов | `go` | `GO` или `;` | В ASE `go` обязателен между пакетами |
+| Дата начала/окончания (ais_entity_basis) | `date_from`, `date_to` | `date_begin`, `date_end` | В проекте AIS используется `date_from`/`date_to` |
+| Полисы AVT/ОСАГО | `oss_agreement` | `ais_policy` | Для AVT-полисов (еОСАГО) используется `oss_agreement`, не `ais_policy` |
+| Посредники по полисам | `oss_middleman` (колонки: `mid_name_id`, `business_role`, `mid_name`) | — | В `oss_middleman` НЕТ колонки `subj_id`; для связи с посредником используется `mid_name_id` |
+| Транзакции | `BEGIN TRAN` / `COMMIT TRAN` / `ROLLBACK TRAN` | `BEGIN TRANSACTION` / `COMMIT` / `ROLLBACK` | В ASE поддерживается сокращённая форма `TRAN` |
+
+### Примеры ошибок (SUPRT-19116, 10.09.2026)
+
+**Ошибка 1:** Использование `USER_NAME()` вместо `SUSER_NAME()`
+
+```sql
+-- НЕПРАВИЛЬНО (T-SQL синтаксис)
+UPDATE dbo.ais_commission
+SET update_user = USER_NAME()
+WHERE com_id = 12345
+
+-- ПРАВИЛЬНО (ASA SQL)
+UPDATE dbo.ais_commission
+SET update_user = SUSER_NAME()
+WHERE com_id = 12345
+```
+
+**Ошибка 2:** Использование `date_begin`/`date_end` вместо `date_from`/`date_to`
+
+```sql
+-- НЕПРАВИЛЬНО (колонки не существуют в ais_entity_basis)
+SELECT mis_ag_id, date_begin, date_end
+FROM dbo.ais_entity_basis
+WHERE ag_id = 484460
+
+-- ПРАВИЛЬНО
+SELECT mis_ag_id, date_from, date_to
+FROM dbo.ais_entity_basis
+WHERE ag_id = 484460
+```
+
+**Ошибка 3:** Использование `ais_policy` для AVT-полисов
+
+```sql
+-- НЕПРАВИЛЬНО (для AVT/еОСАГО используется oss_agreement)
+SELECT os_policy_id, num_agreement, system
+FROM dbo.ais_policy
+WHERE num_agreement IN ('XXX0668448907') AND flag_not_actual = 0
+
+-- ПРАВИЛЬНО (AVT-полисы в oss_agreement)
+SELECT oss_policy_id, num_agreement, blocked
+FROM dbo.oss_agreement
+WHERE num_agreement IN ('XXX0668448907')
+```
+
+**Ошибка 4:** Использование `subj_id` в `oss_middleman`
+
+```sql
+-- НЕПРАВИЛЬНО (колонки subj_id нет в oss_middleman)
+SELECT os_policy_id, subj_id, mid_name_id
+FROM dbo.oss_middleman
+
+-- ПРАВИЛЬНО (используется mid_name_id для связи с посредником)
+SELECT os_policy_id, mid_name_id, business_role, mid_name
+FROM dbo.oss_middleman
+```
+
+### Правило проверки перед написанием SQL
+
+ПЕРЕД записью любого `.sql` файла или SQL-фрагмента:
+
+1. **Проверить имена колонок** через `SELECT name FROM syscolumns WHERE id = object_id('имя_таблицы') ORDER BY colid`
+2. **Валидировать синтаксис** через `sybase-docs_validate_code(code="...", product="ase15.5")`
+3. **Проверить документацию** через `sybase-docs_search_docs(query="имя_функции или конструкция")`
+
+Не полагаться на память — синтаксис ASE отличается от T-SQL, PostgreSQL, Oracle.
+
+## Безопасность данных — ЗАПРЕЩЕНО выводить конфиденциальную информацию
+
+**Строгое правило:** При диагностических запросах и отладочных скриптах **НЕ выводить** данные, которые могут привести к идентификации клиента или раскрытию финансовой информации.
+
+### Запрещено выводить (в SELECT/PRINT/диагностике):
+
+| Категория | Примеры колонок | Риск |
+|-----------|-----------------|------|
+| **Имена клиентов/посредников** | `entity_name`, `mid_name`, `insurant`, `per_last_name`, `per_first_name` | Идентификация лица |
+| **Номера полисов/договоров** | `num_agreement`, `policy_number` | Идентификация договора |
+| **Суммы/финансы** | `com_sum`, `pp_sum`, `premium`, `paym_sum` | Финансовая информация |
+| **Адреса/телефоны** | `address`, `phone`, `email` | Персональные данные |
+| **Номера счетов** | `account_number`, `bank_account` | Банковская информация |
+
+### Разрешено выводить (для диагностики):
+
+| Категория | Примеры колонок | Назначение |
+|-----------|-----------------|------------|
+| **Внутренние ID** | `com_id`, `entity_id`, `ag_id`, `os_policy_id`, `mis_ag_id` | Связи между объектами |
+| **Коды/статусы** | `com_type`, `system`, `state`, `business_role`, `blocked` | Логика работы |
+| **Ссылки** | `cover_id`, `mid_name_id`, `dep_id` | Структура данных |
+| **Даты (без привязки к клиенту)** | `date_from`, `date_to`, `paym_date` | Временные рамки |
+| **Технические поля** | `update_foundation`, `update_user`, `check_info` | Отладка |
+
+### Примеры:
+
+```sql
+-- НЕПРАВИЛЬНО (выводит конфиденциальные данные)
+SELECT c.com_id, e.entity_name, c.com_sum, p.num_agreement
+FROM dbo.ais_commission c
+JOIN dbo.ais_entity_data e ON e.entity_id = c.entity_id
+JOIN dbo.oss_agreement p ON p.oss_policy_id = c.os_policy_id
+
+-- ПРАВИЛЬНО (только внутренние ID и коды)
+SELECT c.com_id, c.entity_id, c.ag_id, c.com_type, c.system, c.state, c.os_policy_id
+FROM dbo.ais_commission c
+WHERE c.com_id IN (186262303, 187671845)
+
+-- НЕПРАВИЛЬНО (выводит имя посредника)
+SELECT os_policy_id, mid_name, subj_id
+FROM dbo.oss_middleman
+
+-- ПРАВИЛЬНО (только ID и роли)
+SELECT os_policy_id, mid_name_id, business_role, cover_id
+FROM dbo.oss_middleman
+WHERE os_policy_id IN (139477263, 140633041)
+```
+
+### Правило для диагностических скриптов:
+
+1. **Проверять SELECT-список** перед выполнением — нет ли конфиденциальных полей
+2. **Использовать только ID** для связи между таблицами
+3. **Если нужны имена** — выполнять запрос локально, не сохранять в файлы/логи
+4. **При сохранении в MCP/файлы** — только ID и коды, без персональных данных
+
+Это правило защищает клиентов при возможной утечке диагностических данных наружу.

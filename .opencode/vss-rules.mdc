@@ -1,6 +1,6 @@
 ---
 description: Правила работы с Microsoft Visual SourceSafe (VSS) в проекте
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Правила работы с VSS
