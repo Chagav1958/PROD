@@ -92,3 +92,8 @@ config/confluence_password.txt
 .opencode/session/errors.count
 .opencode/session/edits.log
 .opencode/session/searches.log
+
+# Каталоги сборки C#-проектов (bin/obj) и runtime-настройки PB-сервиса
+scripts/**/bin/
+scripts/**/obj/
+config/pb_service.json

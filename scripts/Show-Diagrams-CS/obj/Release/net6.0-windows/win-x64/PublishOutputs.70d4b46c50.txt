@@ -1,2 +1,0 @@
-C:\AIS\AI\Prod\scripts\Show-Diagrams.pdb
-C:\AIS\AI\Prod\scripts\Show-Diagrams.exe

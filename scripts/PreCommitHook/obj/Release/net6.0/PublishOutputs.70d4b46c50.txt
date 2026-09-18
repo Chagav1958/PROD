@@ -1,5 +1,0 @@
-C:\AIS\AI\Prod\scripts\pre-commit.exe
-C:\AIS\AI\Prod\scripts\pre-commit.dll
-C:\AIS\AI\Prod\scripts\pre-commit.deps.json
-C:\AIS\AI\Prod\scripts\pre-commit.runtimeconfig.json
-C:\AIS\AI\Prod\scripts\pre-commit.pdb

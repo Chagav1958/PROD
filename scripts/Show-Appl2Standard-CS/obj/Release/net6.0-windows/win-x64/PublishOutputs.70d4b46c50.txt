@@ -1,2 +1,0 @@
-C:\AIS\AI\Prod\scripts\ShowAppl2Standard.pdb
-C:\AIS\AI\Prod\scripts\ShowAppl2Standard.exe

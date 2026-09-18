@@ -1,6 +1,0 @@
-C:\AIS\AI\Prod\scripts\Count-Token.exe
-C:\AIS\AI\Prod\scripts\Count-Token.dll
-C:\AIS\AI\Prod\scripts\Count-Token.deps.json
-C:\AIS\AI\Prod\scripts\Count-Token.runtimeconfig.json
-C:\AIS\AI\Prod\scripts\Count-Token.pdb
-C:\AIS\AI\Prod\scripts\SharpToken.dll

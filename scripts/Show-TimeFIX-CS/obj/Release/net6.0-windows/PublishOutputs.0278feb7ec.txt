@@ -1,6 +1,0 @@
-C:\AIS\AI\Prod\bin\Show-TimeFIX.exe
-C:\AIS\AI\Prod\bin\Show-TimeFIX.dll
-C:\AIS\AI\Prod\bin\Show-TimeFIX.deps.json
-C:\AIS\AI\Prod\bin\Show-TimeFIX.runtimeconfig.json
-C:\AIS\AI\Prod\bin\Show-TimeFIX.pdb
-C:\AIS\AI\Prod\bin\Microsoft.Exchange.WebServices.NETStandard.dll

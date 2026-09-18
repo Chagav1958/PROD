@@ -1,5 +1,0 @@
-C:\AIS\AI\Prod\scripts\Show-OpStatus-CS\bin\Release\net6.0-windows\publish\Show-OpStatus.exe
-C:\AIS\AI\Prod\scripts\Show-OpStatus-CS\bin\Release\net6.0-windows\publish\Show-OpStatus.dll
-C:\AIS\AI\Prod\scripts\Show-OpStatus-CS\bin\Release\net6.0-windows\publish\Show-OpStatus.deps.json
-C:\AIS\AI\Prod\scripts\Show-OpStatus-CS\bin\Release\net6.0-windows\publish\Show-OpStatus.runtimeconfig.json
-C:\AIS\AI\Prod\scripts\Show-OpStatus-CS\bin\Release\net6.0-windows\publish\Show-OpStatus.pdb

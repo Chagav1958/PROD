@@ -1,5 +1,0 @@
-C:\AIS\AI\Prod\bin\Setup-Secrets.exe
-C:\AIS\AI\Prod\bin\Setup-Secrets.dll
-C:\AIS\AI\Prod\bin\Setup-Secrets.deps.json
-C:\AIS\AI\Prod\bin\Setup-Secrets.runtimeconfig.json
-C:\AIS\AI\Prod\bin\Setup-Secrets.pdb

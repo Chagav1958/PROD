@@ -1,2 +1,0 @@
-C:\AIS\AI\Prod\scripts\Show-TestMsg.pdb
-C:\AIS\AI\Prod\scripts\Show-TestMsg.exe

@@ -1,5 +1,0 @@
-C:\AIS\AI\Prod\scripts\Show-Report-CS\bin\Release\net6.0-windows\publish\Show-Report.exe
-C:\AIS\AI\Prod\scripts\Show-Report-CS\bin\Release\net6.0-windows\publish\Show-Report.dll
-C:\AIS\AI\Prod\scripts\Show-Report-CS\bin\Release\net6.0-windows\publish\Show-Report.deps.json
-C:\AIS\AI\Prod\scripts\Show-Report-CS\bin\Release\net6.0-windows\publish\Show-Report.runtimeconfig.json
-C:\AIS\AI\Prod\scripts\Show-Report-CS\bin\Release\net6.0-windows\publish\Show-Report.pdb
