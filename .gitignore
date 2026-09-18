@@ -81,3 +81,14 @@ config/confluence_password.txt
 .config/opencode/secrets/
 # Учётные данные EWS MCP (значения паролей/логинов) — никогда в git
 .config/ews-mcp/credentials.env
+
+# --- Артефакты сборки и runtime-состояние (18.09.2026) ---
+# Отладочные символы .NET
+*.pdb
+# Манифесты зависимостей .NET
+*.deps.json
+# Состояние плагина PB/SQL-enforcer и логи сессий (динамические, меняются постоянно)
+.opencode/session/pb-sql-enforcer.json
+.opencode/session/errors.count
+.opencode/session/edits.log
+.opencode/session/searches.log
