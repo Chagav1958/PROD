@@ -391,7 +391,10 @@ namespace SetupSecrets
             {
                 int x = (int)(lParam.ToInt64() & 0xFFFF), y = (int)((lParam.ToInt64() >> 16) & 0xFFFF);
                 var p = PointFromScreen(new Point(x, y)); double w = ActualWidth, h = ActualHeight; int m = RESIZE_MARGIN;
-                if (p.Y < 42 && !(p.X < m) && !(p.X > w - m) && !(p.Y < m)) { handled = true; return (IntPtr)HTCAPTION; }
+                // Зона кнопок заголовка (свернуть/закрыть) — не отдавать системе как HTCAPTION,
+                // иначе клики по кнопкам превращаются в перетаскивание окна.
+                double btnZone = 100;
+                if (p.Y < 42 && p.X < w - btnZone && !(p.X < m) && !(p.Y < m)) { handled = true; return (IntPtr)HTCAPTION; }
                 if (p.X < m && p.Y < m) { handled = true; return (IntPtr)13; }
                 if (p.X > w - m && p.Y < m) { handled = true; return (IntPtr)14; }
                 if (p.X < m && p.Y > h - m) { handled = true; return (IntPtr)16; }
