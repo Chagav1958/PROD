@@ -60,6 +60,25 @@ powershell -NoLogo -File C:\AIS\AI\Prod\scripts\Test-Secrets.ps1 -Init
 
 Значения можно взять из корпоративного менеджера паролей или из `config\.local_secrets.json`. После заполнения — **перезапуск OpenCode** (значения читаются при старте).
 
+### Смена секрета (повседневная процедура)
+
+Записать новое значение в хранилище (значение запрашивается скрытно, в историю команд не попадает):
+
+```powershell
+powershell -NoLogo -File C:\AIS\AI\Prod\scripts\Set-Secret.ps1 -Name confluence_password.txt
+```
+
+Скрипт пишет файл **без BOM и без перевода строки** (именно так его читает `{file:...}`) и не печатает значение. Флаг `-Verify` сразу запускает проверку `Test-Secrets.ps1 -Online`.
+
+Порядок смены любого секрета:
+
+1. Получить новое значение в источнике (Jira / Confluence / Google / EWS).
+2. `Set-Secret.ps1 -Name <файл>` (или вручную обновить файл в `~/.ais-secrets/opencode`).
+3. **Перезапустить OpenCode** — значения читаются при старте.
+4. `Test-Secrets.ps1 -Online`.
+
+Важно: **Jira работает по PAT-токену, а не по паролю.** Смена доменного пароля Jira не затрагивает — обновлять `jira_token.txt` нужно только при перевыпуске/отзыве токена. Пароль (`confluence_password.txt`) используется для Confluence (Basic) и, при совпадении учётной записи, для EWS (`~/.config/ews-mcp/credentials.env` → `EWS_PASSWORD`).
+
 ### Если пароль/токен скомпрометирован
 
 1. Сменить секрет в источнике (Jira/Confluence/Google/EWS).

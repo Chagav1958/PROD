@@ -39,9 +39,12 @@ function New-SecretsStructure {
             Write-Host "[создано] $d" -ForegroundColor Green
         }
     }
+    # Внимание: пишем БЕЗ BOM (Set-Content -Encoding UTF8 в PS 5.1 добавляет BOM,
+    # а подстановка {file:...} читает файл как есть — BOM испортит значение).
+    $enc = New-Object System.Text.UTF8Encoding($false)
     foreach ($s in $SecretDefs) {
         if (-not (Test-Path $s.Path)) {
-            Set-Content -LiteralPath $s.Path -Value "" -Encoding UTF8 -NoNewline
+            [System.IO.File]::WriteAllText($s.Path, "", $enc)
             Write-Host "[шаблон]  $($s.Path)  — заполните значение ($($s.Consumer))" -ForegroundColor Yellow
         }
     }
