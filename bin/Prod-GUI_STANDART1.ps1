@@ -2229,6 +2229,18 @@ $loadingContent   = $window.FindName("LoadingContent")
 "Controls found: cmbOp=$($null -ne $cmbOp), params=$($null -ne $paramsPanel), pwdBox=$($null -ne $pwdBox)" | Out-File $logFile -Append
 
 
+# Write-TechJournal — совместимый журнал (для общих модулей Settings-Module/Standard2-Helpers/Background-Runner)
+# В СТАНДАРТ1 журнал ведётся в $logFile; функция добавлена, чтобы модули не падали.
+function Write-TechJournal {
+    param([string]$Level, [string]$Message)
+    try {
+        $line = "[{0:HH:mm:ss.fff}] [{1}] {2}" -f (Get-Date), $Level, $Message
+        Add-Content -Path $logFile -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
+    } catch {
+        # SILENT — журнал не должен ронять GUI
+    }
+}
+
 . "C:\AIS\AI\Prod\scripts\Settings-Module.ps1"
 
 # ── Operation definitions ──

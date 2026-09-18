@@ -1,0 +1,67 @@
+{
+    "_comment":  "СЕРВИС PB — управление мерами защиты разработки PB/SQL. Каждая мера может быть отключена (enabled=false) для снятия блокировки разработки. Статистика срабатываний накапливается автоматически.",
+    "_version":  "1.0",
+    "_created":  "16.09.2026",
+    "measures":  {
+                     "m1_enforcer_allowlist":  {
+                                                   "enabled":  true,
+                                                   "name":  "M1: Enforcer + белый список констант",
+                                                   "description":  "pb-sql-enforcer.js блокирует выдуманные перечисляемые константы (например Warning!) и запрещённые идиомы (iif, ??, ?., =\u003e, Switch). Проверенные константы: Information!/StopSign!/Exclamation!/Question!/None!/Error!/Asterisk!/Hand!.",
+                                                   "blocks":  "edit/write .sr*/.sql без валидации и с несуществующими константами",
+                                                   "rollback":  "enabled=false в этом файле (правки перестанут блокироваться enforcer\u0027ом)"
+                                               },
+                     "m2_no_bash_bypass":  {
+                                               "enabled":  true,
+                                               "name":  "M2: Запрет обхода enforcer через PowerShell",
+                                               "description":  "Правки .sr*/.sql выполнять ТОЛЬКО через edit/write (контролирует enforcer). Правка через bash (PowerShell) — нарушение. При необходимости правки через bash — сначала Lint-PB.ps1.",
+                                               "blocks":  "нет (правило поведения, блокировки нет)",
+                                               "rollback":  "enabled=false — разрешить правки .sr*/.sql через PowerShell"
+                                           },
+                     "m3_linter":  {
+                                       "enabled":  true,
+                                       "name":  "M3: Линтер Lint-PB.ps1",
+                                       "description":  "Скрипт сканирует папки Test_/Diag_ на запрещённые идиомы, выдуманные константы (Warning! и др.), даты в mdy-формате. Запускается вручную или по команде PBSERV. Отчёт в temp/pb_lint_report.txt.",
+                                       "blocks":  "нет (проверка, отчёт)",
+                                       "rollback":  "enabled=false — линтер не требуется перед готовностью"
+                                   },
+                     "m4_mandatory_claude":  {
+                                                 "enabled":  true,
+                                                 "name":  "M4: Обязательная валидация claude_pb/claude_sql",
+                                                 "description":  "Перед правкой .sr*/.sql вызывать claude_pb (для .sr*) или claude_sql (для .sql) — реальная проверка фрагмента + кредиты enforcer. sybase-docs/rules-mcp, если доступны, тоже дают кредиты.",
+                                                 "blocks":  "нет (enforcer блокирует edit без кредитов)",
+                                                 "rollback":  "enabled=false — разрешить правки без валидации (требует enabled m1=false)"
+                                             },
+                     "m5_wait_mcp":  {
+                                         "enabled":  true,
+                                         "name":  "M5: Ждать запуск MCP до правок",
+                                         "description":  "Перед правками .sr*/.sql убедиться, что sybase-docs/rules-mcp доступны (в списке инструментов). Если нет — сообщить пользователю и ждать/перезапускать, НЕ писать код по памяти.",
+                                         "blocks":  "нет (правило поведения, принудительно не блокирует)",
+                                         "rollback":  "enabled=false — разрешить работу при неподключённых MCP"
+                                     }
+                 },
+    "stats":  {
+                  "m1_enforcer_blocks":  8,
+                  "m3_lint_runs":  2,
+                  "m3_lint_findings":  0,
+                  "m4_claude_validations":  0,
+                  "created":  "16.09.2026"
+              },
+    "history":  [
+                    {
+                        "time":  "2026-09-16 16:02:51",
+                        "action":  "отключена мера m1"
+                    },
+                    {
+                        "time":  "2026-09-16 16:02:52",
+                        "action":  "включена мера m1"
+                    },
+                    {
+                        "time":  "2026-09-16 16:11:07",
+                        "action":  "линтер: 3 файлов, 0 находок"
+                    },
+                    {
+                        "time":  "2026-09-18 21:32:33",
+                        "action":  "линтер: 26 файлов, 0 находок"
+                    }
+                ]
+}

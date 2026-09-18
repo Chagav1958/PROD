@@ -19,6 +19,7 @@ if not "%EXPORT_PATH%"=="" ( set BASEDIR=%EXPORT_PATH% ) else ( set BASEDIR=%SCR
 :: Удаление концевых пробелов
 :trimBase
 if "!BASEDIR:~-1!"==" " set BASEDIR=!BASEDIR:~0,-1!& goto trimBase
+mkdir "%BASEDIR%\LOGS" 2>nul
 set LOGFILE=%BASEDIR%\LOGS\export_objects.log
 
 echo ============================================= > "%LOGFILE%"
@@ -81,8 +82,7 @@ if "%RES%"=="1" (
 
 set ISQL=isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1
 
-:: ������ �� ���� �������
-:: Фильтр по типу объекта
+:: ������ �� ���� �������
 if /i "%OBJECT_TYPE%"=="Procedure" goto export_proc
 if /i "%OBJECT_TYPE%"=="Functions" goto export_func
 if /i "%OBJECT_TYPE%"=="Triggers" goto export_trig
@@ -93,6 +93,11 @@ if /i "%OBJECT_TYPE%"=="PK" goto export_pk
 if /i "%OBJECT_TYPE%"=="FK" goto export_fk
 if /i "%OBJECT_TYPE%"=="Grants" goto export_grants
 if "%OBJECT_TYPE%"=="" goto export_all
+if not "%OBJECT_TYPE%"=="" (
+    echo FATAL: Unknown OBJECT_TYPE: %OBJECT_TYPE% >> "%LOGFILE%"
+    echo FATAL: Unknown OBJECT_TYPE: %OBJECT_TYPE%
+    exit /b 1
+)
 
 :: ========== PROCEDURES ==========
 echo. >> "%LOGFILE%"
@@ -117,7 +122,9 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\procs.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting proc: !ONAME!
-        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tp.sql"
+        echo set nocount on>"%BASEDIR%\LOGS\_tp.sql"
+        echo select convert^(varbinary^(255^)^, text^) as hx, number, colid from syscomments where id=object_id^('!ONAME!'^) order by number, colid>>"%BASEDIR%\LOGS\_tp.sql"
+        echo go>>"%BASEDIR%\LOGS\_tp.sql"
         isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tp.sql" -o "%BASEDIR%\LOGS\_frags.txt"
         powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
         echo USE %DATABASE%>"%BASEDIR%\Procedure\!ONAME!.sql"
@@ -183,7 +190,9 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\funcs.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting func: !ONAME!
-        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tf.sql"
+        echo set nocount on>"%BASEDIR%\LOGS\_tf.sql"
+        echo select convert^(varbinary^(255^)^, text^) as hx, number, colid from syscomments where id=object_id^('!ONAME!'^) order by number, colid>>"%BASEDIR%\LOGS\_tf.sql"
+        echo go>>"%BASEDIR%\LOGS\_tf.sql"
         isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tf.sql" -o "%BASEDIR%\LOGS\_frags.txt"
         powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
         echo USE %DATABASE%>"%BASEDIR%\Functions\!ONAME!.sql"
@@ -247,7 +256,9 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\trigs.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting trig: !ONAME!
-        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tt.sql"
+        echo set nocount on>"%BASEDIR%\LOGS\_tt.sql"
+        echo select convert^(varbinary^(255^)^, text^) as hx, number, colid from syscomments where id=object_id^('!ONAME!'^) order by number, colid>>"%BASEDIR%\LOGS\_tt.sql"
+        echo go>>"%BASEDIR%\LOGS\_tt.sql"
         isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tt.sql" -o "%BASEDIR%\LOGS\_frags.txt"
         powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
         echo USE %DATABASE%>"%BASEDIR%\Triggers\!ONAME!.sql"
@@ -294,7 +305,7 @@ for /f %%a in ('type "%BASEDIR%\LOGS\tables.txt" 2^>nul ^| find /c /v ""') do se
 echo ###PHASE###Tables^|!T_TOTAL!###
 echo ###PHASE###Tables^|!T_TOTAL!### >> "%LOGFILE%"
 
-set T_CNT=0& set T_OK=0
+set TB_CNT=0& set TB_OK=0
 for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\tables.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
@@ -306,14 +317,14 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\tables.txt"') do (
         echo go >> "%BASEDIR%\LOGS\_tbl.sql"
         type "%SCRIPT_DIR%\gen_create_table.sql" >> "%BASEDIR%\LOGS\_tbl.sql"
         isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -i "%BASEDIR%\LOGS\_tbl.sql" -o "%BASEDIR%\Tables\!ONAME!.sql"
-        if not errorlevel 1 set /a T_OK+=1
-        set /a T_CNT+=1
+        if not errorlevel 1 set /a TB_OK+=1
+        set /a TB_CNT+=1
         echo ###STEP###
         echo ###STEP### >> "%LOGFILE%"
     )
 )
-echo   Tables: found=%T_CNT% ok=%T_OK%
-echo   Tables: found=%T_CNT% ok=%T_OK% >> "%LOGFILE%"
+echo   Tables: found=%TB_CNT% ok=%TB_OK%
+echo   Tables: found=%TB_CNT% ok=%TB_OK% >> "%LOGFILE%"
 goto :sect_done
 
 :: ========== VIEWS ==========
@@ -337,7 +348,9 @@ for /f "tokens=*" %%i in ('type "%BASEDIR%\LOGS\views.txt"') do (
     set "ONAME=%%i" & set "ONAME=!ONAME: =!"
     if defined ONAME (
         echo   Exporting view: !ONAME!
-        (echo set nocount on & echo select convert(varbinary(255), text^) as hx, number, colid from syscomments where id=object_id('!ONAME!'^) order by number, colid & echo go) > "%BASEDIR%\LOGS\_tv.sql"
+        echo set nocount on>"%BASEDIR%\LOGS\_tv.sql"
+        echo select convert^(varbinary^(255^)^, text^) as hx, number, colid from syscomments where id=object_id^('!ONAME!'^) order by number, colid>>"%BASEDIR%\LOGS\_tv.sql"
+        echo go>>"%BASEDIR%\LOGS\_tv.sql"
         isql -S %SERVER% -U %LOGIN% -P %PASSWORD% -D %DATABASE% -b -h-1 -w 65535 -i "%BASEDIR%\LOGS\_tv.sql" -o "%BASEDIR%\LOGS\_frags.txt"
         powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Rebuild-Object.ps1" -Frags "%BASEDIR%\LOGS\_frags.txt" -Out "%BASEDIR%\LOGS\_body.tmp"
         echo USE %DATABASE%>"%BASEDIR%\Views\!ONAME!.sql"
@@ -472,9 +485,9 @@ del "%BASEDIR%\LOGS\test.*" 2>nul
 echo Converting to UTF-8 BOM (CRLF)...
 powershell -NoLogo -ExecutionPolicy RemoteSigned -File "%SCRIPT_DIR%\..\scripts\Convert-ExportEncoding.ps1" -Path "%BASEDIR%" -Extensions "*.sql"
 
-set /a TOTAL_OK=P_OK+F_OK+T_OK+V_OK+I_OK+PK_OK+FK_OK+G_OK
-set /a TOTAL_FAIL=0
-set /a TOTAL_CNT=P_CNT+F_CNT+T_CNT+V_CNT+I_CNT+PK_CNT+FK_CNT+G_CNT
+set /a TOTAL_OK=P_OK+F_OK+T_OK+TB_OK+V_OK+I_OK+PK_OK+FK_OK+G_OK
+set /a TOTAL_CNT=P_CNT+F_CNT+T_CNT+TB_CNT+V_CNT+I_CNT+PK_CNT+FK_CNT+G_CNT
+set /a TOTAL_FAIL=TOTAL_CNT-TOTAL_OK
 
 echo. >> "%LOGFILE%"
 echo ============================================= >> "%LOGFILE%"
@@ -533,4 +546,3 @@ echo.
 echo Example: %~nx0 dev_golden golden PASSWORD SYBASE-19337
 exit /b 1
 endlocal
-
