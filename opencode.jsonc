@@ -9,8 +9,18 @@
     ".opencode/knowledge-first.mdc",
     ".opencode/save-analysis.mdc",
     ".opencode/save-large-prompts.mdc",
-    ".opencode/task-save-results.mdc"
+    ".opencode/task-save-results.mdc",
+    ".opencode/token-economy.mdc"
   ],
+  "skills": {
+    "paths": [".opencode/skills"],
+    "urls": []
+  },
+  "permission": {
+    "external_directory": {
+      "C:\\AIS\\1 Release\\*": "allow"
+    }
+  },
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -66,22 +76,25 @@
   "mcp": {
     "atlassian": {
       "type": "local",
-      "command": ["C:\\Users\\vchaga\\AppData\\Roaming\\Python\\Python312\\Scripts\\uvx.exe", "mcp-atlassian"],
+      "command": ["C:\\AIS\\AI\\atlassian-mcp\\.venv\\Scripts\\mcp-atlassian.exe"],
       "enabled": true,
-      "env": {
+      "environment": {
         "JIRA_URL": "https://mytask.renins.com",
-        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}",
+        "JIRA_PERSONAL_TOKEN": "{file:~/.ais-secrets/opencode/jira_token.txt}",
         "CONFLUENCE_URL": "https://wiki.renins.com",
-        "CONFLUENCE_PERSONAL_TOKEN": "${CONFLUENCE_PERSONAL_TOKEN}",
+        "CONFLUENCE_PERSONAL_TOKEN": "",
+        "CONFLUENCE_USERNAME": "vchaga",
+        "CONFLUENCE_API_TOKEN": "{file:~/.ais-secrets/opencode/confluence_password.txt}",
         "READ_ONLY_MODE": "true",
         "ENABLED_TOOLS": "confluence_search,confluence_get_page,jira_search,jira_get_issue"
-      }
+      },
+      "timeout": 60000
     },
     "sybase-docs": {
       "type": "local",
       "command": ["C:\\AIS\\AI\\sybase-docs-mcp\\venv\\Scripts\\python.exe", "-m", "sybase_mcp.server"],
       "enabled": true,
-      "env": {
+      "environment": {
         "DOCS_ROOT": "C:\\AIS\\AI\\sybase-docs-mcp",
         "PYTHONUNBUFFERED": "1"
       }
@@ -127,7 +140,9 @@
     ".opencode/plugins/russian-compaction.js",
     ".opencode/plugins/claude-code.js",
     ".opencode/plugin/loop-guard.js",
-    ".opencode/plugin/task-progress.js"
+    ".opencode/plugin/task-progress.js",
+    ".opencode/plugins/pb-sql-enforcer.js",
+    ".opencode/plugins/task-session-rename.js"
   ],
   "lsp": {
     "pb_lsp": {

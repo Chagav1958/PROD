@@ -3,7 +3,7 @@
   "provider": {
     "google": {
       "options": {
-        "apiKey": "{file:secrets/google_api_key.txt}"
+        "apiKey": "{file:~/.ais-secrets/opencode/google_api_key.txt}"
       },
       "blacklist": [
         "gemini-3.1-pro-preview-customtools",
@@ -39,11 +39,11 @@
       "enabled": true,
       "environment": {
         "JIRA_URL": "https://mytask.renins.com",
-        "JIRA_PERSONAL_TOKEN": "{file:secrets/jira_token.txt}",
+        "JIRA_PERSONAL_TOKEN": "{file:~/.ais-secrets/opencode/jira_token.txt}",
         "CONFLUENCE_URL": "https://wiki.renins.com",
         "CONFLUENCE_PERSONAL_TOKEN": "",
         "CONFLUENCE_USERNAME": "vchaga",
-        "CONFLUENCE_API_TOKEN": "{file:secrets/confluence_password.txt}",
+        "CONFLUENCE_API_TOKEN": "{file:~/.ais-secrets/opencode/confluence_password.txt}",
         "READ_ONLY_MODE": "true",
         "ENABLED_TOOLS": "confluence_search,confluence_get_page,jira_search,jira_get_issue"
       }
