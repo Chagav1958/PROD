@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -33,6 +34,11 @@ namespace SetupSecrets
 
         private string _secretsPath;
         private string _ewsEnvPath;
+        private string _aisDir = "";
+        private string _fAisJira = "";
+        private string _fAisConf = "";
+        private string _fAisGoogle = "";
+        private const string ConfluenceLogin = "vchaga";
         private const string Entropy = "AIS.Secrets.2026";
 
         public MainWindow()
@@ -41,17 +47,30 @@ namespace SetupSecrets
             Log("START", "Setup-Secrets");
 
             string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".";
-            _secretsPath = Path.GetFullPath(Path.Combine(exeDir, "..\\..\\..\\config\\.local_secrets.json"));
+            _secretsPath = FindProjectSecrets(exeDir);
             _ewsEnvPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 ".config", "ews-mcp", "credentials.env");
 
-            if (!File.Exists(_secretsPath))
-            {
-                string alt = Path.GetFullPath(Path.Combine(exeDir, "..\\config\\.local_secrets.json"));
-                if (File.Exists(alt)) _secretsPath = alt;
-            }
+            _aisDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".ais-secrets", "opencode");
+            _fAisJira = Path.Combine(_aisDir, "jira_token.txt");
+            _fAisConf = Path.Combine(_aisDir, "confluence_password.txt");
+            _fAisGoogle = Path.Combine(_aisDir, "google_api_key.txt");
+
             LoadSecrets();
             ParseAutoTestArgs();
+        }
+
+        private static string FindProjectSecrets(string startDir)
+        {
+            var dir = new DirectoryInfo(startDir);
+            while (dir != null)
+            {
+                var cand = Path.Combine(dir.FullName, "config", ".local_secrets.json");
+                if (File.Exists(cand)) return cand;
+                dir = dir.Parent;
+            }
+            return Path.Combine(@"C:\AIS\AI\Prod", "config", ".local_secrets.json");
         }
 
         public static void Log(string level, string msg)
@@ -111,6 +130,9 @@ namespace SetupSecrets
                 case "ews_email": tbEwsEmail.Text = value; break;
                 case "ews_user": tbEwsUser.Text = value; break;
                 case "ews_pass": tbEwsPass.Text = value; break;
+                case "oc_jira": tbOcJiraToken.Text = value; break;
+                case "conf_pass": tbOcConfPass.Text = value; break;
+                case "google": tbOcGoogleKey.Text = value; break;
             }
             Log("AUTOTEST", $"set {name}");
         }
@@ -147,6 +169,85 @@ namespace SetupSecrets
             }
             catch (Exception ex) { Log("ERROR", $"Load: {ex.Message}"); }
             LoadEwsEnv();
+            LoadAisSecrets();
+        }
+
+        private void LoadAisSecrets()
+        {
+            tbOcJiraToken.Text = ReadSecretFile(_fAisJira);
+            tbOcConfPass.Text = ReadSecretFile(_fAisConf);
+            tbOcGoogleKey.Text = ReadSecretFile(_fAisGoogle);
+            Log("INFO", $"Loaded ais-secrets: {_aisDir}");
+        }
+
+        private static string ReadSecretFile(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return "";
+                return File.ReadAllText(path).TrimStart('\uFEFF').Trim();
+            }
+            catch { return ""; }
+        }
+
+        private static void WriteSecretFile(string path, string value)
+        {
+            var v = (value ?? "").Trim();
+            File.WriteAllText(path, v, new UTF8Encoding(false));
+        }
+
+        private void SaveAisSecrets()
+        {
+            if (!Directory.Exists(_aisDir)) Directory.CreateDirectory(_aisDir);
+            WriteSecretFile(_fAisJira, tbOcJiraToken.Text);
+            WriteSecretFile(_fAisConf, tbOcConfPass.Text);
+            WriteSecretFile(_fAisGoogle, tbOcGoogleKey.Text);
+            Log("INFO", $"Saved ais-secrets: {_aisDir}");
+        }
+
+        private async void BtnCheck_Click(object sender, RoutedEventArgs e)
+        {
+            Log("CLICK", "check");
+            btnCheck.IsEnabled = false;
+            var sb = new StringBuilder();
+            try
+            {
+                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+
+                string jira = tbOcJiraToken.Text.Trim();
+                if (!string.IsNullOrEmpty(jira))
+                {
+                    try
+                    {
+                        var req = new HttpRequestMessage(HttpMethod.Get, "https://mytask.renins.com/rest/api/2/myself");
+                        req.Headers.Add("Authorization", "Bearer " + jira);
+                        var resp = await http.SendAsync(req);
+                        sb.AppendLine($"Jira: HTTP {(int)resp.StatusCode} — {(resp.IsSuccessStatusCode ? "OK" : "ОШИБКА")}");
+                    }
+                    catch (Exception ex) { sb.AppendLine("Jira: " + ex.Message); }
+                }
+                else sb.AppendLine("Jira: токен пуст");
+
+                string conf = tbOcConfPass.Text.Trim();
+                if (!string.IsNullOrEmpty(conf))
+                {
+                    try
+                    {
+                        var req = new HttpRequestMessage(HttpMethod.Get, "https://wiki.renins.com/rest/api/user/current");
+                        var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(ConfluenceLogin + ":" + conf));
+                        req.Headers.Add("Authorization", "Basic " + b64);
+                        var resp = await http.SendAsync(req);
+                        var body = await resp.Content.ReadAsStringAsync();
+                        bool ok = body.Contains("\"type\":\"known\"");
+                        sb.AppendLine($"Confluence: HTTP {(int)resp.StatusCode} — {(ok ? "OK (аутентифицирован)" : "НЕ аутентифицирован")}");
+                    }
+                    catch (Exception ex) { sb.AppendLine("Confluence: " + ex.Message); }
+                }
+                else sb.AppendLine("Confluence: пароль пуст");
+            }
+            finally { btnCheck.IsEnabled = true; }
+
+            MessageBox.Show(sb.ToString(), "Проверка секретов", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void LoadEwsEnv()
@@ -205,8 +306,9 @@ namespace SetupSecrets
             {
                 SaveSecrets();
                 SaveEwsEnv();
+                SaveAisSecrets();
                 Log("INFO", "Saved all secrets");
-                MessageBox.Show("Секреты сохранены.\n\n.local_secrets.json — config/\nEWS — ~/.config/ews-mcp/credentials.env",
+                MessageBox.Show("Секреты сохранены.\n\n.local_secrets.json — config/\nEWS — ~/.config/ews-mcp/credentials.env\nMCP — ~/.ais-secrets/opencode/",
                     "Сохранено", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex) { Log("ERROR", $"Save: {ex.Message}"); }
