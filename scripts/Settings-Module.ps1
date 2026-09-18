@@ -140,6 +140,31 @@ function Build-SettingsUI {
     
     $config = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
     Write-TechJournal "INFO" "Build-SettingsUI: config loaded"
+    
+    # MERGE: секреты из .local_secrets.json (отдельное хранилище, в .gitignore)
+    $localSecretsPath = Join-Path (Split-Path $ConfigPath -Parent) ".local_secrets.json"
+    if (Test-Path $localSecretsPath) {
+        try {
+            $localSecrets = Get-Content $localSecretsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($localSecrets.sybase) {
+                if (-not $config.sybase) { $config | Add-Member -NotePropertyName "sybase" -NotePropertyValue (@{}) -Force }
+                if ($localSecrets.sybase.password_encrypted) { $config.sybase.password_encrypted = $localSecrets.sybase.password_encrypted }
+            }
+            if ($localSecrets.vss) {
+                if (-not $config.vss) { $config | Add-Member -NotePropertyName "vss" -NotePropertyValue (@{}) -Force }
+                if ($localSecrets.vss.user) { $config.vss.user = $localSecrets.vss.user }
+                if ($localSecrets.vss.password_encrypted) { $config.vss.password_encrypted = $localSecrets.vss.password_encrypted }
+                if ($localSecrets.vss.master_key_encrypted) { $config.vss.master_key_encrypted = $localSecrets.vss.master_key_encrypted }
+            }
+            if ($localSecrets.jira) {
+                if (-not $config.jira) { $config | Add-Member -NotePropertyName "jira" -NotePropertyValue (@{}) -Force }
+                if ($localSecrets.jira.api_token_encrypted) { $config.jira.api_token_encrypted = $localSecrets.jira.api_token_encrypted }
+                if ($localSecrets.jira.token_encrypted) { $config.jira.token_encrypted = $localSecrets.jira.token_encrypted }
+            }
+            Write-TechJournal "INFO" "Build-SettingsUI: merged .local_secrets.json"
+        } catch { Write-TechJournal "WARN" "Build-SettingsUI: .local_secrets merge failed: $_" }
+    }
+    
     $masterKey = Get-MasterKey -ConfigPath $ConfigPath
     if (-not $masterKey) {
         try {
@@ -780,7 +805,7 @@ function Export-Settings {
     $exportConfig = $config | ConvertTo-Json -Depth 10 | ConvertFrom-Json
     $exportConfig.jira.api_token_encrypted = ""
     $exportConfig.jira.token_encrypted = ""
-    $exportConfig.vss.password_encrypted = ""
+    $exportConfig.vss.password_encrypted = ''
     
     $export = [ordered]@{
         exported_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")

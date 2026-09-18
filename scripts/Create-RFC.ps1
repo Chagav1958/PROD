@@ -161,8 +161,8 @@ if ($DryRun) {
     $dryBody.fields["customfield_15254"] = "Нет"
     $dryBody.fields["customfield_15255"] = @{ name = $JiraUser }
     $dryBody.fields["customfield_15256"] = @{ name = $JiraUser }
-    $dryBody.fields["customfield_15350"] = @( @{ accountId = $jiraAccountId } )
-    $dryBody.fields["assignee"] = @{ accountId = $jiraAccountId }
+    $dryBody.fields["customfield_15350"] = @( $( if ($jiraAccountId) { @{ accountId = $jiraAccountId } } else { @{ name = $JiraUser } } ) )
+    $dryBody.fields["assignee"] = $( if ($jiraAccountId) { @{ accountId = $jiraAccountId } } else { @{ name = $JiraUser } } )
     $dryBody.fields["customfield_15258"] = $startStr
     $dryBody.fields["customfield_15259"] = $endStr
     $dryBody | ConvertTo-Json -Depth 10 | Write-Host
@@ -184,8 +184,15 @@ $rfcBody = @{
         issuetype   = @{ id = $cfg.jira.issue_type_id }
         summary     = "Разработка - $taskSummary"
         description = "RFC сформирована автоматически - AIS Release Preparation"
-        assignee    = @{ accountId = $jiraAccountId }
     }
+}
+
+# assignee: для Jira Cloud — accountId, для Jira Server/Data Center — name
+if ($jiraAccountId) {
+    $rfcBody.fields.assignee = @{ accountId = $jiraAccountId }
+} else {
+    $rfcBody.fields.assignee = @{ name = $JiraUser }
+    Write-Host "  assignee по name (accountId недоступен): $JiraUser" -ForegroundColor Yellow
 }
 
 # Add custom fields if configured (only if not placeholder)

@@ -1,0 +1,14 @@
+wait 1000
+log Test: window opened
+wait 500
+set_search modules
+wait 300
+search_down
+wait 300
+log Test: search works
+wait 500
+click refresh
+wait 300
+log Test: refresh works
+wait 500
+close
